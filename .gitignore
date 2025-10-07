@@ -1,51 +1,112 @@
-# Gradle files
+# Kotlin Multiplatform (Android + iOS) gitignore
+# Tailored for a KMP project that targets Android and iOS only
+
+# Gradle
 .gradle/
+**/build/
 build/
 
-# Local configuration files
+# Local configuration
 local.properties
+local.properties.*
 
-# Android Studio and IntelliJ IDEA files
+# IntelliJ / Android Studio
 .idea/
 *.iml
 *.iws
 *.ipr
+/.idea/caches/
+/.idea/libraries/
+/.idea/modules.xml
+/.idea/workspace.xml
+/.idea/gradle.xml
+/.idea/usage.statistics.xml
+/.idea/dictionaries/
+/.idea/httpRequests/
 
-# Android Studio cache
-.idea/caches/
-.idea/libraries/
-.idea/modules.xml
-.idea/workspace.xml
-.idea/gradle.xml
-.idea/usage.statistics.xml
-.idea/dictionaries/
-.idea/httpRequests/
+# Kotlin/Native and KMP generated artifacts
+.konan/
+.cinterop/
+*.klib
+*.kexe
+*.kotlin_module
+*.kotlin_metadata
+*.kotlin_bin
 
-# Keystore files
-*.jks
-*.keystore
+# Gradle caches and wrapper artifacts
+.gradle/
+.gradle-test-kit/
 
-# Log files
-*.log
-
-# OS-specific files
-.DS_Store
-Thumbs.db
-
-# Build directories
-app/build/
-*/build/
-
-# Proguard configuration files
-proguard-rules.pro
-
-# Miscellaneous
+# Android specific
+captures/
+.externalNativeBuild/
+.cxx/
 *.apk
 *.ap_
 *.dex
 *.class
+*.keystore
+*.jks
+keystore.properties
 
-# Android NDK
-ndkBuild/
-local.properties
+# Generated/source files
+**/generated/
+**/generated/**
+**/build/generated/**
 
+# Xcode / iOS
+# Ignore Xcode workspace user data, derived data and build products
+*.pbxuser
+*.mode1v3
+*.mode2v3
+*.perspectivev3
+xcuserdata/
+*.xcuserstate
+*.xcworkspace/xcuserdata/
+**/DerivedData/
+DerivedData/
+**/Build/
+build/
+*.hmap
+*.ipa
+*.dSYM
+*.dSYM.zip
+
+# CocoaPods
+Pods/
+Podfile.lock
+
+# Swift Package Manager
+.build/
+Package.resolved
+
+# Carthage
+Carthage/Build/
+
+# macOS
+.DS_Store
+
+# Logs
+*.log
+
+# Editor temporary files
+*~
+*.swp
+*.swo
+*.tmp
+
+# Misc
+*.orig
+
+# Keep project-level Gradle and settings files tracked
+!/gradle/wrapper/gradle-wrapper.properties
+!gradle/wrapper/gradle-wrapper.jar
+!settings.gradle.kts
+!build.gradle.kts
+!/gradlew
+!/gradlew.bat
+
+# If you want to track CocoaPods artifacts or lockfile for reproducible iOS builds,
+# remove Podfile.lock and/or Pods/ from this file. Currently they're ignored above.
+
+# End of file
