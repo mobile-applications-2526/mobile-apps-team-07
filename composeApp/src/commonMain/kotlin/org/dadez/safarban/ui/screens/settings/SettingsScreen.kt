@@ -1,4 +1,4 @@
-package org.dadez.safarban.screens.settings
+package org.dadez.safarban.ui.screens.settings
 
 import androidx.compose.foundation.layout.*
 import androidx.compose.material3.*

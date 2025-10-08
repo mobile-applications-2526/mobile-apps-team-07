@@ -3,22 +3,28 @@ package org.dadez.safarban
 import androidx.compose.foundation.layout.*
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
+import androidx.compose.ui.Modifier
+import androidx.compose.ui.unit.dp
 import org.koin.compose.KoinApplication
 import com.arkivanov.decompose.extensions.compose.stack.Children
 import com.arkivanov.decompose.extensions.compose.stack.animation.slide
 import com.arkivanov.decompose.extensions.compose.stack.animation.stackAnimation
 import com.arkivanov.decompose.extensions.compose.subscribeAsState
-import org.dadez.safarban.navigation.RootComponent
-import org.dadez.safarban.screens.details.DetailsScreen
-import org.dadez.safarban.screens.home.HomeScreen
-import org.dadez.safarban.screens.settings.SettingsScreen
-import org.dadez.safarban.screens.profile.ProfileScreen
+import org.dadez.safarban.ui.navigation.RootComponent
+import org.dadez.safarban.ui.screens.details.DetailsScreen
+import org.dadez.safarban.ui.screens.home.HomeScreen
+import org.dadez.safarban.ui.screens.settings.SettingsScreen
+import org.dadez.safarban.ui.screens.profile.ProfileScreen
+import org.dadez.safarban.ui.screens.map.MapScreen
+import org.dadez.safarban.ui.screens.cargo.CargoScreen
+import org.dadez.safarban.ui.components.BottomNavigationBar
 import org.dadez.safarban.di.appModule
 
 /**
  * Main entry point for the app with Decompose navigation and Koin DI
  * Now accepts a single RootComponent instance to avoid duplicate registrations
  */
+@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun RootApp(rootComponent: RootComponent) {
     KoinApplication(application = {
@@ -26,56 +32,72 @@ fun RootApp(rootComponent: RootComponent) {
     }) {
         MaterialTheme {
             val childStack by rootComponent.routerState.subscribeAsState()
+            val currentConfig = childStack.active.configuration
 
-            // Add smooth navigation animations
-            Children(
-                stack = childStack,
-                animation = stackAnimation(slide())
-            ) { child ->
-                when (val instance = child.instance) {
-                    is RootComponent.Child.HomeChild -> {
-                        HomeScreen(
-                            component = instance.component,
-                            onOpenDetails = rootComponent::navigateToDetails,
-                            onOpenSettings = rootComponent::navigateToSettings,
-                            onOpenProfile = rootComponent::navigateToProfile
-                        )
-                    }
+            Scaffold(
+                bottomBar = {
+                    BottomNavigationBar(
+                        currentRoute = currentConfig as RootComponent.Config,
+                        onNavigateToHome = rootComponent::navigateToHome,
+                        onNavigateToMap = rootComponent::navigateToMap,
+                        onNavigateToCargo = rootComponent::navigateToCargo,
+                        onNavigateToProfile = { rootComponent.navigateToProfile("current_user") }
+                    )
+                }
+            ) { paddingValues ->
+                // Add smooth navigation animations
+                Children(
+                    stack = childStack,
+                    animation = stackAnimation(slide()),
+                    modifier = Modifier.padding(paddingValues)
+                ) { child ->
+                    when (val instance = child.instance) {
+                        is RootComponent.Child.HomeChild -> {
+                            HomeScreen(
+                                component = instance.component,
+                                onOpenDetails = rootComponent::navigateToDetails,
+                                onOpenSettings = rootComponent::navigateToSettings,
+                                onOpenProfile = { rootComponent.navigateToProfile("current_user") }
+                            )
+                        }
 
-                    is RootComponent.Child.DetailsChild -> {
-                        DetailsScreen(
-                            component = instance.component,
-                            onBack = { rootComponent.navigateBack() }
-                        )
-                    }
+                        is RootComponent.Child.DetailsChild -> {
+                            DetailsScreen(
+                                component = instance.component,
+                                onBack = { rootComponent.navigateBack() }
+                            )
+                        }
 
-                    is RootComponent.Child.SettingsChild -> {
-                        SettingsScreen(
-                            component = instance.component,
-                            onBack = { rootComponent.navigateBack() }
-                        )
-                    }
+                        is RootComponent.Child.SettingsChild -> {
+                            SettingsScreen(
+                                component = instance.component,
+                                onBack = { rootComponent.navigateBack() }
+                            )
+                        }
 
-                    is RootComponent.Child.ProfileChild -> {
-                        ProfileScreen(
-                            component = instance.component,
-                            onBack = { rootComponent.navigateBack() }
-                        )
+                        is RootComponent.Child.ProfileChild -> {
+                            ProfileScreen(
+                                component = instance.component,
+                                onBack = { rootComponent.navigateBack() }
+                            )
+                        }
+
+                        is RootComponent.Child.MapChild -> {
+                            MapScreen(
+                                component = instance.component,
+                                onBack = { rootComponent.navigateBack() }
+                            )
+                        }
+
+                        is RootComponent.Child.CargoChild -> {
+                            CargoScreen(
+                                component = instance.component,
+                                onBack = { rootComponent.navigateBack() }
+                            )
+                        }
                     }
                 }
             }
         }
     }
-}
-
-/**
- * No-arg App function for previews and testing
- */
-@Composable
-fun App() {
-    // Create a fake ComponentContext for previews and a single RootComponent
-    val fakeLifecycle = com.arkivanov.essenty.lifecycle.LifecycleRegistry()
-    val fakeComponentContext = com.arkivanov.decompose.DefaultComponentContext(fakeLifecycle)
-    val fakeRoot = remember { RootComponent(fakeComponentContext) }
-    RootApp(fakeRoot)
 }

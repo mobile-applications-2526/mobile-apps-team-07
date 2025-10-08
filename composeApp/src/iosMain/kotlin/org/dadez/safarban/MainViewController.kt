@@ -3,7 +3,7 @@ package org.dadez.safarban
 import androidx.compose.ui.window.ComposeUIViewController
 import com.arkivanov.decompose.DefaultComponentContext
 import com.arkivanov.essenty.lifecycle.LifecycleRegistry
-import org.dadez.safarban.navigation.RootComponent
+import org.dadez.safarban.ui.navigation.RootComponent
 
 private var rootComponentInstance: RootComponent? = null
 

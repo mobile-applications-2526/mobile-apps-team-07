@@ -1,4 +1,4 @@
-package org.dadez.safarban.screens.home
+package org.dadez.safarban.ui.screens.home
 
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.delay
@@ -23,7 +23,7 @@ class HomeViewModel(
             // Simulate network/db load
             try {
                 delay(500)
-                val items = kotlin.collections.listOf("Apples", "Oranges", "Bananas")
+                val items = listOf("Apples", "Oranges", "Bananas")
                 _state.value = _state.value.copy(items = items, isLoading = false)
             } catch (t: Throwable) {
                 _state.value = _state.value.copy(isLoading = false, error = t.message)

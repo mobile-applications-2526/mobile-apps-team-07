@@ -1,4 +1,4 @@
-package org.dadez.safarban.screens.home
+package org.dadez.safarban.ui.screens.home
 
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement

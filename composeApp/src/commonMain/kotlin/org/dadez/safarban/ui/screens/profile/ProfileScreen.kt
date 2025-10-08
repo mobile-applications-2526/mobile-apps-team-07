@@ -1,4 +1,4 @@
-package org.dadez.safarban.screens.profile
+package org.dadez.safarban.ui.screens.profile
 
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.shape.CircleShape

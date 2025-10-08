@@ -1,7 +1,8 @@
-package org.dadez.safarban.screens.settings
+package org.dadez.safarban.ui.screens.settings
 
 import com.arkivanov.decompose.ComponentContext
 import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
@@ -35,7 +36,7 @@ class SettingsComponentImpl(
         scope.launch {
             _uiState.value = _uiState.value.copy(isLoading = true)
             // Simulate cache clearing
-            kotlinx.coroutines.delay(1000)
+            delay(1000)
             _uiState.value = _uiState.value.copy(
                 isLoading = false,
                 cacheSize = "0 MB"

@@ -1,4 +1,4 @@
-package org.dadez.safarban.screens.settings
+package org.dadez.safarban.ui.screens.settings
 
 data class SettingsUiState(
     val isDarkMode: Boolean = false,

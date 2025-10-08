@@ -1,4 +1,4 @@
-package org.dadez.safarban.navigation
+package org.dadez.safarban.ui.navigation
 
 import com.arkivanov.decompose.ComponentContext
 import com.arkivanov.decompose.router.stack.ChildStack
@@ -12,20 +12,24 @@ import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.SupervisorJob
 import kotlinx.serialization.Serializable
-import org.dadez.safarban.screens.details.DetailsComponent
-import org.dadez.safarban.screens.details.DetailsComponentImpl
-import org.dadez.safarban.screens.home.HomeComponent
-import org.dadez.safarban.screens.home.HomeComponentImpl
-import org.dadez.safarban.screens.settings.SettingsComponent
-import org.dadez.safarban.screens.settings.SettingsComponentImpl
-import org.dadez.safarban.screens.profile.ProfileComponent
-import org.dadez.safarban.screens.profile.ProfileComponentImpl
+import org.dadez.safarban.ui.screens.details.DetailsComponent
+import org.dadez.safarban.ui.screens.details.DetailsComponentImpl
+import org.dadez.safarban.ui.screens.home.HomeComponent
+import org.dadez.safarban.ui.screens.home.HomeComponentImpl
+import org.dadez.safarban.ui.screens.settings.SettingsComponent
+import org.dadez.safarban.ui.screens.settings.SettingsComponentImpl
+import org.dadez.safarban.ui.screens.profile.ProfileComponent
+import org.dadez.safarban.ui.screens.profile.ProfileComponentImpl
 
 class RootComponent(
     componentContext: ComponentContext
 ) : ComponentContext by componentContext {
 
     private val navigation = StackNavigation<Config>()
+
+    // Maintain an explicit user navigation history so system back can traverse every
+    // step the user took (including bringToFront bottom-nav actions).
+    private val history = mutableListOf<Config>(Config.Home)
 
     private val scope = CoroutineScope(SupervisorJob() + Dispatchers.Main.immediate)
 
@@ -65,42 +69,88 @@ class RootComponent(
                     userId = config.userId
                 )
             )
+            is Config.Map -> Child.MapChild(
+                org.dadez.safarban.ui.screens.map.MapComponentImpl(
+                    componentContext = componentContext,
+                    scope = scope
+                )
+            )
+            is Config.Cargo -> Child.CargoChild(
+                org.dadez.safarban.ui.screens.cargo.CargoComponentImpl(
+                    componentContext = componentContext,
+                    scope = scope
+                )
+            )
         }
 
     /**
-     * Navigate to home screen (clears back stack)
+     * Navigate to home screen (adds to history)
      */
     fun navigateToHome() {
         navigation.bringToFront(Config.Home)
+        if (history.lastOrNull() != Config.Home) history.add(Config.Home)
     }
 
     /**
-     * Navigate to details screen (pushes new screen to back stack)
+     * Navigate to details screen (pushes new screen to back stack and records history)
      */
     fun navigateToDetails(id: String) {
-        navigation.pushNew(Config.Details(id))
+        val cfg = Config.Details(id)
+        navigation.pushNew(cfg)
+        if (history.lastOrNull() != cfg) history.add(cfg)
     }
 
     /**
-     * Navigate to settings screen (pushes new screen to back stack)
+     * Navigate to settings screen (brings to front for bottom nav and records history)
      */
     fun navigateToSettings() {
-        navigation.pushNew(Config.Settings)
+        navigation.bringToFront(Config.Settings)
+        if (history.lastOrNull() != Config.Settings) history.add(Config.Settings)
     }
 
     /**
-     * Navigate to profile screen (pushes new screen to back stack)
+     * Navigate to profile screen (brings to front for bottom nav and records history)
      */
     fun navigateToProfile(userId: String) {
-        navigation.pushNew(Config.Profile(userId))
+        val cfg = Config.Profile(userId)
+        navigation.bringToFront(cfg)
+        if (history.lastOrNull() != cfg) history.add(cfg)
     }
 
     /**
-     * Navigate back in the stack
+     * Navigate to map screen (brings to front for bottom nav and records history)
+     */
+    fun navigateToMap() {
+        navigation.bringToFront(Config.Map)
+        if (history.lastOrNull() != Config.Map) history.add(Config.Map)
+    }
+
+    /**
+     * Navigate to cargo screen (brings to front for bottom nav and records history)
+     */
+    fun navigateToCargo() {
+        navigation.bringToFront(Config.Cargo)
+        if (history.lastOrNull() != Config.Cargo) history.add(Config.Cargo)
+    }
+
+    /**
+     * Navigate back in the stack following the user's navigation history.
+     * Returns true if handled (we navigated within the app), false if there is no history
+     * and the host should handle (e.g. minimize or finish).
      */
     fun navigateBack(): Boolean {
-        navigation.pop()
-        return true
+        // If user took previous steps, pop the history and navigate to the previous entry
+        if (history.size > 1) {
+            // Remove current
+            history.removeAt(history.lastIndex)
+            // The new last is the previous screen we should show
+            val previous = history.last()
+            navigation.bringToFront(previous)
+            return true
+        }
+
+        // nothing to pop; let the host decide (minimize/exit)
+        return false
     }
 
     /**
@@ -138,6 +188,12 @@ class RootComponent(
 
         @Serializable
         data class Profile(val userId: String) : Config()
+
+        @Serializable
+        data object Map : Config()
+
+        @Serializable
+        data object Cargo : Config()
     }
 
     sealed class Child {
@@ -145,5 +201,7 @@ class RootComponent(
         data class DetailsChild(val component: DetailsComponent) : Child()
         data class SettingsChild(val component: SettingsComponent) : Child()
         data class ProfileChild(val component: ProfileComponent) : Child()
+        data class MapChild(val component: org.dadez.safarban.ui.screens.map.MapComponent) : Child()
+        data class CargoChild(val component: org.dadez.safarban.ui.screens.cargo.CargoComponent) : Child()
     }
 }

@@ -52,6 +52,8 @@ kotlin {
             // Koin for dependency injection
             implementation(libs.koin.core)
             implementation(libs.koin.compose)
+            // Icon library (Lucide)
+            implementation("com.composables:icons-lucide:1.1.0")
         }
         commonTest.dependencies {
             implementation(libs.kotlin.test)

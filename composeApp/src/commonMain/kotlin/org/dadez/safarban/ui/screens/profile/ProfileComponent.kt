@@ -1,4 +1,4 @@
-package org.dadez.safarban.screens.profile
+package org.dadez.safarban.ui.screens.profile
 
 import kotlinx.coroutines.flow.StateFlow
 

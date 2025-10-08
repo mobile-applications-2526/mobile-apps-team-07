@@ -1,4 +1,4 @@
-package org.dadez.safarban.screens.details
+package org.dadez.safarban.ui.screens.details
 
 /**
  * Immutable UI state for the Details screen.

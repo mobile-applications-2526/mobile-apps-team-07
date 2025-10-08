@@ -6,10 +6,11 @@ import android.os.Bundle
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
+import androidx.activity.addCallback
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.tooling.preview.Preview
 import com.arkivanov.decompose.DefaultComponentContext
-import org.dadez.safarban.navigation.RootComponent
+import org.dadez.safarban.ui.navigation.RootComponent
 
 class MainActivity : ComponentActivity() {
     private lateinit var rootComponent: RootComponent
@@ -21,6 +22,15 @@ class MainActivity : ComponentActivity() {
         // Create a Decompose ComponentContext backed by the Android lifecycle
         val componentContext = DefaultComponentContext(lifecycle)
         rootComponent = RootComponent(componentContext)
+
+        // Register a back callback that delegates to the RootComponent
+        onBackPressedDispatcher.addCallback(this) {
+            val handled = if (::rootComponent.isInitialized) rootComponent.navigateBack() else false
+            if (!handled) {
+                // At root: move task to background to preserve state (like Home button)
+                moveTaskToBack(true)
+            }
+        }
 
         // Handle deep links from intent
         handleIntent(intent)
@@ -56,11 +66,4 @@ class MainActivity : ComponentActivity() {
             }
         }
     }
-}
-
-@Preview
-@Composable
-fun AppAndroidPreview() {
-    // Use the no-arg App() for preview
-    App()
 }
