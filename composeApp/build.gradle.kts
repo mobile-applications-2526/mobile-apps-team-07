@@ -1,4 +1,3 @@
-import org.jetbrains.compose.desktop.application.dsl.TargetFormat
 import org.jetbrains.kotlin.gradle.dsl.JvmTarget
 
 plugins {
@@ -6,6 +5,7 @@ plugins {
     alias(libs.plugins.androidApplication)
     alias(libs.plugins.composeMultiplatform)
     alias(libs.plugins.composeCompiler)
+    kotlin("plugin.serialization") version "2.2.20"
 }
 
 kotlin {
@@ -29,6 +29,7 @@ kotlin {
         androidMain.dependencies {
             implementation(compose.preview)
             implementation(libs.androidx.activity.compose)
+            implementation(libs.koin.android)
         }
         commonMain.dependencies {
             implementation(compose.runtime)
@@ -39,6 +40,18 @@ kotlin {
             implementation(compose.components.uiToolingPreview)
             implementation(libs.androidx.lifecycle.viewmodelCompose)
             implementation(libs.androidx.lifecycle.runtimeCompose)
+            // Decompose for multiplatform navigation/state management
+            implementation("com.arkivanov.decompose:decompose:3.4.0")
+            implementation("com.arkivanov.decompose:extensions-compose:3.4.0")
+            // Essenty lifecycle for Decompose
+            implementation("com.arkivanov.essenty:lifecycle:2.2.0")
+            // Kotlinx Coroutines (common) - keep version aligned with project Kotlin
+            implementation("org.jetbrains.kotlinx:kotlinx-coroutines-core:1.7.3")
+            // Kotlinx Serialization for Decompose navigation
+            implementation("org.jetbrains.kotlinx:kotlinx-serialization-json:1.6.3")
+            // Koin for dependency injection
+            implementation(libs.koin.core)
+            implementation(libs.koin.compose)
         }
         commonTest.dependencies {
             implementation(libs.kotlin.test)
@@ -76,4 +89,3 @@ android {
 dependencies {
     debugImplementation(compose.uiTooling)
 }
-

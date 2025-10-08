@@ -21,7 +21,6 @@ Logging:
 
 Navigation:
 - Decompose
-- Voyager
 
 State Management
 - Decompose
