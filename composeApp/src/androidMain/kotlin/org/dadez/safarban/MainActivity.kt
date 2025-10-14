@@ -4,11 +4,9 @@ import android.content.Intent
 import android.net.Uri
 import android.os.Bundle
 import androidx.activity.ComponentActivity
+import androidx.activity.addCallback
 import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
-import androidx.activity.addCallback
-import androidx.compose.runtime.Composable
-import androidx.compose.ui.tooling.preview.Preview
 import com.arkivanov.decompose.DefaultComponentContext
 import org.dadez.safarban.ui.navigation.RootComponent
 
@@ -18,6 +16,7 @@ class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         enableEdgeToEdge()
         super.onCreate(savedInstanceState)
+
 
         // Create a Decompose ComponentContext backed by the Android lifecycle
         val componentContext = DefaultComponentContext(lifecycle)

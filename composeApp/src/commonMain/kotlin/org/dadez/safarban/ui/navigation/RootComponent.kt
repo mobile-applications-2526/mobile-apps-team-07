@@ -5,7 +5,6 @@ import com.arkivanov.decompose.router.stack.ChildStack
 import com.arkivanov.decompose.router.stack.StackNavigation
 import com.arkivanov.decompose.router.stack.bringToFront
 import com.arkivanov.decompose.router.stack.childStack
-import com.arkivanov.decompose.router.stack.pop
 import com.arkivanov.decompose.router.stack.pushNew
 import com.arkivanov.decompose.value.Value
 import kotlinx.coroutines.CoroutineScope
@@ -16,10 +15,10 @@ import org.dadez.safarban.ui.screens.details.DetailsComponent
 import org.dadez.safarban.ui.screens.details.DetailsComponentImpl
 import org.dadez.safarban.ui.screens.home.HomeComponent
 import org.dadez.safarban.ui.screens.home.HomeComponentImpl
-import org.dadez.safarban.ui.screens.settings.SettingsComponent
-import org.dadez.safarban.ui.screens.settings.SettingsComponentImpl
 import org.dadez.safarban.ui.screens.profile.ProfileComponent
 import org.dadez.safarban.ui.screens.profile.ProfileComponentImpl
+import org.dadez.safarban.ui.screens.settings.SettingsComponent
+import org.dadez.safarban.ui.screens.settings.SettingsComponentImpl
 
 class RootComponent(
     componentContext: ComponentContext
@@ -71,8 +70,7 @@ class RootComponent(
             )
             is Config.Map -> Child.MapChild(
                 org.dadez.safarban.ui.screens.map.MapComponentImpl(
-                    componentContext = componentContext,
-                    scope = scope
+                    componentContext = componentContext
                 )
             )
             is Config.Cargo -> Child.CargoChild(
