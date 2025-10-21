@@ -3,10 +3,8 @@ package org.dadez.safarban.ui.screens.cargo
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
-import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
-import androidx.compose.material3.Card
 import androidx.compose.material3.CenterAlignedTopAppBar
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.IconButton
@@ -41,12 +39,16 @@ fun CargoScreen(
 
         Spacer(modifier = Modifier.height(16.dp))
 
-        Card(modifier = Modifier.fillMaxWidth()) {
-            Column(modifier = Modifier.padding(16.dp)) {
-                Text("Cargo page content goes here.")
-                Spacer(modifier = Modifier.height(8.dp))
-                Text("Static information about cargo and packages.")
-            }
-        }
+        //MaplibreMap(baseStyle = BaseStyle.Uri("https://tiles.openfreemap.org/styles/liberty"))
+
+//        MaplibreMap(
+//            modifier = Modifier
+//                .fillMaxWidth()
+//                .weight(1f)
+//                .padding(8.dp),
+//            baseStyle = BaseStyle.Uri("https://api.protomaps.com/styles/v5/light/en.json?key=73c45a97eddd43fb")
+//        )  {
+//            // You can add markers or other map elements here
+//        }
     }
 }

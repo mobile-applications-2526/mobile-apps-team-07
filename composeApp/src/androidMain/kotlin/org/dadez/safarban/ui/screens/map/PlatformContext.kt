@@ -1,11 +1,15 @@
 package org.dadez.safarban.ui.screens.map
 
-import android.location.Location
+import android.content.Context
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.remember
 import androidx.compose.ui.platform.LocalContext
+import com.google.android.gms.location.LocationServices
+import org.dadez.safarban.data.location.LocationProvider
+import org.dadez.safarban.data.location.LocationProviderImpl
 
 /**
- * Android implementation: returns Android Context.
+ * Android implementation to get platform context
  */
 @Composable
 actual fun rememberPlatformContext(): Any {
@@ -13,15 +17,14 @@ actual fun rememberPlatformContext(): Any {
 }
 
 /**
- * Extract latitude from Android Location object.
+ * Android implementation to get LocationProvider with FusedLocationProviderClient
  */
-actual fun getLatitude(location: Any?): Double? {
-    return (location as? Location)?.latitude
+@Composable
+actual fun rememberLocationProvider(): LocationProvider {
+    val context = LocalContext.current
+    return remember {
+        val fusedLocationClient = LocationServices.getFusedLocationProviderClient(context as Context)
+        LocationProviderImpl(fusedLocationClient)
+    }
 }
 
-/**
- * Extract longitude from Android Location object.
- */
-actual fun getLongitude(location: Any?): Double? {
-    return (location as? Location)?.longitude
-}

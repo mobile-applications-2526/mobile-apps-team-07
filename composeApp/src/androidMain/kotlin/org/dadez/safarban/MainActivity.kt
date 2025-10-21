@@ -17,6 +17,7 @@ class MainActivity : ComponentActivity() {
         enableEdgeToEdge()
         super.onCreate(savedInstanceState)
 
+        // Initialize Android context for dependency injection - Not needed anymore
 
         // Create a Decompose ComponentContext backed by the Android lifecycle
         val componentContext = DefaultComponentContext(lifecycle)

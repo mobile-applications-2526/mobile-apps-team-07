@@ -1,28 +1,26 @@
 package org.dadez.safarban.ui.screens.map
 
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.remember
+import org.dadez.safarban.data.location.LocationProvider
+import org.dadez.safarban.data.location.LocationProviderImpl
 
 /**
- * iOS implementation: returns a placeholder context object.
- * TODO: Return proper iOS context when iOS support is implemented.
+ * iOS implementation to get platform context
  */
 @Composable
 actual fun rememberPlatformContext(): Any {
-    return object {} // Placeholder context for iOS
+    // iOS doesn't need a context object for CoreLocation
+    return Unit
 }
 
 /**
- * Extract latitude from iOS location object.
- * TODO: Implement proper iOS location extraction when iOS support is added.
+ * iOS implementation to get LocationProvider with CLLocationManager
  */
-actual fun getLatitude(location: Any?): Double? {
-    return null // Placeholder for iOS
+@Composable
+actual fun rememberLocationProvider(): LocationProvider {
+    return remember {
+        LocationProviderImpl()
+    }
 }
 
-/**
- * Extract longitude from iOS location object.
- * TODO: Implement proper iOS location extraction when iOS support is added.
- */
-actual fun getLongitude(location: Any?): Double? {
-    return null // Placeholder for iOS
-}

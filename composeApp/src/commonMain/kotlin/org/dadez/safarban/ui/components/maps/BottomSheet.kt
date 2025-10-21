@@ -52,9 +52,9 @@ import com.composables.icons.lucide.Ship
 import kotlin.math.PI
 import kotlin.math.atan2
 import kotlin.math.cos
+import kotlin.math.roundToInt
 import kotlin.math.sin
 import kotlin.math.sqrt
-import kotlin.math.roundToInt
 
 data class LocationItem(
     val id: String,

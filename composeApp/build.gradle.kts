@@ -32,6 +32,7 @@ kotlin {
             implementation(libs.koin.android)
             implementation(libs.osmdroid.android)
             implementation(libs.play.services.location)
+            implementation(libs.ktor.client.okhttp)
         }
         commonMain.dependencies {
             implementation(compose.runtime)
@@ -54,11 +55,20 @@ kotlin {
             // Koin for dependency injection
             implementation(libs.koin.core)
             implementation(libs.koin.compose)
+            implementation(libs.koin.compose.viewmodel)
             // Icon library (Lucide)
             implementation("com.composables:icons-lucide:1.1.0")
+            implementation(libs.maplibre.compose)
+            // Ktor client
+            implementation(libs.ktor.client.core)
+            implementation(libs.ktor.client.content.negotiation)
+            implementation(libs.ktor.serialization.kotlinx.json)
         }
         commonTest.dependencies {
             implementation(libs.kotlin.test)
+        }
+        iosMain.dependencies {
+            implementation(libs.ktor.client.darwin)
         }
     }
 }
