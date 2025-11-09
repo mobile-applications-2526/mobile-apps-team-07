@@ -220,48 +220,173 @@ fun BottomSheet(
                 // Spacing between handle and content
                 Spacer(modifier = Modifier.height(8.dp))
 
-                // Helper to create a simple cell
-                @Composable
-                fun OverviewCell(title: String) {
-                    Card(
-                        modifier = Modifier
-                            .weight(1f)
-                            .padding(8.dp)
-                            .height(100.dp),
-                        colors = CardDefaults.cardColors(
-                            containerColor = cardBackgroundColor
-                        ),
-                        shape = RoundedCornerShape(12.dp),
-                        elevation = CardDefaults.cardElevation(defaultElevation = 2.dp)
-                    ) {
-                        Box(modifier = Modifier.fillMaxSize().padding(12.dp), contentAlignment = Alignment.Center) {
-                            Text(text = title, color = cardContentColor)
-                        }
-                    }
-                }
-
                 // Make the overview content vertically scrollable so all cells can be viewed
                 val scrollState = rememberScrollState()
                 Column(modifier = Modifier
                     .fillMaxWidth()
                     .verticalScroll(scrollState)
                     .padding(horizontal = 4.dp)) {
+
                     // Row 1: Current status & Current voyage
                     Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                        OverviewCell("Current status")
-                        OverviewCell("Current voyage")
+                        // Current Status Cell
+                        Card(
+                            modifier = Modifier
+                                .weight(1f)
+                                .padding(8.dp)
+                                .height(120.dp),
+                            colors = CardDefaults.cardColors(containerColor = cardBackgroundColor),
+                            shape = RoundedCornerShape(12.dp),
+                            elevation = CardDefaults.cardElevation(defaultElevation = 2.dp)
+                        ) {
+                            Column(modifier = Modifier.fillMaxSize().padding(12.dp)) {
+                                Text(text = "Current Status", fontWeight = FontWeight.Bold, fontSize = 14.sp, color = cardContentColor)
+                                Spacer(modifier = Modifier.height(8.dp))
+                                Text(text = "Atlantic Ocean", fontSize = 12.sp, color = cardContentColor)
+                                Text(text = "228° | 12.8 kts", fontSize = 12.sp, color = cardContentColor)
+                                Spacer(modifier = Modifier.weight(1f))
+                                Row(verticalAlignment = Alignment.CenterVertically) {
+                                    Box(modifier = Modifier.size(8.dp).background(Color(0xFF4CAF50), shape = RoundedCornerShape(4.dp)))
+                                    Spacer(modifier = Modifier.width(4.dp))
+                                    Text(text = "In service", fontSize = 11.sp, color = Color(0xFF4CAF50), fontWeight = FontWeight.Medium)
+                                }
+                            }
+                        }
+
+                        // Current Voyage Cell
+                        Card(
+                            modifier = Modifier
+                                .weight(1f)
+                                .padding(8.dp)
+                                .height(120.dp),
+                            colors = CardDefaults.cardColors(containerColor = cardBackgroundColor),
+                            shape = RoundedCornerShape(12.dp),
+                            elevation = CardDefaults.cardElevation(defaultElevation = 2.dp)
+                        ) {
+                            Column(modifier = Modifier.fillMaxSize().padding(12.dp)) {
+                                Text(text = "Current Voyage", fontWeight = FontWeight.Bold, fontSize = 14.sp, color = cardContentColor)
+                                Spacer(modifier = Modifier.height(8.dp))
+                                Text(text = "V24-07", fontSize = 12.sp, color = cardContentColor, fontWeight = FontWeight.Medium)
+                                Text(text = "TC - 10,500$/day", fontSize = 11.sp, color = cardContentColor.copy(alpha = 0.7f))
+                            }
+                        }
                     }
 
                     // Row 2: Quick stats & Alerts
                     Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                        OverviewCell("Quick stats")
-                        OverviewCell("Alerts")
+                        // Quick Stats Cell
+                        Card(
+                            modifier = Modifier
+                                .weight(1f)
+                                .padding(8.dp)
+                                .height(120.dp),
+                            colors = CardDefaults.cardColors(containerColor = cardBackgroundColor),
+                            shape = RoundedCornerShape(12.dp),
+                            elevation = CardDefaults.cardElevation(defaultElevation = 2.dp)
+                        ) {
+                            Column(modifier = Modifier.fillMaxSize().padding(12.dp)) {
+                                Text(text = "Quick Stats", fontWeight = FontWeight.Bold, fontSize = 14.sp, color = cardContentColor)
+                                Spacer(modifier = Modifier.height(8.dp))
+                                Text(text = "Speed:", fontSize = 11.sp, color = cardContentColor.copy(alpha = 0.7f))
+                                Text(text = "Fuel:", fontSize = 11.sp, color = cardContentColor.copy(alpha = 0.7f))
+                                Text(text = "Cargo:", fontSize = 11.sp, color = cardContentColor.copy(alpha = 0.7f))
+                            }
+                        }
+
+                        // Alerts Cell
+                        Card(
+                            modifier = Modifier
+                                .weight(1f)
+                                .padding(8.dp)
+                                .height(120.dp),
+                            colors = CardDefaults.cardColors(containerColor = cardBackgroundColor),
+                            shape = RoundedCornerShape(12.dp),
+                            elevation = CardDefaults.cardElevation(defaultElevation = 2.dp)
+                        ) {
+                            Column(modifier = Modifier.fillMaxSize().padding(12.dp)) {
+                                Text(text = "Alerts (IFANY)", fontWeight = FontWeight.Bold, fontSize = 14.sp, color = cardContentColor)
+                                Spacer(modifier = Modifier.height(8.dp))
+                                Text(text = "- - - - - -", fontSize = 11.sp, color = cardContentColor.copy(alpha = 0.5f))
+                            }
+                        }
                     }
 
                     // Row 3: Fuel consumption graph & Speed performance graph
                     Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                        OverviewCell("Fuel consumption")
-                        OverviewCell("Speed performance")
+                        // Fuel Consumption Graph Cell
+                        Card(
+                            modifier = Modifier
+                                .weight(1f)
+                                .padding(8.dp)
+                                .height(140.dp),
+                            colors = CardDefaults.cardColors(containerColor = cardBackgroundColor),
+                            shape = RoundedCornerShape(12.dp),
+                            elevation = CardDefaults.cardElevation(defaultElevation = 2.dp)
+                        ) {
+                            Column(modifier = Modifier.fillMaxSize().padding(12.dp)) {
+                                Text(text = "Fuel Consumption", fontWeight = FontWeight.Bold, fontSize = 14.sp, color = cardContentColor)
+                                Text(text = "Graph", fontSize = 11.sp, color = cardContentColor.copy(alpha = 0.7f))
+                                Spacer(modifier = Modifier.height(8.dp))
+                                // Simple bar chart representation
+                                Row(
+                                    modifier = Modifier.fillMaxWidth().weight(1f),
+                                    horizontalArrangement = Arrangement.SpaceBetween,
+                                    verticalAlignment = Alignment.Bottom
+                                ) {
+                                    listOf(18, 22, 16, 20, 15).forEach { value ->
+                                        Box(
+                                            modifier = Modifier
+                                                .width(16.dp)
+                                                .height((value * 2).dp)
+                                                .background(Color(0xFF4CAF50), shape = RoundedCornerShape(2.dp))
+                                        )
+                                    }
+                                }
+                                Spacer(modifier = Modifier.height(4.dp))
+                                Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
+                                    Text("5", fontSize = 9.sp, color = cardContentColor.copy(alpha = 0.6f))
+                                    Text("10", fontSize = 9.sp, color = cardContentColor.copy(alpha = 0.6f))
+                                    Text("15", fontSize = 9.sp, color = cardContentColor.copy(alpha = 0.6f))
+                                    Text("20", fontSize = 9.sp, color = cardContentColor.copy(alpha = 0.6f))
+                                }
+                            }
+                        }
+
+                        // Speed Performance Graph Cell
+                        Card(
+                            modifier = Modifier
+                                .weight(1f)
+                                .padding(8.dp)
+                                .height(140.dp),
+                            colors = CardDefaults.cardColors(containerColor = cardBackgroundColor),
+                            shape = RoundedCornerShape(12.dp),
+                            elevation = CardDefaults.cardElevation(defaultElevation = 2.dp)
+                        ) {
+                            Column(modifier = Modifier.fillMaxSize().padding(12.dp)) {
+                                Text(text = "Speed Performance", fontWeight = FontWeight.Bold, fontSize = 14.sp, color = cardContentColor)
+                                Text(text = "Graph", fontSize = 11.sp, color = cardContentColor.copy(alpha = 0.7f))
+                                Spacer(modifier = Modifier.height(8.dp))
+                                // Simple line chart representation with dots
+                                Row(
+                                    modifier = Modifier.fillMaxWidth().weight(1f),
+                                    horizontalArrangement = Arrangement.SpaceBetween,
+                                    verticalAlignment = Alignment.Bottom
+                                ) {
+                                    listOf(12, 15, 13, 14, 12).forEach { value ->
+                                        Box(
+                                            modifier = Modifier
+                                                .size(8.dp)
+                                                .background(Color(0xFF2196F3), shape = RoundedCornerShape(4.dp))
+                                        )
+                                    }
+                                }
+                                Spacer(modifier = Modifier.height(4.dp))
+                                Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
+                                    Text("3", fontSize = 9.sp, color = cardContentColor.copy(alpha = 0.6f))
+                                    Text("10", fontSize = 9.sp, color = cardContentColor.copy(alpha = 0.6f))
+                                }
+                            }
+                        }
                     }
 
                     Spacer(modifier = Modifier.height(bottomContentPadding))

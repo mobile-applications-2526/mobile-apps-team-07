@@ -46,7 +46,7 @@ fun HomeScreen(
     Column(
         modifier = Modifier.fillMaxSize()
     ) {
-        // Ocean blue top bar that extends behind status bar
+        // Ocean blue top bar that extends behind status bar (same as BoatScreen)
         Box(
             modifier = Modifier
                 .fillMaxWidth()

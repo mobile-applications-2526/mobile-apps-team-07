@@ -1,22 +1,27 @@
 package org.dadez.safarban.ui.screens.profile
 
+import androidx.compose.foundation.background
+import androidx.compose.foundation.clickable
+import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.WindowInsets
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.statusBars
 import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.layout.windowInsetsPadding
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.material3.Button
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
-import androidx.compose.material3.CenterAlignedTopAppBar
 import androidx.compose.material3.CircularProgressIndicator
-import androidx.compose.material3.ExperimentalMaterial3Api
-import androidx.compose.material3.IconButton
+import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Surface
@@ -27,10 +32,16 @@ import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
+import com.composables.icons.lucide.ChevronLeft
+import com.composables.icons.lucide.Lucide
 
-@OptIn(ExperimentalMaterial3Api::class)
+// Ocean blue color - same as HomeScreen and BoatScreen
+private val OceanBlue = Color(0xFF006994)
+
 @Composable
 fun ProfileScreen(
     component: ProfileComponent,
@@ -39,30 +50,57 @@ fun ProfileScreen(
     val uiState by component.uiState.collectAsState()
 
     Column(
-        modifier = Modifier
-            .fillMaxSize()
-            .padding(16.dp)
+        modifier = Modifier.fillMaxSize()
     ) {
-        // Top App Bar
-        CenterAlignedTopAppBar(
-            title = { Text("Profile") },
-            navigationIcon = {
-                IconButton(onClick = onBack) {
-                    Text("←")
-                }
-            }
-        )
+        // Ocean blue top bar that extends behind status bar (matches BoatScreen/HomeScreen style)
+        Row(
+            modifier = Modifier
+                .fillMaxWidth()
+                .background(OceanBlue)
+                .windowInsetsPadding(WindowInsets.statusBars)
+                .padding(horizontal = 12.dp, vertical = 14.dp),
+            verticalAlignment = Alignment.CenterVertically,
+            horizontalArrangement = Arrangement.Center
+        ) {
+            Icon(
+                imageVector = Lucide.ChevronLeft,
+                contentDescription = "Back",
+                tint = Color.White,
+                modifier = Modifier
+                    .size(28.dp)
+                    .clickable { onBack() }
+            )
+
+            Spacer(modifier = Modifier.weight(1f))
+
+            Text(
+                text = "Profile",
+                style = MaterialTheme.typography.headlineSmall,
+                fontWeight = FontWeight.Bold,
+                color = Color.White
+            )
+
+            Spacer(modifier = Modifier.weight(1f))
+
+            Box(modifier = Modifier.size(28.dp))
+        }
 
         Spacer(modifier = Modifier.height(24.dp))
 
-        if (uiState.isLoading) {
-            Box(
-                modifier = Modifier.fillMaxWidth(),
-                contentAlignment = Alignment.Center
-            ) {
-                CircularProgressIndicator()
-            }
-        } else {
+        // Content container with padding
+        Column(
+            modifier = Modifier
+                .fillMaxSize()
+                .padding(16.dp)
+        ) {
+            if (uiState.isLoading) {
+                Box(
+                    modifier = Modifier.fillMaxWidth(),
+                    contentAlignment = Alignment.Center
+                ) {
+                    CircularProgressIndicator()
+                }
+            } else {
             // Profile Avatar
             Box(
                 modifier = Modifier
@@ -154,6 +192,7 @@ fun ProfileScreen(
                 } else {
                     Text("Save Profile")
                 }
+            }
             }
         }
     }
