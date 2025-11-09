@@ -79,6 +79,14 @@ class RootComponent(
                     scope = scope
                 )
             )
+            is Config.Boat -> Child.BoatChild(
+                org.dadez.safarban.ui.screens.boat.BoatComponentImpl(
+                    componentContext = componentContext,
+                    scope = scope,
+                    boatId = config.boatId,
+                    boatName = config.boatName
+                )
+            )
         }
 
     /**
@@ -132,6 +140,17 @@ class RootComponent(
     }
 
     /**
+     * Navigate to boat detail screen (brings to front and records history)
+     */
+    fun navigateToBoat(boatId: String, boatName: String) {
+        val cfg = Config.Boat(boatId, boatName)
+        navigation.bringToFront(cfg)
+        if (history.lastOrNull() != cfg) {
+            history.add(cfg)
+        }
+    }
+
+    /**
      * Navigate back in the stack following the user's navigation history.
      * Returns true if handled (we navigated within the app), false if there is no history
      * and the host should handle (e.g. minimize or finish).
@@ -149,6 +168,19 @@ class RootComponent(
 
         // nothing to pop; let the host decide (minimize/exit)
         return false
+    }
+
+    /**
+     * Returns true if navigating from 'from' to 'to' should be considered a back navigation
+     */
+    fun isBackNavigation(from: Config, to: Config): Boolean {
+        val fromIndex = history.indexOf(from)
+        val toIndex = history.indexOf(to)
+        return if (fromIndex == -1 || toIndex == -1) {
+            false
+        } else {
+            toIndex < fromIndex
+        }
     }
 
     /**
@@ -192,6 +224,9 @@ class RootComponent(
 
         @Serializable
         data object Cargo : Config()
+
+        @Serializable
+        data class Boat(val boatId: String, val boatName: String) : Config()
     }
 
     sealed class Child {
@@ -201,5 +236,6 @@ class RootComponent(
         data class ProfileChild(val component: ProfileComponent) : Child()
         data class MapChild(val component: org.dadez.safarban.ui.screens.map.MapComponent) : Child()
         data class CargoChild(val component: org.dadez.safarban.ui.screens.cargo.CargoComponent) : Child()
+        data class BoatChild(val component: org.dadez.safarban.ui.screens.boat.BoatComponent) : Child()
     }
 }

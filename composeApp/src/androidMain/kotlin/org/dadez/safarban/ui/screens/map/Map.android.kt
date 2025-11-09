@@ -19,6 +19,8 @@ import org.osmdroid.events.MapListener
 import org.osmdroid.events.ScrollEvent
 import org.osmdroid.events.ZoomEvent
 import org.osmdroid.util.GeoPoint
+import android.graphics.Point
+import android.util.Log
 import org.osmdroid.views.MapView
 import org.osmdroid.views.overlay.Marker
 
@@ -35,6 +37,12 @@ actual fun OpenStreetMap(
     modifier: Modifier,
     userLocation: UserLocation?,
     boatLocations: List<LocationItem>,
+    // optional filters (no default values in actuals)
+    selectedBoatId: String?,
+    selectedBoatName: String?,
+    // explicit camera center override (no defaults here)
+    selectedCameraLat: Double?,
+    selectedCameraLon: Double?,
     initialCameraState: MapCameraState,
     recenter: MutableState<Boolean>,
     onRecenterComplete: () -> Unit,
@@ -124,9 +132,18 @@ actual fun OpenStreetMap(
             mapView.overlays.add(initialUserMarker)
             userMarkerRef.value = initialUserMarker
 
-            // Create boat markers for all boat locations
+            // Create boat markers. If a selection filter is provided, only create markers for matching boats
             val boatMarkerDrawable = ContextCompat.getDrawable(ctx, R.drawable.fishing_boat)
-            val boatMarkers = boatLocations.map { location ->
+            val filteredBoatLocations = if (!selectedBoatId.isNullOrBlank() || !selectedBoatName.isNullOrBlank()) {
+                boatLocations.filter { loc ->
+                    (!selectedBoatId.isNullOrBlank() && loc.id.equals(selectedBoatId, ignoreCase = true)) ||
+                    (!selectedBoatName.isNullOrBlank() && loc.name.equals(selectedBoatName, ignoreCase = true))
+                }
+            } else {
+                boatLocations
+            }
+
+            val boatMarkers = filteredBoatLocations.map { location ->
                 Marker(mapView).apply {
                     position = GeoPoint(location.latitude, location.longitude)
                     setAnchor(Marker.ANCHOR_CENTER, Marker.ANCHOR_BOTTOM)
@@ -175,9 +192,18 @@ actual fun OpenStreetMap(
                 // Remove old boat markers
                 boatMarkersRef.value.forEach { mapView.overlays.remove(it) }
 
-                // Add new boat markers
+                // Add new boat markers (apply selection filter if provided)
                 val boatMarkerDrawable = ContextCompat.getDrawable(context, R.drawable.fishing_boat)
-                val newBoatMarkers = boatLocations.map { location ->
+                val filteredBoatLocations = if (!selectedBoatId.isNullOrBlank() || !selectedBoatName.isNullOrBlank()) {
+                    boatLocations.filter { loc ->
+                        (!selectedBoatId.isNullOrBlank() && loc.id.equals(selectedBoatId, ignoreCase = true)) ||
+                        (!selectedBoatName.isNullOrBlank() && loc.name.equals(selectedBoatName, ignoreCase = true))
+                    }
+                } else {
+                    boatLocations
+                }
+
+                val newBoatMarkers = filteredBoatLocations.map { location ->
                     Marker(mapView).apply {
                         position = GeoPoint(location.latitude, location.longitude)
                         setAnchor(Marker.ANCHOR_CENTER, Marker.ANCHOR_BOTTOM)
@@ -188,6 +214,59 @@ actual fun OpenStreetMap(
                 }
                 newBoatMarkers.forEach { mapView.overlays.add(it) }
                 boatMarkersRef.value = newBoatMarkers
+            }
+
+            // If a recenter was requested (e.g., opening a dynamic boat overview), focus the map
+            if (recenter.value) {
+                try {
+                    // Prefer using the passed initialCameraState center (so offsets/adjustments are respected).
+                    // Fallback to first boat marker position or user location if initialCameraState is not set.
+                    val hasValidInitial = !initialCameraState.latitude.isNaN() && !initialCameraState.longitude.isNaN()
+                    // prefer explicit camera overrides (selectedCameraLat/Lon) if provided
+                    val hasSelectedCamera = selectedCameraLat != null && selectedCameraLon != null
+                    val targetBaseGeo = when {
+                        hasSelectedCamera -> GeoPoint(selectedCameraLat!!, selectedCameraLon!!)
+                        hasValidInitial -> GeoPoint(initialCameraState.latitude, initialCameraState.longitude)
+                        boatMarkersRef.value.isNotEmpty() -> {
+                            val loc = boatMarkersRef.value[0].position as GeoPoint
+                            GeoPoint(loc.latitude, loc.longitude)
+                        }
+                        userLocation != null -> GeoPoint(userLocation.latitude, userLocation.longitude)
+                        else -> null
+                    }
+
+                    Log.d("MapDebug", "recenter requested: selectedCamera=$selectedCameraLat,$selectedCameraLon initial=${initialCameraState.latitude},${initialCameraState.longitude}")
+                    targetBaseGeo?.let { baseGeo ->
+                         // Run projection-based adjustments after the view is laid out so mapView.height is valid.
+                         mapView.post {
+                             try {
+                                 Log.d("MapDebug", "baseGeo=${baseGeo.latitude},${baseGeo.longitude} mapHeight=${mapView.measuredHeight}/${mapView.height}")
+                                 val projection = mapView.projection
+                                 val screenPt = Point()
+                                 projection.toPixels(baseGeo, screenPt)
+
+                                 // desired upward shift: 20% of visible map height (adjustable)
+                                 val mapHeight = if (mapView.measuredHeight > 0) mapView.measuredHeight else mapView.height
+                                 val desiredShiftPx = (mapHeight * 0.20).toInt()
+
+                                 val newScreenY = screenPt.y - desiredShiftPx
+                                 val newCenterGeo = projection.fromPixels(screenPt.x, newScreenY)
+                                 Log.d("MapDebug", "screenPt=$screenPt newScreenY=$newScreenY newCenterGeo=${newCenterGeo.latitude},${newCenterGeo.longitude}")
+
+                                 // set zoom and animate to adjusted center
+                                 try { mapView.controller.setZoom(initialCameraState.zoom) } catch (t: Throwable) { Log.w("MapDebug","zoom set failed", t) }
+                                 mapView.controller.animateTo(newCenterGeo as GeoPoint)
+                             } catch (t: Throwable) {
+                                // fallback to simple animate
+                                Log.w("MapDebug","projection shift failed", t)
+                                try { mapView.controller.setZoom(initialCameraState.zoom) } catch (t2: Throwable) { Log.w("MapDebug","zoom set failed", t2) }
+                                mapView.controller.animateTo(baseGeo)
+                             }
+                         }
+                     }
+                } catch (_: Throwable) { }
+                // Notify that recenter has been handled
+                try { onRecenterComplete() } catch (_: Throwable) {}
             }
 
             // Redraw map overlays

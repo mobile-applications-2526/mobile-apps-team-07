@@ -8,8 +8,6 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.Modifier
 import com.arkivanov.decompose.extensions.compose.stack.Children
-import com.arkivanov.decompose.extensions.compose.stack.animation.slide
-import com.arkivanov.decompose.extensions.compose.stack.animation.stackAnimation
 import com.arkivanov.decompose.extensions.compose.subscribeAsState
 import org.dadez.safarban.ui.components.general.BottomNavigationBar
 import org.dadez.safarban.ui.navigation.RootComponent
@@ -29,24 +27,29 @@ import org.dadez.safarban.ui.screens.settings.SettingsScreen
 fun RootApp(rootComponent: RootComponent) {
     MaterialTheme {
         val childStack by rootComponent.routerState.subscribeAsState()
-        val currentConfig = childStack.active.configuration
+        val currentConfig = childStack.active.configuration as RootComponent.Config
 
         Scaffold(
             bottomBar = {
+                // Get boat component if we're in boat view for tab state
+                val boatComponent = (childStack.active.instance as? RootComponent.Child.BoatChild)?.component
+
                 BottomNavigationBar(
-                    currentRoute = currentConfig as RootComponent.Config,
+                    currentRoute = currentConfig,
                     onNavigateToHome = rootComponent::navigateToHome,
                     onNavigateToMap = rootComponent::navigateToMap,
-                    onNavigateToCargo = rootComponent::navigateToCargo,
-                    onNavigateToProfile = { rootComponent.navigateToProfile("current_user") }
+                    onNavigateToProfile = { rootComponent.navigateToProfile("current_user") },
+                    boatComponent = boatComponent
                 )
             }
         ) { paddingValues ->
-            // Add smooth navigation animations
+            // If we're displaying a Boat screen, don't apply the scaffold padding so the map can draw full-bleed
+            val childrenModifier = if (currentConfig is RootComponent.Config.Boat) Modifier else Modifier.padding(paddingValues)
+
+            // Render children without animations
             Children(
                 stack = childStack,
-                animation = stackAnimation(slide()),
-                modifier = Modifier.padding(paddingValues)
+                modifier = childrenModifier
             ) { child ->
                 when (val instance = child.instance) {
                     is RootComponent.Child.HomeChild -> {
@@ -54,7 +57,8 @@ fun RootApp(rootComponent: RootComponent) {
                             component = instance.component,
                             onOpenDetails = rootComponent::navigateToDetails,
                             onOpenSettings = rootComponent::navigateToSettings,
-                            onOpenProfile = { rootComponent.navigateToProfile("current_user") }
+                            onOpenProfile = { rootComponent.navigateToProfile("current_user") },
+                            onBoatClick = rootComponent::navigateToBoat
                         )
                     }
 
@@ -88,6 +92,13 @@ fun RootApp(rootComponent: RootComponent) {
 
                     is RootComponent.Child.CargoChild -> {
                         CargoScreen(
+                            component = instance.component,
+                            onBack = { rootComponent.navigateBack() }
+                        )
+                    }
+
+                    is RootComponent.Child.BoatChild -> {
+                        org.dadez.safarban.ui.screens.boat.BoatScreen(
                             component = instance.component,
                             onBack = { rootComponent.navigateBack() }
                         )

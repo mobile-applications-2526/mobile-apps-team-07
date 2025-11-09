@@ -5,6 +5,7 @@ plugins {
     alias(libs.plugins.androidApplication)
     alias(libs.plugins.composeMultiplatform)
     alias(libs.plugins.composeCompiler)
+    alias(libs.plugins.sqldelight)
     kotlin("plugin.serialization") version "2.2.20"
 }
 
@@ -32,6 +33,7 @@ kotlin {
             implementation(libs.koin.android)
             implementation(libs.osmdroid.android)
             implementation(libs.play.services.location)
+            implementation(libs.sqldelight.android.driver)
             implementation(libs.ktor.client.okhttp)
         }
         commonMain.dependencies {
@@ -63,12 +65,22 @@ kotlin {
             implementation(libs.ktor.client.core)
             implementation(libs.ktor.client.content.negotiation)
             implementation(libs.ktor.serialization.kotlinx.json)
+            implementation(libs.kotlinx.datetime)
         }
         commonTest.dependencies {
             implementation(libs.kotlin.test)
         }
         iosMain.dependencies {
             implementation(libs.ktor.client.darwin)
+            implementation(libs.sqldelight.native.driver)
+        }
+    }
+}
+
+sqldelight {
+    databases {
+        create("SafarbanDatabase") {
+            packageName.set("org.dadez.safarban.database")
         }
     }
 }

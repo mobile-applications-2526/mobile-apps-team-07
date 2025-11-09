@@ -1,0 +1,55 @@
+-- User table for storing user information
+CREATE TABLE user (
+    id INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL,
+    username TEXT NOT NULL UNIQUE,
+    email TEXT NOT NULL UNIQUE,
+    full_name TEXT NOT NULL,
+    created_at INTEGER NOT NULL,
+    updated_at INTEGER NOT NULL
+);
+
+-- Index for faster lookups by username
+CREATE INDEX user_username ON user(username);
+
+-- Index for faster lookups by email
+CREATE INDEX user_email ON user(email);
+
+-- Query to select all users
+selectAll:
+SELECT * FROM user;
+
+-- Query to select user by id
+selectById:
+SELECT * FROM user WHERE id = ?;
+
+-- Query to select user by username
+selectByUsername:
+SELECT * FROM user WHERE username = ?;
+
+-- Query to select user by email
+selectByEmail:
+SELECT * FROM user WHERE email = ?;
+
+-- Insert a new user
+insert:
+INSERT INTO user(username, email, full_name, created_at, updated_at)
+VALUES (?, ?, ?, ?, ?);
+
+-- Update user information
+update:
+UPDATE user
+SET username = ?, email = ?, full_name = ?, updated_at = ?
+WHERE id = ?;
+
+-- Delete user by id
+deleteById:
+DELETE FROM user WHERE id = ?;
+
+-- Delete all users
+deleteAll:
+DELETE FROM user;
+
+-- Count all users
+countAll:
+SELECT COUNT(*) FROM user;
+

@@ -11,6 +11,7 @@ import androidx.compose.material3.FloatingActionButton
 import androidx.compose.material3.Icon
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.MutableState
+import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
@@ -30,6 +31,12 @@ expect fun OpenStreetMap(
     modifier: Modifier = Modifier,
     userLocation: UserLocation? = null,
     boatLocations: List<LocationItem> = emptyList(),
+    // Optional selection filters — platform map impls can use these to show only selected boat
+    selectedBoatId: String? = null,
+    selectedBoatName: String? = null,
+    // Optional explicit camera center override (latitude/longitude) to force the map center
+    selectedCameraLat: Double? = null,
+    selectedCameraLon: Double? = null,
     initialCameraState: MapCameraState,
     recenter: MutableState<Boolean>,
     onRecenterComplete: () -> Unit,
@@ -54,43 +61,82 @@ fun MapContent(
     onRefresh: () -> Unit,
     onRefreshAnimationComplete: () -> Unit,
     onLocationClick: (LocationItem) -> Unit,
-    onCameraMove: (latitude: Double, longitude: Double, zoom: Double) -> Unit
+    onCameraMove: (latitude: Double, longitude: Double, zoom: Double) -> Unit,
+    // Optional selected boat identification (when viewing a single boat overview)
+    selectedBoatId: String? = null,
+    selectedBoatName: String? = null,
+    // Optional explicit camera center override (latitude/longitude)
+    selectedCameraLat: Double? = null,
+    selectedCameraLon: Double? = null,
+    bottomPadding: Dp = 0.dp, // space at bottom (e.g., height of overlaid bottom nav)
+    // New options
+    showFab: Boolean = true,
+    // Styling overrides forwarded to BottomSheet
+    sheetContainerColor: Color = Color(0xFF1D2124),
+    sheetContentColor: Color = Color.White,
+    cardBackgroundColor: Color = Color(0xFF2A2D32),
+    cardContentColor: Color = Color(0xFFBDBDBD),
+    cardBorderColor: Color = Color.Transparent,
+    cardBorderWidth: Dp = 0.dp,
+    // New: indicate this content is for the overview sheet
+    isOverview: Boolean = false
 ) {
+    // Local camera state for on-screen debug overlay
+    val cameraLatState = remember { androidx.compose.runtime.mutableStateOf(initialCameraState.latitude) }
+    val cameraLonState = remember { androidx.compose.runtime.mutableStateOf(initialCameraState.longitude) }
+    val cameraZoomState = remember { androidx.compose.runtime.mutableStateOf(initialCameraState.zoom) }
+
+    // Helper to compute boat marker info (first location when available)
+    val boatMarker = remember(locations) { locations.firstOrNull() }
+
     Box(modifier = modifier.fillMaxSize()) {
         // Map covering entire screen with user location tracking and boat markers
         OpenStreetMap(
             modifier = Modifier.fillMaxSize(),
             userLocation = userLocation,
             boatLocations = locations,
+            selectedBoatId = selectedBoatId,
+            selectedBoatName = selectedBoatName,
+            selectedCameraLat = selectedCameraLat,
+            selectedCameraLon = selectedCameraLon,
             initialCameraState = initialCameraState,
             recenter = recenter,
             onRecenterComplete = { recenter.value = false },
-            onCameraMove = onCameraMove
+            onCameraMove = { lat, lon, zoom ->
+                // update local debug state and forward the event
+                cameraLatState.value = lat
+                cameraLonState.value = lon
+                cameraZoomState.value = zoom
+                onCameraMove(lat, lon, zoom)
+            }
         )
 
-        // Floating Action Button to center on user location
-        FloatingActionButton(
-            onClick = { recenter.value = true },
-            containerColor = Color(0xFF1D2124),
-            contentColor = Color(0xFFBDBDBD),
-            shape = RoundedCornerShape(32.dp),
-            modifier = Modifier
-                .align(Alignment.BottomEnd)
-                .padding(end = 16.dp, bottom = bottomSheetHeight + 16.dp)
-        ) {
-            Icon(
-                imageVector = Lucide.Compass,
-                contentDescription = "Center on User Location",
-                modifier = Modifier.size(28.dp),
-                tint = Color(0xFFBDBDBD)
-            )
+        // Floating Action Button to center on user location (optional)
+        if (showFab) {
+            // Style FAB to match the bottom sheet styling (container and content colors forwarded in parameters)
+            FloatingActionButton(
+                onClick = { recenter.value = true },
+                containerColor = sheetContainerColor,
+                contentColor = sheetContentColor,
+                shape = RoundedCornerShape(32.dp),
+                modifier = Modifier
+                    .align(Alignment.BottomEnd)
+                    .padding(end = 16.dp, bottom = bottomSheetHeight + 16.dp + bottomPadding)
+            ) {
+                Icon(
+                    imageVector = Lucide.Compass,
+                    contentDescription = "Center on User Location",
+                    modifier = Modifier.size(28.dp)
+                )
+            }
         }
 
-        // Bottom sheet with nearby places
+        // Bottom sheet with nearby places; ensure it sits above any overlaid bottom nav
         BottomSheet(
             modifier = Modifier
                 .fillMaxWidth()
-                .align(Alignment.BottomCenter),
+                .align(Alignment.BottomCenter)
+                .padding(bottom = bottomPadding),
             locations = locations,
             userLat = userLocation?.latitude,
             userLon = userLocation?.longitude,
@@ -100,7 +146,24 @@ fun MapContent(
             shouldAnimateRefresh = shouldAnimateRefresh,
             onRefresh = onRefresh,
             onRefreshAnimationComplete = onRefreshAnimationComplete,
-            listState = listState
+            listState = listState,
+            // forward debug values so the sheet can render them at the top
+            debugCameraLat = cameraLatState.value,
+            debugCameraLon = cameraLonState.value,
+            debugZoom = cameraZoomState.value,
+            debugBoatName = boatMarker?.name,
+            debugBoatLat = boatMarker?.latitude,
+            debugBoatLon = boatMarker?.longitude,
+            debugVerticalDeg = boatMarker?.let { cameraLatState.value - it.latitude },
+            // forward styling
+            containerColor = sheetContainerColor,
+            contentColor = sheetContentColor,
+            cardBackgroundColor = cardBackgroundColor,
+            cardContentColor = cardContentColor,
+            cardBorderColor = cardBorderColor,
+            cardBorderWidth = cardBorderWidth,
+            // forward overview flag
+            isOverview = isOverview
         )
     }
 }

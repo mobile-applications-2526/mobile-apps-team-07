@@ -31,6 +31,12 @@ actual fun OpenStreetMap(
     modifier: Modifier,
     userLocation: UserLocation?,
     boatLocations: List<LocationItem>,
+    // optional selection filters
+    selectedBoatId: String? = null,
+    selectedBoatName: String? = null,
+    // optional explicit camera center override
+    selectedCameraLat: Double? = null,
+    selectedCameraLon: Double? = null,
     initialCameraState: MapCameraState,
     recenter: MutableState<Boolean>,
     onRecenterComplete: () -> Unit,
@@ -41,9 +47,19 @@ actual fun OpenStreetMap(
     val userInteracted = remember { mutableStateOf(false) }
     val isMapLoaded = remember { mutableStateOf(false) }
 
+    // Filter boatLocations if selection provided, then generate boat markers JavaScript
+    val filteredBoatLocations = if (!selectedBoatId.isNullOrBlank() || !selectedBoatName.isNullOrBlank()) {
+        boatLocations.filter { loc ->
+            (!selectedBoatId.isNullOrBlank() && loc.id.equals(selectedBoatId, ignoreCase = true)) ||
+            (!selectedBoatName.isNullOrBlank() && loc.name.equals(selectedBoatName, ignoreCase = true))
+        }
+    } else {
+        boatLocations
+    }
+
     // Generate boat markers JavaScript
-    val boatMarkersJs = remember(boatLocations) {
-        boatLocations.joinToString("\n") { location ->
+    val boatMarkersJs = remember(filteredBoatLocations) {
+        filteredBoatLocations.joinToString("\n") { location ->
             val escapedName = location.name.replace("'", "\\'")
             val escapedDesc = location.description?.replace("'", "\\'") ?: ""
             """
@@ -59,7 +75,12 @@ actual fun OpenStreetMap(
         }
     }
 
-    val htmlContent = remember(initialCameraState, boatMarkersJs) {
+    // choose center lat/lon preferring selectedCamera if provided
+    val centerLat = selectedCameraLat ?: initialCameraState.latitude
+    val centerLon = selectedCameraLon ?: initialCameraState.longitude
+    val centerZoom = initialCameraState.zoom
+
+    val htmlContent = remember(centerLat, centerLon, centerZoom, boatMarkersJs) {
         """
         <!DOCTYPE html>
         <html>
@@ -76,8 +97,8 @@ actual fun OpenStreetMap(
             <div id="map"></div>
             <script>
                 var map = L.map('map', {
-                    center: [${initialCameraState.latitude}, ${initialCameraState.longitude}],
-                    zoom: ${initialCameraState.zoom},
+                    center: [$centerLat, $centerLon],
+                    zoom: $centerZoom,
                     zoomControl: true,
                     minZoom: 3,
                     maxBounds: [[-90, -180], [90, 180]], // Prevent horizontal wrapping
@@ -94,7 +115,7 @@ actual fun OpenStreetMap(
                 // User location marker
                 var userMarker = null;
 
-                // Add boat markers
+                // Add boat markers (filtered if selection was provided)
                 $boatMarkersJs
 
                 // Track map movements
@@ -115,7 +136,7 @@ actual fun OpenStreetMap(
                     } else {
                         userMarker = L.marker([lat, lng], {
                             icon: L.icon({
-                                iconUrl: 'data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iMjQiIGhlaWdodD0iMjQiIHZpZXdCb3g9IjAgMCAyNCAyNCIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj48Y2lyY2xlIGN4PSIxMiIgY3k9IjEyIiByPSI4IiBmaWxsPSIjNDA3OEZGIiBzdHJva2U9IiNGRkZGRkYiIHN0cm9rZS13aWR0aD0iMyIvPjwvc3ZnPg==',
+                                iconUrl: 'data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iMjQiIGhlaWdodD0iMjQiIHZpZXdCb3g9IjAgMCAyNCAyNCIgeG1zbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj48Y2lyY2xlIGN4PSIxMiIgY3k9IjEyIiByPSI4IiBmaWxsPSIjNDA3OEZGIiBzdHJva2U9IiNGRkZGRkYiIHN0cm9rZS13aWR0aD0iMyIvPjwvc3ZnPg==',
                                 iconSize: [24, 24],
                                 iconAnchor: [12, 12]
                             })
@@ -193,7 +214,10 @@ actual fun OpenStreetMap(
 
                     // Handle recenter request
                     if (recenter.value) {
-                        webView.evaluateJavaScript("recenterMap(${loc.latitude}, ${loc.longitude});", null)
+                        // If a selected camera center is provided, recenter there; else recenter to user location
+                        val targetLat = ${if (true) "selectedCameraLat ?: loc.latitude" else "loc.latitude"}
+                        val targetLon = ${if (true) "selectedCameraLon ?: loc.longitude" else "loc.longitude"}
+                        webView.evaluateJavaScript("recenterMap(${""}+targetLat+","+targetLon+");", null)
                         userInteracted.value = false
                         onRecenterComplete()
                     }

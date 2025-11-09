@@ -2,7 +2,6 @@ package org.dadez.safarban.ui.screens.map
 
 import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
@@ -10,6 +9,7 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.saveable.Saver
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import org.dadez.safarban.data.location.RememberLocationPermissionState
@@ -105,6 +105,15 @@ fun MapScreen(
         onCameraMove = { lat, lon, zoom ->
             // Save camera state when user moves the map
             mapCameraState = MapCameraState(lat, lon, zoom)
-        }
+        },
+        // Use blue-accented overview style for the map screen bottom sheet
+        sheetContainerColor = Color.White,
+        sheetContentColor = Color(0xFF1D2124),
+        cardBackgroundColor = Color.White,
+        cardContentColor = Color(0xFF1D2124),
+        cardBorderColor = Color(0xFF006994),
+        cardBorderWidth = 2.dp,
+        isOverview = false,
+
     )
 }
