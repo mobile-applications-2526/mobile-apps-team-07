@@ -47,6 +47,8 @@ actual fun OpenStreetMap(
     recenter: MutableState<Boolean>,
     onRecenterComplete: () -> Unit,
     onCameraMove: (latitude: Double, longitude: Double, zoom: Double) -> Unit
+    ,
+    showUserLocation: Boolean
 ) {
     val context = LocalContext.current
     val mapViewRef = remember { mutableStateOf<MapView?>(null) }
@@ -121,16 +123,9 @@ actual fun OpenStreetMap(
                 }
             }
 
-            // Create a dedicated marker for the user
-            val userMarkerDrawable = ContextCompat.getDrawable(ctx, R.drawable.current_location)
-            val initialUserMarker = Marker(mapView).apply {
-                position = GeoPoint(0.0, 0.0)
-                setAnchor(Marker.ANCHOR_CENTER, Marker.ANCHOR_CENTER)
-                icon = userMarkerDrawable
-                title = "You are here"
-            }
-            mapView.overlays.add(initialUserMarker)
-            userMarkerRef.value = initialUserMarker
+            // Do NOT create a user marker at startup. Create it only when a real userLocation is available.
+            // This prevents showing a spurious marker (e.g. at 0,0) on screens that intentionally pass null.
+            userMarkerRef.value = null
 
             // Create boat markers. If a selection filter is provided, only create markers for matching boats
             val boatMarkerDrawable = ContextCompat.getDrawable(ctx, R.drawable.fishing_boat)
@@ -161,13 +156,39 @@ actual fun OpenStreetMap(
 
             mapViewRef.value = mapView
             didRestoreCamera.value = true
+            // Defensive: remove any pre-existing 'You are here' markers that might have been left behind
+            try {
+                val toRemove = mapView.overlays.filterIsInstance<Marker>().filter { it.title == "You are here" }
+                toRemove.forEach { mapView.overlays.remove(it) }
+            } catch (_: Throwable) {}
+
             mapView
         },
         update = { mapView ->
-            // Update user marker position
-            userLocation?.let { loc ->
+            // Debug: log whether user location rendering is allowed and the provided userLocation
+            try { Log.d("MapDebug", "update called: showUserLocation=$showUserLocation userLocation=${'$'}userLocation") } catch (_: Throwable) {}
+            // Update user marker position or create/remove marker depending on presence of userLocation
+            if (showUserLocation && userLocation != null) {
+                val loc = userLocation
                 val gp = GeoPoint(loc.latitude, loc.longitude)
-                userMarkerRef.value?.position = gp
+
+                // Create marker if not present
+                if (userMarkerRef.value == null) {
+                    try {
+                        val userMarkerDrawable = ContextCompat.getDrawable(context, R.drawable.current_location)
+                        val marker = Marker(mapView).apply {
+                            position = gp
+                            setAnchor(Marker.ANCHOR_CENTER, Marker.ANCHOR_CENTER)
+                            icon = userMarkerDrawable
+                            title = "You are here"
+                        }
+                        mapView.overlays.add(marker)
+                        userMarkerRef.value = marker
+                    } catch (_: Throwable) { /* ignore marker creation failures */ }
+                } else {
+                    // Update existing marker position
+                    try { userMarkerRef.value?.position = gp } catch (_: Throwable) {}
+                }
 
                 // Auto-center on first location fix (if user hasn't interacted)
                 if (!userInteracted.value && didRestoreCamera.value) {
@@ -184,6 +205,12 @@ actual fun OpenStreetMap(
                         userInteracted.value = false // Reset so auto-centering works again if needed
                     } catch (_: Throwable) { }
                     onRecenterComplete()
+                }
+            } else {
+                // No user location allowed or not provided: remove any existing user marker to avoid stale/spurious marker on screen
+                userMarkerRef.value?.let { existing ->
+                    try { mapView.overlays.remove(existing) } catch (_: Throwable) {}
+                    userMarkerRef.value = null
                 }
             }
 

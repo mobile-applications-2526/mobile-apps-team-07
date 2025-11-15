@@ -12,7 +12,8 @@ import kotlinx.coroutines.launch
  * - Exposes immutable StateFlow for the UI/state holder to observe.
  */
 class HomeViewModel(
-    private val scope: CoroutineScope
+    private val scope: CoroutineScope,
+    private val getAllBoatsUseCase: org.dadez.safarban.domain.usecase.GetAllBoatsUseCase
 ) {
     private val _state = MutableStateFlow(HomeUiState())
     val state: StateFlow<HomeUiState> = _state
@@ -22,9 +23,27 @@ class HomeViewModel(
             _state.value = _state.value.copy(isLoading = true, error = null)
             // Simulate network/db load
             try {
-                delay(500)
-                val items = listOf("Apples", "Oranges", "Bananas")
-                _state.value = _state.value.copy(items = items, isLoading = false)
+                delay(200)
+
+                try {
+                    val boats = getAllBoatsUseCase()
+                    val mapped = boats.map { domainBoat ->
+                        org.dadez.safarban.ui.components.boat.BoatCardData(
+                            id = domainBoat.externalId ?: (domainBoat.name ?: "unknown"),
+                            name = domainBoat.name ?: "Unknown",
+                            type = domainBoat.type ?: "Unknown",
+                            location = domainBoat.location ?: "Unknown",
+                            status = domainBoat.status ?: "Unknown",
+                            latitude = domainBoat.latitude,
+                            longitude = domainBoat.longitude
+                        )
+                    }
+
+                    _state.value = _state.value.copy(boats = mapped, isLoading = false)
+                    return@launch
+                } catch (_: Throwable) {
+                    _state.value = _state.value.copy(boats = emptyList(), isLoading = false)
+                }
             } catch (t: Throwable) {
                 _state.value = _state.value.copy(isLoading = false, error = t.message)
             }

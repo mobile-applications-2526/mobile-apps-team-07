@@ -11,12 +11,13 @@ import kotlinx.coroutines.CoroutineScope
 class HomeComponentImpl(
     componentContext: ComponentContext? = null,
     private val scope: CoroutineScope,
+    private val getAllBoatsUseCase: org.dadez.safarban.domain.usecase.GetAllBoatsUseCase
 ) : HomeComponent {
 
     // keep a reference to the component context so the parameter is used if provided
     private val componentContextRef: ComponentContext? = componentContext
 
-    private val viewModel = HomeViewModel(scope)
+    private val viewModel = HomeViewModel(scope, getAllBoatsUseCase)
 
     // Expose the ViewModel's StateFlow directly
     override val state = viewModel.state

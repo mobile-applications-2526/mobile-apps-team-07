@@ -73,7 +73,7 @@ fun BoatScreen(
     Box(modifier = modifier.fillMaxSize()) {
         // Map content placed first so overlays (top bar and bottom nav) render on top
         when (state.selectedTab) {
-            BoatTab.OVERVIEW -> OverviewMapArea(state)
+        BoatTab.OVERVIEW -> OverviewMapArea(state, component)
             else -> {
                 // For non-map tabs, show content normally
                 Column(modifier = Modifier.fillMaxSize().padding(16.dp)) {
@@ -154,18 +154,14 @@ private fun TopBar(
 }
 
 @Composable
-private fun OverviewMapArea(state: BoatUiState) {
+private fun OverviewMapArea(state: BoatUiState, component: BoatComponent) {
     // Use coordinates from state when present, otherwise fall back to defaults
     val boatLat = state.boatLatitude ?: 35.6892
     val boatLon = state.boatLongitude ?: 51.3890
 
-    // Create locations: when viewing a specific boat overview, show only that boat on the map
-    val defaultLocations = listOf(
-        LocationItem("SS Anne", "Cargo Ship", description = "Docked at Port 3", 26.194877, 52.558594),
-        LocationItem("HMS Victory", "Warship", description = "Sailing nearby", 25.918526, 35.507813),
-        LocationItem("Queen Mary 2", "Cruise Ship", description = "Anchored at Bay", 12.254128, 47.856445),
-        LocationItem("Black Pearl", "Pirate Ship", description = "Last seen near the island", 43.421009, 32.783203)
-    )
+    // Load locations from the database only. Use locations provided by the component (loaded from domain repo)
+    val defaultLocationsState = component.locations.collectAsState(initial = emptyList<LocationItem>())
+    val defaultLocations = defaultLocationsState.value
 
     // Prefer explicit coords from state. If not present, try to find the selected boat by id or name in defaults
     val matchedDefault = defaultLocations.find {
@@ -256,6 +252,8 @@ private fun OverviewMapArea(state: BoatUiState) {
         selectedCameraLon = overviewCenterLon,
         bottomPadding = BottomNavHeight,
         showFab = false,
+    // Explicitly disable user location rendering on boat pages to save processing
+    showUserLocation = false,
         sheetContainerColor = OverviewSheetBackground,
         sheetContentColor = OverviewSheetContent,
         cardBackgroundColor = OverviewCardBackground,

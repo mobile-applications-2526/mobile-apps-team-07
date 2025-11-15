@@ -1,17 +1,7 @@
 package org.dadez.safarban.data.mapper
 
-import android.location.Location
-import org.dadez.safarban.domain.model.UserLocation
+// Platform-specific location mappers live in platform source sets (androidMain / iosMain).
+// This file intentionally left in commonMain as a no-op placeholder so common compilation
+// doesn't depend on platform location types.
 
-/**
- * Maps Android Location to domain UserLocation model
- */
-fun Location.toUserLocation(): UserLocation {
-    return UserLocation(
-        latitude = latitude,
-        longitude = longitude,
-        accuracy = accuracy,
-        timestamp = time
-    )
-}
 

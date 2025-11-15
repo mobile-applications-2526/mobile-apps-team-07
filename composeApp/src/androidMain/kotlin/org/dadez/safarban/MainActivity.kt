@@ -11,6 +11,8 @@ import androidx.activity.enableEdgeToEdge
 import androidx.compose.ui.graphics.toArgb
 import androidx.core.view.WindowCompat
 import com.arkivanov.decompose.DefaultComponentContext
+import androidx.lifecycle.lifecycleScope
+import kotlinx.coroutines.launch
 import org.dadez.safarban.ui.navigation.RootComponent
 
 class MainActivity : ComponentActivity() {
@@ -30,11 +32,27 @@ class MainActivity : ComponentActivity() {
             isAppearanceLightStatusBars = false
         }
 
-        // Initialize Android context for dependency injection - Not needed anymore
+        // Initialize Koin and platform DI (provides DriverFactory and database)
+        org.dadez.safarban.di.initKoinAndroid(this.applicationContext)
 
-        // Create a Decompose ComponentContext backed by the Android lifecycle
-        val componentContext = DefaultComponentContext(lifecycle)
-        rootComponent = RootComponent(componentContext)
+        // Seed canonical boats if needed (runs asynchronously) using the database provided by DI
+        lifecycleScope.launch {
+            try {
+                val database: org.dadez.safarban.database.SafarbanDatabase = org.koin.core.context.GlobalContext.get().get()
+                org.dadez.safarban.data.db.seedDefaultBoatsIfEmpty(database)
+            } catch (_: Throwable) {
+                // swallow; seeding is best-effort for now
+            }
+        }
+
+    // Create a Decompose ComponentContext backed by the Android lifecycle
+    val componentContext = DefaultComponentContext(lifecycle)
+
+    // Resolve required domain dependencies from Koin and pass into RootComponent
+    val getAllBoatsUseCase: org.dadez.safarban.domain.usecase.GetAllBoatsUseCase = org.koin.core.context.GlobalContext.get().get()
+    val boatRepo: org.dadez.safarban.domain.repository.BoatRepository = org.koin.core.context.GlobalContext.get().get()
+
+    rootComponent = RootComponent(componentContext, getAllBoatsUseCase, boatRepo)
 
         // Register a back callback that delegates to the RootComponent
         onBackPressedDispatcher.addCallback(this) {

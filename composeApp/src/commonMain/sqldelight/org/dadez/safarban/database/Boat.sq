@@ -1,0 +1,52 @@
+-- Boat table for storing boat information
+CREATE TABLE boat (
+    id INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL,
+    external_id TEXT NOT NULL UNIQUE,
+    name TEXT NOT NULL,
+    type TEXT,
+    location TEXT,
+    status TEXT,
+    latitude REAL,
+    longitude REAL,
+    owner_id INTEGER REFERENCES user(id),
+    created_at INTEGER NOT NULL,
+    updated_at INTEGER NOT NULL
+);
+
+-- Index for faster lookups by external id
+CREATE INDEX boat_external_id ON boat(external_id);
+
+-- Query to select all boats
+selectAll:
+SELECT * FROM boat;
+
+-- Query to select boat by id
+selectById:
+SELECT * FROM boat WHERE id = ?;
+
+-- Query to select boat by external id
+selectByExternalId:
+SELECT * FROM boat WHERE external_id = ?;
+
+-- Insert a new boat
+insert:
+INSERT INTO boat(external_id, name, type, location, status, latitude, longitude, owner_id, created_at, updated_at)
+VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?);
+
+-- Update boat information
+update:
+UPDATE boat
+SET external_id = ?, name = ?, type = ?, location = ?, status = ?, latitude = ?, longitude = ?, owner_id = ?, updated_at = ?
+WHERE id = ?;
+
+-- Delete boat by id
+deleteById:
+DELETE FROM boat WHERE id = ?;
+
+-- Delete all boats
+deleteAll:
+DELETE FROM boat;
+
+-- Count all boats
+countAll:
+SELECT COUNT(*) FROM boat;

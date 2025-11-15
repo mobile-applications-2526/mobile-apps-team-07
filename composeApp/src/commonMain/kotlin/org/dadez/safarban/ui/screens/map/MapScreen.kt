@@ -1,17 +1,32 @@
 package org.dadez.safarban.ui.screens.map
 
+import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.saveable.Saver
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
+import androidx.compose.ui.Alignment
+import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.sp
+import androidx.compose.material3.Card
+import androidx.compose.material3.CardDefaults
+import androidx.compose.material3.Icon
+import com.composables.icons.lucide.Lucide
+import com.composables.icons.lucide.Search
 import org.dadez.safarban.data.location.RememberLocationPermissionState
 import org.dadez.safarban.domain.model.UserLocation
 import org.dadez.safarban.ui.components.maps.LocationItem
@@ -77,43 +92,65 @@ fun MapScreen(
     val listState = rememberLazyListState()
     var shouldAnimateRefresh by rememberSaveable { mutableStateOf(false) }
 
-    // Dummy data for nearby places
-    val dummyLocations = remember {
-        listOf(
-            LocationItem("SS Anne", "Cargo Ship", description = "Docked at Port 3", 26.194877, 52.558594), // Gulf
-            LocationItem("HMS Victory", "Warship", description = "Sailing nearby", 25.918526, 35.507813), // Egypt suez
-            LocationItem("Queen Mary 2", "Cruise Ship", description = "Anchored at Bay", 12.254128, 47.856445), // Houthi ship
-            LocationItem("Black Pearl", "Pirate Ship", description = "Last seen near the island", 43.421009, 32.783203) // Stuck in the black sea
-        )
+    // Load boat locations via the component (which should be backed by a domain repository)
+    val locationsState = component.locations
+    val dbLocationsState = locationsState.collectAsState(initial = emptyList<org.dadez.safarban.ui.components.maps.LocationItem>())
+    // Kick off load when component is available
+    LaunchedEffect(Unit) {
+        component.load()
     }
 
-    // Use separated MapContent composable
-    MapContent(
-        userLocation = userLocation,
-        initialCameraState = mapCameraState,
-        recenter = recenter,
-        bottomSheetHeight = bottomSheetHeight,
-        onBottomSheetHeightChanged = { height -> bottomSheetHeight = height },
-        listState = listState,
-        locations = dummyLocations,
-        shouldAnimateRefresh = shouldAnimateRefresh,
-        onRefresh = { shouldAnimateRefresh = true },
-        onRefreshAnimationComplete = { shouldAnimateRefresh = false },
-        onLocationClick = { location ->
-            // Handle location click
-        },
-        onCameraMove = { lat, lon, zoom ->
-            // Save camera state when user moves the map
-            mapCameraState = MapCameraState(lat, lon, zoom)
-        },
-        // Use blue-accented overview style for the map screen bottom sheet
-        sheetContainerColor = Color.White,
-        sheetContentColor = Color(0xFF1D2124),
-        cardBackgroundColor = Color.White,
-        cardContentColor = Color(0xFF1D2124),
-        cardBorderColor = Color(0xFF006994),
-        cardBorderWidth = 2.dp,
-        isOverview = false,
+    // Use separated MapContent composable inside a Box so we can overlay UI (search bar)
+    Box(modifier = Modifier.fillMaxSize()) {
+        MapContent(
+            userLocation = userLocation,
+            initialCameraState = mapCameraState,
+            recenter = recenter,
+            bottomSheetHeight = bottomSheetHeight,
+            onBottomSheetHeightChanged = { height -> bottomSheetHeight = height },
+            listState = listState,
+            locations = dbLocationsState.value,
+            shouldAnimateRefresh = shouldAnimateRefresh,
+            onRefresh = { shouldAnimateRefresh = true },
+            onRefreshAnimationComplete = { shouldAnimateRefresh = false },
+            onLocationClick = { location ->
+                // Handle location click
+            },
+            onCameraMove = { lat, lon, zoom ->
+                // Save camera state when user moves the map
+                mapCameraState = MapCameraState(lat, lon, zoom)
+            },
+            // Use blue-accented overview style for the map screen bottom sheet
+            sheetContainerColor = Color.White,
+            sheetContentColor = Color(0xFF1D2124),
+            cardBackgroundColor = Color.White,
+            cardContentColor = Color(0xFF1D2124),
+            cardBorderColor = Color(0xFF006994),
+            cardBorderWidth = 2.dp,
+            isOverview = false,
+            // Map screen should show the user location
+            showUserLocation = true,
+        )
 
-    )
+        // Floating search bar near the top (UI-only, no logic yet)
+        Card(
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(start = 64.dp, end = 64.dp, top = 16.dp)
+                .height(48.dp)
+                .align(Alignment.TopCenter),
+            shape = RoundedCornerShape(24.dp),
+            colors = CardDefaults.cardColors(containerColor = Color.White),
+            elevation = CardDefaults.cardElevation(defaultElevation = 6.dp)
+        ) {
+            // Simple placeholder content
+            Icon(
+                imageVector = Lucide.Search,
+                contentDescription = "Search Icon",
+                tint = Color(0xFF888888),
+                modifier = Modifier
+                    .padding(start = 12.dp, top = 12.dp)
+            )
+        }
+    }
 }

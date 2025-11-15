@@ -38,7 +38,7 @@ Secure storage:
 - Multiplatform Settings ??
 - iOS Keychain and Android EncryptedSharedPreferences
 
-Maps:
+Maps (to be decided):
 - Mapbox (Android, iOS and Desktop)
 - OpenStreetMaps (Android and Desktop)
 - Google Maps (Android)

@@ -40,7 +40,9 @@ expect fun OpenStreetMap(
     initialCameraState: MapCameraState,
     recenter: MutableState<Boolean>,
     onRecenterComplete: () -> Unit,
-    onCameraMove: (latitude: Double, longitude: Double, zoom: Double) -> Unit
+    onCameraMove: (latitude: Double, longitude: Double, zoom: Double) -> Unit,
+    // Explicit: whether the map should display a user location marker and process user location
+    showUserLocation: Boolean = true
 )
 
 /**
@@ -79,7 +81,9 @@ fun MapContent(
     cardBorderColor: Color = Color.Transparent,
     cardBorderWidth: Dp = 0.dp,
     // New: indicate this content is for the overview sheet
-    isOverview: Boolean = false
+    isOverview: Boolean = false,
+    // Should the map show and track the user's location? Default true for MapScreen; BoatScreen will set false.
+    showUserLocation: Boolean = true
 ) {
     // Local camera state for on-screen debug overlay
     val cameraLatState = remember { androidx.compose.runtime.mutableStateOf(initialCameraState.latitude) }
@@ -108,7 +112,8 @@ fun MapContent(
                 cameraLonState.value = lon
                 cameraZoomState.value = zoom
                 onCameraMove(lat, lon, zoom)
-            }
+            },
+            showUserLocation = showUserLocation
         )
 
         // Floating Action Button to center on user location (optional)

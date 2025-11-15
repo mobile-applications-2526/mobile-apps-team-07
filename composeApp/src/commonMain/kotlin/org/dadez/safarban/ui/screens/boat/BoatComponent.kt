@@ -7,6 +7,7 @@ import kotlinx.coroutines.flow.StateFlow
  */
 interface BoatComponent {
     val state: StateFlow<BoatUiState>
+    val locations: StateFlow<List<org.dadez.safarban.ui.components.maps.LocationItem>>
 
     fun onTabSelected(tab: BoatTab)
 }

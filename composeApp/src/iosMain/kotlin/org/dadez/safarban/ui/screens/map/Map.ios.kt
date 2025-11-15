@@ -40,7 +40,8 @@ actual fun OpenStreetMap(
     initialCameraState: MapCameraState,
     recenter: MutableState<Boolean>,
     onRecenterComplete: () -> Unit,
-    onCameraMove: (latitude: Double, longitude: Double, zoom: Double) -> Unit
+    onCameraMove: (latitude: Double, longitude: Double, zoom: Double) -> Unit,
+    showUserLocation: Boolean
 ) {
     val webViewRef = remember { mutableStateOf<WKWebView?>(null) }
     val hasAutocentered = remember { mutableStateOf(false) }
@@ -200,9 +201,9 @@ actual fun OpenStreetMap(
             webView
         },
         update = { webView ->
-            // Update user location marker
-            userLocation?.let { loc ->
-                if (isMapLoaded.value) {
+            // Update user location marker only when showUserLocation is true and map is ready
+                if (isMapLoaded.value && showUserLocation && userLocation != null) {
+                    val loc = userLocation
                     webView.evaluateJavaScript("updateUserLocation(${loc.latitude}, ${loc.longitude});", null)
 
                     // Auto-center on first location fix
@@ -215,14 +216,16 @@ actual fun OpenStreetMap(
                     // Handle recenter request
                     if (recenter.value) {
                         // If a selected camera center is provided, recenter there; else recenter to user location
-                        val targetLat = ${if (true) "selectedCameraLat ?: loc.latitude" else "loc.latitude"}
-                        val targetLon = ${if (true) "selectedCameraLon ?: loc.longitude" else "loc.longitude"}
-                        webView.evaluateJavaScript("recenterMap(${""}+targetLat+","+targetLon+");", null)
+                        val targetLat = selectedCameraLat ?: loc.latitude
+                        val targetLon = selectedCameraLon ?: loc.longitude
+                        webView.evaluateJavaScript("recenterMap(${""}+targetLat+","+targetLon+" );", null)
                         userInteracted.value = false
                         onRecenterComplete()
                     }
+                } else if (isMapLoaded.value && !showUserLocation) {
+                    // Remove user marker on JS side if present by setting to null coordinates outside bounds
+                    webView.evaluateJavaScript("if (userMarker) { map.removeLayer(userMarker); userMarker = null; }", null)
                 }
-            }
         }
     )
 

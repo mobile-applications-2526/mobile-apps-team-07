@@ -42,7 +42,6 @@ fun HomeScreen(
     onBoatClick: (String, String) -> Unit = { _, _ -> }
 ) {
     val state by component.state.collectAsState(initial = HomeUiState())
-
     Column(
         modifier = Modifier.fillMaxSize()
     ) {
@@ -63,47 +62,8 @@ fun HomeScreen(
             )
         }
 
-        // Content — make the home boats list scrollable
-        val boats = remember {
-            listOf(
-                BoatCardData(
-                    id = "SS Anne",
-                    name = "SS Anne",
-                    type = "Cargo Ship",
-                    location = "Port 3",
-                    status = "Docked",
-                    latitude = 26.194877,
-                    longitude = 52.558594
-                ),
-                BoatCardData(
-                    id = "HMS Victory",
-                    name = "HMS Victory",
-                    type = "Warship",
-                    location = "Suez Canal",
-                    status = "Sailing",
-                    latitude = 25.918526,
-                    longitude = 35.507813
-                ),
-                BoatCardData(
-                    id = "Queen Mary 2",
-                    name = "Queen Mary 2",
-                    type = "Cruise Ship",
-                    location = "Anchored Bay",
-                    status = "Anchored",
-                    latitude = 12.254128,
-                    longitude = 47.856445
-                ),
-                BoatCardData(
-                    id = "Black Pearl",
-                    name = "Black Pearl",
-                    type = "Pirate Ship",
-                    location = "Near Island",
-                    status = "Missing",
-                    latitude = 43.421009,
-                    longitude = 32.783203
-                )
-            )
-        }
+        // Boats are now provided via HomeUiState.boats and populated from the DB by the ViewModel
+        val boats = state.boats
 
         LazyColumn(
             modifier = Modifier

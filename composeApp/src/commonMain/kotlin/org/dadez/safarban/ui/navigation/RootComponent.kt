@@ -15,13 +15,17 @@ import org.dadez.safarban.ui.screens.details.DetailsComponent
 import org.dadez.safarban.ui.screens.details.DetailsComponentImpl
 import org.dadez.safarban.ui.screens.home.HomeComponent
 import org.dadez.safarban.ui.screens.home.HomeComponentImpl
+import org.dadez.safarban.domain.usecase.GetAllBoatsUseCase
+import org.dadez.safarban.domain.repository.BoatRepository
 import org.dadez.safarban.ui.screens.profile.ProfileComponent
 import org.dadez.safarban.ui.screens.profile.ProfileComponentImpl
 import org.dadez.safarban.ui.screens.settings.SettingsComponent
 import org.dadez.safarban.ui.screens.settings.SettingsComponentImpl
 
 class RootComponent(
-    componentContext: ComponentContext
+    componentContext: ComponentContext,
+    private val getAllBoatsUseCase: GetAllBoatsUseCase,
+    private val boatRepository: BoatRepository,
 ) : ComponentContext by componentContext {
 
     private val navigation = StackNavigation<Config>()
@@ -42,12 +46,16 @@ class RootComponent(
 
     private fun createChild(config: Config, componentContext: ComponentContext): Child =
         when (config) {
-            is Config.Home -> Child.HomeChild(
-                HomeComponentImpl(
-                    componentContext = componentContext,
-                    scope = scope
+            is Config.Home -> {
+                // Resolve DI-provided use-cases/repositories and pass them into components
+                Child.HomeChild(
+                    HomeComponentImpl(
+                        componentContext = componentContext,
+                        scope = scope,
+                        getAllBoatsUseCase = getAllBoatsUseCase
+                    )
                 )
-            )
+            }
             is Config.Details -> Child.DetailsChild(
                 DetailsComponentImpl(
                     componentContext = componentContext,
@@ -68,25 +76,33 @@ class RootComponent(
                     userId = config.userId
                 )
             )
-            is Config.Map -> Child.MapChild(
-                org.dadez.safarban.ui.screens.map.MapComponentImpl(
-                    componentContext = componentContext
+            is Config.Map -> {
+                val boatRepo = boatRepository
+                Child.MapChild(
+                    org.dadez.safarban.ui.screens.map.MapComponentImpl(
+                        componentContext = componentContext,
+                        boatRepository = boatRepo
+                    )
                 )
-            )
+            }
             is Config.Cargo -> Child.CargoChild(
                 org.dadez.safarban.ui.screens.cargo.CargoComponentImpl(
                     componentContext = componentContext,
                     scope = scope
                 )
             )
-            is Config.Boat -> Child.BoatChild(
-                org.dadez.safarban.ui.screens.boat.BoatComponentImpl(
-                    componentContext = componentContext,
-                    scope = scope,
-                    boatId = config.boatId,
-                    boatName = config.boatName
+            is Config.Boat -> {
+                val boatRepo = boatRepository
+                Child.BoatChild(
+                    org.dadez.safarban.ui.screens.boat.BoatComponentImpl(
+                        componentContext = componentContext,
+                        scope = scope,
+                        boatId = config.boatId,
+                        boatName = config.boatName,
+                        boatRepository = boatRepo
+                    )
                 )
-            )
+            }
         }
 
     /**
