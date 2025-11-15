@@ -29,7 +29,7 @@ class HomeViewModel(
                     val boats = getAllBoatsUseCase()
                     val mapped = boats.map { domainBoat ->
                         org.dadez.safarban.ui.components.boat.BoatCardData(
-                            id = domainBoat.externalId ?: (domainBoat.name ?: "unknown"),
+                            id = domainBoat.id.toString(), // Use the database ID
                             name = domainBoat.name ?: "Unknown",
                             type = domainBoat.type ?: "Unknown",
                             location = domainBoat.location ?: "Unknown",

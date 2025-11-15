@@ -5,12 +5,15 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.lazy.rememberLazyListState
+import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.material3.Card
+import androidx.compose.material3.CardDefaults
+import androidx.compose.material3.Icon
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
-import androidx.compose.runtime.getValue
 import androidx.compose.runtime.collectAsState
+import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.saveable.Saver
@@ -21,38 +24,22 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
-import androidx.compose.ui.unit.sp
-import androidx.compose.material3.Card
-import androidx.compose.material3.CardDefaults
-import androidx.compose.material3.Icon
 import com.composables.icons.lucide.Lucide
 import com.composables.icons.lucide.Search
 import org.dadez.safarban.data.location.RememberLocationPermissionState
-import org.dadez.safarban.domain.model.UserLocation
-import org.dadez.safarban.ui.components.maps.LocationItem
-
-/**
- * Get platform-specific context.
- * Android: returns Android Context
- * iOS: returns platform-specific context object
- */
-@Composable
-expect fun rememberPlatformContext(): Any
-
-/**
- * Get platform-specific LocationProvider implementation
- */
-@Composable
-expect fun rememberLocationProvider(): org.dadez.safarban.data.location.LocationProvider
+import org.dadez.safarban.rememberLocationProvider
+import org.dadez.safarban.rememberPlatformContext
 
 @Composable
 fun MapScreen(
     component: MapComponent,
-    onBack: () -> Unit
+    onBack: () -> Unit,
+    onBoatClick: (String, String) -> Unit // <-- add this
 ) {
+    val viewModel = component
     val context = rememberPlatformContext()
     val recenter = remember { mutableStateOf(false) }
-    var userLocation by remember { mutableStateOf<UserLocation?>(null) }
+    val uiState by viewModel.uiState.collectAsState()
 
     // Create location provider
     val locationProvider = rememberLocationProvider()
@@ -73,7 +60,7 @@ fun MapScreen(
     LaunchedEffect(isLocationPermissionGranted) {
         if (isLocationPermissionGranted) {
             locationProvider.locationUpdates().collect { location ->
-                userLocation = location
+                viewModel.updateUserLocation(location)
             }
         }
     }
@@ -92,29 +79,26 @@ fun MapScreen(
     val listState = rememberLazyListState()
     var shouldAnimateRefresh by rememberSaveable { mutableStateOf(false) }
 
-    // Load boat locations via the component (which should be backed by a domain repository)
-    val locationsState = component.locations
-    val dbLocationsState = locationsState.collectAsState(initial = emptyList<org.dadez.safarban.ui.components.maps.LocationItem>())
     // Kick off load when component is available
     LaunchedEffect(Unit) {
-        component.load()
+        viewModel.load()
     }
 
     // Use separated MapContent composable inside a Box so we can overlay UI (search bar)
     Box(modifier = Modifier.fillMaxSize()) {
         MapContent(
-            userLocation = userLocation,
+            userLocation = uiState.userLocation,
             initialCameraState = mapCameraState,
             recenter = recenter,
             bottomSheetHeight = bottomSheetHeight,
             onBottomSheetHeightChanged = { height -> bottomSheetHeight = height },
             listState = listState,
-            locations = dbLocationsState.value,
+            locations = uiState.locations,
             shouldAnimateRefresh = shouldAnimateRefresh,
             onRefresh = { shouldAnimateRefresh = true },
             onRefreshAnimationComplete = { shouldAnimateRefresh = false },
             onLocationClick = { location ->
-                // Handle location click
+                onBoatClick(location.id, location.name)
             },
             onCameraMove = { lat, lon, zoom ->
                 // Save camera state when user moves the map
@@ -136,7 +120,7 @@ fun MapScreen(
         Card(
             modifier = Modifier
                 .fillMaxWidth()
-                .padding(start = 64.dp, end = 64.dp, top = 16.dp)
+                .padding(start = 64.dp, end = 64.dp, top = 64.dp)
                 .height(48.dp)
                 .align(Alignment.TopCenter),
             shape = RoundedCornerShape(24.dp),

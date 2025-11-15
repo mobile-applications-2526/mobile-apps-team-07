@@ -10,8 +10,10 @@ import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
 import androidx.compose.ui.graphics.toArgb
 import androidx.core.view.WindowCompat
-import com.arkivanov.decompose.DefaultComponentContext
 import androidx.lifecycle.lifecycleScope
+import com.arkivanov.decompose.DefaultComponentContext
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 import org.dadez.safarban.ui.navigation.RootComponent
 
@@ -35,11 +37,11 @@ class MainActivity : ComponentActivity() {
         // Initialize Koin and platform DI (provides DriverFactory and database)
         org.dadez.safarban.di.initKoinAndroid(this.applicationContext)
 
-        // Seed canonical boats if needed (runs asynchronously) using the database provided by DI
-        lifecycleScope.launch {
+        // Seed the DB if needed (this is a suspend call, launched in the IO scope)
+        CoroutineScope(Dispatchers.IO).launch {
             try {
-                val database: org.dadez.safarban.database.SafarbanDatabase = org.koin.core.context.GlobalContext.get().get()
-                org.dadez.safarban.data.db.seedDefaultBoatsIfEmpty(database)
+                val boatRepository: org.dadez.safarban.domain.repository.BoatRepository = org.koin.core.context.GlobalContext.get().get()
+                org.dadez.safarban.data.db.seedDefaultBoatsIfEmpty(boatRepository)
             } catch (_: Throwable) {
                 // swallow; seeding is best-effort for now
             }
@@ -50,9 +52,10 @@ class MainActivity : ComponentActivity() {
 
     // Resolve required domain dependencies from Koin and pass into RootComponent
     val getAllBoatsUseCase: org.dadez.safarban.domain.usecase.GetAllBoatsUseCase = org.koin.core.context.GlobalContext.get().get()
+    val getUserByIdUseCase: org.dadez.safarban.domain.usecase.GetUserByIdUseCase = org.koin.core.context.GlobalContext.get().get()
     val boatRepo: org.dadez.safarban.domain.repository.BoatRepository = org.koin.core.context.GlobalContext.get().get()
 
-    rootComponent = RootComponent(componentContext, getAllBoatsUseCase, boatRepo)
+    rootComponent = RootComponent(componentContext, getAllBoatsUseCase, getUserByIdUseCase, boatRepo)
 
         // Register a back callback that delegates to the RootComponent
         onBackPressedDispatcher.addCallback(this) {

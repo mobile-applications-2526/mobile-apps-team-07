@@ -53,12 +53,12 @@ fun BottomNavigationBar(
 
     if (isBoatView && boatComponent != null) {
         // Collect boat state
-        val boatState by boatComponent.state.collectAsState()
+        val boatState by boatComponent.uiState.collectAsState()
 
         // Show boat-specific navigation (no back button here; back lives in top bar)
         BoatBottomNavigationBar(
             currentTab = boatState.selectedTab,
-            onTabSelected = { tab -> boatComponent.onTabSelected(tab) },
+            onTabSelected = { tab -> boatComponent.selectTab(tab) },
             modifier = modifier
         )
     } else {

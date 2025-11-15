@@ -11,12 +11,13 @@ import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.SupervisorJob
 import kotlinx.serialization.Serializable
+import org.dadez.safarban.domain.repository.BoatRepository
+import org.dadez.safarban.domain.usecase.GetAllBoatsUseCase
+import org.dadez.safarban.domain.usecase.GetUserByIdUseCase
 import org.dadez.safarban.ui.screens.details.DetailsComponent
 import org.dadez.safarban.ui.screens.details.DetailsComponentImpl
 import org.dadez.safarban.ui.screens.home.HomeComponent
 import org.dadez.safarban.ui.screens.home.HomeComponentImpl
-import org.dadez.safarban.domain.usecase.GetAllBoatsUseCase
-import org.dadez.safarban.domain.repository.BoatRepository
 import org.dadez.safarban.ui.screens.profile.ProfileComponent
 import org.dadez.safarban.ui.screens.profile.ProfileComponentImpl
 import org.dadez.safarban.ui.screens.settings.SettingsComponent
@@ -25,6 +26,7 @@ import org.dadez.safarban.ui.screens.settings.SettingsComponentImpl
 class RootComponent(
     componentContext: ComponentContext,
     private val getAllBoatsUseCase: GetAllBoatsUseCase,
+    private val getUserByIdUseCase: GetUserByIdUseCase,
     private val boatRepository: BoatRepository,
 ) : ComponentContext by componentContext {
 
@@ -96,10 +98,11 @@ class RootComponent(
                 Child.BoatChild(
                     org.dadez.safarban.ui.screens.boat.BoatComponentImpl(
                         componentContext = componentContext,
+                        boatId = config.boatId.toLongOrNull() ?: 0L,
+                        getUserByIdUseCase = getUserByIdUseCase,
+                        boatRepository = boatRepo,
                         scope = scope,
-                        boatId = config.boatId,
-                        boatName = config.boatName,
-                        boatRepository = boatRepo
+                        onBack = { navigateBack() }
                     )
                 )
             }

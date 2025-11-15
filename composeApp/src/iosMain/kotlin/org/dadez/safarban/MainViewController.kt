@@ -15,10 +15,10 @@ fun MainViewController() = ComposeUIViewController {
 
     // Seed canonical boats if needed (best-effort on a background coroutine)
     try {
-        kotlinx.coroutines.CoroutineScope(kotlinx.coroutines.Dispatchers.Default).launch {
+        CoroutineScope(Dispatchers.IO).launch {
             try {
-                val database: org.dadez.safarban.database.SafarbanDatabase = org.koin.core.context.GlobalContext.get().get()
-                org.dadez.safarban.data.db.seedDefaultBoatsIfEmpty(database)
+                val boatRepository: org.dadez.safarban.domain.repository.BoatRepository = org.koin.core.context.GlobalContext.get().get()
+                org.dadez.safarban.data.db.seedDefaultBoatsIfEmpty(boatRepository)
             } catch (_: Throwable) {
                 // ignore
             }
@@ -31,9 +31,10 @@ fun MainViewController() = ComposeUIViewController {
 
     // Resolve domain dependencies from Koin and pass into RootComponent
     val getAllBoatsUseCase: org.dadez.safarban.domain.usecase.GetAllBoatsUseCase = org.koin.core.context.GlobalContext.get().get()
+    val getUserByIdUseCase: org.dadez.safarban.domain.usecase.GetUserByIdUseCase = org.koin.core.context.GlobalContext.get().get()
     val boatRepo: org.dadez.safarban.domain.repository.BoatRepository = org.koin.core.context.GlobalContext.get().get()
 
-    val rootComponent = RootComponent(componentContext, getAllBoatsUseCase, boatRepo)
+    val rootComponent = RootComponent(componentContext, getAllBoatsUseCase, getUserByIdUseCase, boatRepo)
     rootComponentInstance = rootComponent
     // Pass the single RootComponent instance into RootApp to avoid duplicate registration
     RootApp(rootComponent)

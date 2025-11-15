@@ -9,10 +9,11 @@ import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.launch
 import org.dadez.safarban.domain.repository.BoatRepository
 
-class MapComponentImpl(
+class MapViewModelImpl(
     componentContext: ComponentContext,
-    private val boatRepository: BoatRepository
-) : MapComponent, ComponentContext by componentContext {
+    private val boatRepository: BoatRepository,
+    private val locationProvider: org.dadez.safarban.data.location.LocationProvider
+) : MapViewModel, ComponentContext by componentContext {
 
     private val scope = CoroutineScope(Dispatchers.Main + SupervisorJob())
 
@@ -21,6 +22,7 @@ class MapComponentImpl(
 
     init {
         load()
+        startLocationUpdates()
     }
 
     override fun load() {
@@ -28,16 +30,14 @@ class MapComponentImpl(
             _uiState.value = _uiState.value.copy(isLoading = true)
             try {
                 val boats = boatRepository.getAllBoats()
-                val locations = boats.mapNotNull { b ->
-                    if (b.latitude != null && b.longitude != null) {
-                        org.dadez.safarban.ui.components.maps.LocationItem(
-                            id = b.externalId ?: b.id?.toString() ?: (b.name ?: "unknown"),
-                            name = b.name ?: "Unknown",
-                            description = b.location ?: b.type ?: "",
-                            latitude = b.latitude,
-                            longitude = b.longitude
-                        )
-                    } else null
+                val locations = boats.map { b ->
+                    org.dadez.safarban.ui.components.maps.LocationItem(
+                        id = b.externalId ?: (b.name ?: "unknown"),
+                        name = b.name ?: "Unknown",
+                        description = b.location ?: b.type ?: "",
+                        latitude = b.latitude ?: 0.0,
+                        longitude = b.longitude ?: 0.0
+                    )
                 }
                 _uiState.value = _uiState.value.copy(isLoading = false, locations = locations)
             } catch (e: Exception) {
@@ -46,8 +46,15 @@ class MapComponentImpl(
         }
     }
 
+    private fun startLocationUpdates() {
+        scope.launch {
+            locationProvider.locationUpdates().collect { location ->
+                _uiState.value = _uiState.value.copy(userLocation = location)
+            }
+        }
+    }
+
     override fun updateUserLocation(location: org.dadez.safarban.domain.model.UserLocation) {
         _uiState.value = _uiState.value.copy(userLocation = location)
     }
 }
-

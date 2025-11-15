@@ -1,10 +1,13 @@
 package org.dadez.safarban.ui.screens.map
 
+import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.sizeIn
 import androidx.compose.foundation.lazy.LazyListState
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.FloatingActionButton
@@ -19,6 +22,7 @@ import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import com.composables.icons.lucide.Compass
 import com.composables.icons.lucide.Lucide
+import com.composables.icons.lucide.UserRound
 import org.dadez.safarban.domain.model.UserLocation
 import org.dadez.safarban.ui.components.maps.BottomSheet
 import org.dadez.safarban.ui.components.maps.LocationItem
@@ -116,23 +120,45 @@ fun MapContent(
             showUserLocation = showUserLocation
         )
 
-        // Floating Action Button to center on user location (optional)
+        // Floating Action Button and User Icon Column (optional)
         if (showFab) {
-            // Style FAB to match the bottom sheet styling (container and content colors forwarded in parameters)
-            FloatingActionButton(
-                onClick = { recenter.value = true },
-                containerColor = sheetContainerColor,
-                contentColor = sheetContentColor,
-                shape = RoundedCornerShape(32.dp),
+            Column(
                 modifier = Modifier
                     .align(Alignment.BottomEnd)
-                    .padding(end = 16.dp, bottom = bottomSheetHeight + 16.dp + bottomPadding)
+                    .padding(end = 16.dp, bottom = bottomSheetHeight + 16.dp + bottomPadding),
+                verticalArrangement = Arrangement.spacedBy(16.dp)
             ) {
-                Icon(
-                    imageVector = Lucide.Compass,
-                    contentDescription = "Center on User Location",
-                    modifier = Modifier.size(28.dp)
-                )
+
+                FloatingActionButton(
+                    onClick = { recenter.value = true },
+                    containerColor = sheetContainerColor,
+                    contentColor = sheetContentColor,
+                    shape = RoundedCornerShape(32.dp),
+                    modifier = Modifier.align(Alignment.End)
+                ) {
+                    Icon(
+                        imageVector = Lucide.Compass,
+                        contentDescription = "Center on User Location",
+                        modifier = Modifier.size(28.dp)
+                    )
+                }
+
+                FloatingActionButton(
+                    onClick = { /* TODO: handle profile click */ },
+                    containerColor = sheetContainerColor,
+                    contentColor = sheetContentColor,
+                    shape = RoundedCornerShape(32.dp),
+                    modifier = Modifier
+                        .align(Alignment.End)
+                        .padding(bottom = 12.dp)
+                        .size(56.dp)
+                ) {
+                    Icon(
+                        imageVector = Lucide.UserRound,
+                        contentDescription = "Profile",
+                        modifier = Modifier.size(28.dp)
+                    )
+                }
             }
         }
 

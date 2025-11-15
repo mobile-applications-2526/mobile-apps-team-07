@@ -1,9 +1,27 @@
 package org.dadez.safarban
 
-import android.os.Build
+import android.content.Context
+import androidx.compose.runtime.Composable
+import androidx.compose.runtime.remember
+import com.google.android.gms.location.LocationServices
+import org.dadez.safarban.data.location.LocationProvider
+import org.dadez.safarban.data.location.LocationProviderImpl
+import org.koin.compose.koinInject
 
-class AndroidPlatform : Platform {
-    override val name: String = "Android ${Build.VERSION.SDK_INT}"
+actual class Platform actual constructor() {
+    actual val name: String = "Android"
 }
 
-actual fun getPlatform(): Platform = AndroidPlatform()
+actual fun getPlatform(): Platform = Platform()
+
+@Composable
+actual fun rememberPlatformContext(): Any {
+    return koinInject<Context>()
+}
+
+@Composable
+actual fun rememberLocationProvider(): LocationProvider {
+    val context = koinInject<Context>()
+    val fusedLocationClient = remember { LocationServices.getFusedLocationProviderClient(context) }
+    return remember { LocationProviderImpl(fusedLocationClient) }
+}

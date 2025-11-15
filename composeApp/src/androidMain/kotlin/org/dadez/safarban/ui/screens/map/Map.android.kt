@@ -1,6 +1,8 @@
 package org.dadez.safarban.ui.screens.map
 
 import android.content.Context
+import android.graphics.Point
+import android.util.Log
 import android.view.MotionEvent
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.DisposableEffect
@@ -19,8 +21,6 @@ import org.osmdroid.events.MapListener
 import org.osmdroid.events.ScrollEvent
 import org.osmdroid.events.ZoomEvent
 import org.osmdroid.util.GeoPoint
-import android.graphics.Point
-import android.util.Log
 import org.osmdroid.views.MapView
 import org.osmdroid.views.overlay.Marker
 

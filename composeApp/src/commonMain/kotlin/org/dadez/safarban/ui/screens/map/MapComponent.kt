@@ -1,11 +1,7 @@
 package org.dadez.safarban.ui.screens.map
 
-import kotlinx.coroutines.flow.StateFlow
-import org.dadez.safarban.ui.components.maps.LocationItem
+/**
+ * Public interface for the Map screen component.
+ */
+interface MapComponent : MapViewModel
 
-interface MapComponent {
-    val uiState: StateFlow<MapUiState>
-    val locations: StateFlow<List<LocationItem>>
-
-    fun load()
-}

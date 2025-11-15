@@ -2,48 +2,84 @@ package org.dadez.safarban.data.repository
 
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
+import org.dadez.safarban.data.mapper.toDomain
+import org.dadez.safarban.data.mapper.toEntity
+import org.dadez.safarban.database.SafarbanDatabase
 import org.dadez.safarban.domain.model.User
 import org.dadez.safarban.domain.repository.UserRepository
 
-class UserRepositoryImpl(private val dbRepo: org.dadez.safarban.database.UserRepository) : UserRepository {
+/**
+ * Repository class for User database operations
+ * Provides a clean API for CRUD operations on the user table
+ */
+class UserRepositoryImpl(private val database: SafarbanDatabase) : UserRepository {
 
-    private fun mapDbUserToDomain(u: org.dadez.safarban.database.User): User = User(
-        id = u.id,
-        username = u.username,
-        email = u.email,
-        fullName = u.full_name,
-        createdAt = u.created_at,
-        updatedAt = u.updated_at
-    )
+    private val queries = database.userQueries
 
+    /**
+     * Get all users from the database
+     */
     override suspend fun getAllUsers(): List<User> = withContext(Dispatchers.Default) {
-        dbRepo.getAllUsers().map { mapDbUserToDomain(it) }
+        queries.selectAll().executeAsList().map { it.toDomain() }
     }
 
+    /**
+     * Get user by ID
+     */
     override suspend fun getUserById(id: Long): User? = withContext(Dispatchers.Default) {
-        dbRepo.getUserById(id)?.let { mapDbUserToDomain(it) }
+        queries.selectById(id).executeAsOneOrNull()?.toDomain()
     }
 
-    override suspend fun getUserByUsername(username: String): User? = withContext(Dispatchers.Default) {
-        dbRepo.getUserByUsername(username)?.let { mapDbUserToDomain(it) }
+    /**
+     * Get user by username
+     */
+    override suspend fun getUserByUsername(username: String): User? =
+        withContext(Dispatchers.Default) {
+            queries.selectByUsername(username).executeAsOneOrNull()?.toDomain()
+        }
+
+    /**
+     * Insert a new user
+     */
+    override suspend fun insertUser(user: User): Unit = withContext(Dispatchers.Default) {
+        user.toEntity().let {
+            queries.insert(
+                username = it.username,
+                email = it.email,
+                full_name = it.full_name,
+                created_at = it.created_at,
+                updated_at = it.updated_at
+            )
+        }
     }
 
-    override suspend fun insertUser(user: User) = withContext(Dispatchers.Default) {
-        dbRepo.insertUser(user.username, user.email, user.fullName)
-        Unit
+    /**
+     * Update an existing user
+     */
+    override suspend fun updateUser(user: User): Unit = withContext(Dispatchers.Default) {
+        user.toEntity().let {
+            queries.update(
+                id = it.id,
+                username = it.username,
+                email = it.email,
+                full_name = it.full_name,
+                updated_at = it.updated_at
+            )
+        }
     }
 
-    override suspend fun updateUser(user: User) = withContext(Dispatchers.Default) {
-        dbRepo.updateUser(user.id, user.username, user.email, user.fullName)
-        Unit
+    /**
+     * Delete user by ID
+     */
+    override suspend fun deleteUserById(id: Long): Unit = withContext(Dispatchers.Default) {
+        queries.deleteById(id)
     }
 
-    override suspend fun deleteUserById(id: Long) = withContext(Dispatchers.Default) {
-        dbRepo.deleteUserById(id)
-        Unit
-    }
-
+    /**
+     * Count total users
+     */
     override suspend fun countUsers(): Long = withContext(Dispatchers.Default) {
-        dbRepo.countUsers()
+        queries.countAll().executeAsOne()
     }
 }
+

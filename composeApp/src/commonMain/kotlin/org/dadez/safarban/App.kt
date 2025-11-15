@@ -7,7 +7,6 @@ import androidx.compose.material3.Scaffold
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.Modifier
-import com.arkivanov.decompose.extensions.compose.stack.Children
 import com.arkivanov.decompose.extensions.compose.subscribeAsState
 import org.dadez.safarban.ui.components.general.BottomNavigationBar
 import org.dadez.safarban.ui.navigation.RootComponent
@@ -46,63 +45,60 @@ fun RootApp(rootComponent: RootComponent) {
             // If we're displaying a Boat screen, don't apply the scaffold padding so the map can draw full-bleed
             val childrenModifier = if (currentConfig is RootComponent.Config.Boat) Modifier else Modifier.padding(paddingValues)
 
-            // Render children without animations
-            Children(
-                stack = childStack,
-                modifier = childrenModifier
-            ) { child ->
-                when (val instance = child.instance) {
-                    is RootComponent.Child.HomeChild -> {
-                        HomeScreen(
-                            component = instance.component,
-                            onOpenDetails = rootComponent::navigateToDetails,
-                            onOpenSettings = rootComponent::navigateToSettings,
-                            onOpenProfile = { rootComponent.navigateToProfile("current_user") },
-                            onBoatClick = rootComponent::navigateToBoat
-                        )
-                    }
+            when (val child = childStack.active.instance) {
+                is RootComponent.Child.HomeChild -> {
+                    HomeScreen(
+                        component = child.component,
+                        onOpenDetails = rootComponent::navigateToDetails,
+                        onOpenSettings = rootComponent::navigateToSettings,
+                        onOpenProfile = { rootComponent.navigateToProfile("current_user") },
+                        onBoatClick = rootComponent::navigateToBoat
+                    )
+                }
 
-                    is RootComponent.Child.DetailsChild -> {
-                        DetailsScreen(
-                            component = instance.component,
-                            onBack = { rootComponent.navigateBack() }
-                        )
-                    }
+                is RootComponent.Child.DetailsChild -> {
+                    DetailsScreen(
+                        component = child.component,
+                        onBack = { rootComponent.navigateBack() }
+                    )
+                }
 
-                    is RootComponent.Child.SettingsChild -> {
-                        SettingsScreen(
-                            component = instance.component,
-                            onBack = { rootComponent.navigateBack() }
-                        )
-                    }
+                is RootComponent.Child.SettingsChild -> {
+                    SettingsScreen(
+                        component = child.component,
+                        onBack = { rootComponent.navigateBack() }
+                    )
+                }
 
-                    is RootComponent.Child.ProfileChild -> {
-                        ProfileScreen(
-                            component = instance.component,
-                            onBack = { rootComponent.navigateBack() }
-                        )
-                    }
+                is RootComponent.Child.ProfileChild -> {
+                    ProfileScreen(
+                        component = child.component,
+                        onBack = { rootComponent.navigateBack() }
+                    )
+                }
 
-                    is RootComponent.Child.MapChild -> {
-                        MapScreen(
-                            component = instance.component,
-                            onBack = { rootComponent.navigateBack() }
-                        )
-                    }
+                is RootComponent.Child.MapChild -> {
+                    MapScreen(
+                        component = child.component,
+                        onBack = { rootComponent.navigateBack() },
+                        onBoatClick = { boatId, boatName ->
+                            rootComponent.navigateToBoat(boatId, boatName)
+                        }
+                    )
+                }
 
-                    is RootComponent.Child.CargoChild -> {
-                        CargoScreen(
-                            component = instance.component,
-                            onBack = { rootComponent.navigateBack() }
-                        )
-                    }
+                is RootComponent.Child.CargoChild -> {
+                    CargoScreen(
+                        component = child.component,
+                        onBack = { rootComponent.navigateBack() }
+                    )
+                }
 
-                    is RootComponent.Child.BoatChild -> {
-                        org.dadez.safarban.ui.screens.boat.BoatScreen(
-                            component = instance.component,
-                            onBack = { rootComponent.navigateBack() }
-                        )
-                    }
+                is RootComponent.Child.BoatChild -> {
+                    org.dadez.safarban.ui.screens.boat.BoatScreen(
+                        component = child.component,
+                        onBack = { rootComponent.navigateBack() }
+                    )
                 }
             }
         }

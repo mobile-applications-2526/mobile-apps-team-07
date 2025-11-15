@@ -1,60 +1,39 @@
 package org.dadez.safarban.ui.screens.boat
 
 import com.arkivanov.decompose.ComponentContext
-import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.flow.StateFlow
-import kotlinx.coroutines.flow.asStateFlow
-import kotlinx.coroutines.flow.update
-import kotlinx.coroutines.launch
+import org.dadez.safarban.domain.repository.BoatRepository
+import org.dadez.safarban.domain.usecase.GetUserByIdUseCase
+import org.dadez.safarban.ui.screens.boat.screens.operations.OperationsComponent
+import org.dadez.safarban.ui.screens.boat.screens.operations.OperationsComponentImpl
+import org.dadez.safarban.ui.screens.boat.screens.overview.OverviewComponent
+import org.dadez.safarban.ui.screens.boat.screens.overview.OverviewComponentImpl
+import org.dadez.safarban.ui.screens.boat.screens.specifications.SpecsComponent
+import org.dadez.safarban.ui.screens.boat.screens.specifications.SpecsComponentImpl
 
 /**
  * Implementation of BoatComponent
  */
 class BoatComponentImpl(
-    componentContext: ComponentContext? = null,
-    scope: kotlinx.coroutines.CoroutineScope,
-    private val boatId: String,
-    private val boatName: String,
-    private val boatLatitude: Double? = null,
-    private val boatLongitude: Double? = null,
-    private val boatRepository: org.dadez.safarban.domain.repository.BoatRepository
-) : BoatComponent {
+    componentContext: ComponentContext,
+    private val boatId: Long,
+    getUserByIdUseCase: GetUserByIdUseCase,
+    private val boatRepository: BoatRepository,
+    private val scope: CoroutineScope,
+    private val onBack: () -> Unit
+) : BoatComponent, ComponentContext by componentContext {
 
-    private val _state = MutableStateFlow(
-        BoatUiState(
-            boatId = boatId,
-            boatName = boatName,
-            selectedTab = BoatTab.OVERVIEW,
-            boatLatitude = boatLatitude,
-            boatLongitude = boatLongitude
-        )
-    )
-    override val state: StateFlow<BoatUiState> = _state.asStateFlow()
+    private val viewModel = BoatViewModel(componentContext, boatId, getUserByIdUseCase, boatRepository, scope)
 
-    private val _locations = kotlinx.coroutines.flow.MutableStateFlow<List<org.dadez.safarban.ui.components.maps.LocationItem>>(emptyList())
-    override val locations: StateFlow<List<org.dadez.safarban.ui.components.maps.LocationItem>> = _locations
+    override val uiState: StateFlow<BoatUiState> = viewModel.uiState
 
-    init {
-        // load default locations from repository
-        kotlinx.coroutines.CoroutineScope(kotlinx.coroutines.Dispatchers.Default).launch {
-            try {
-                val boats = boatRepository.getAllBoats()
-                _locations.value = boats.map { b ->
-                    org.dadez.safarban.ui.components.maps.LocationItem(
-                        id = b.externalId ?: (b.name ?: "unknown"),
-                        name = b.name ?: "Unknown",
-                        description = b.location ?: b.type ?: "",
-                        latitude = b.latitude ?: 0.0,
-                        longitude = b.longitude ?: 0.0
-                    )
-                }
-            } catch (_: Throwable) {
-                // ignore
-            }
-        }
-    }
+    override fun selectTab(tab: BoatTab) = viewModel.selectTab(tab)
 
-    override fun onTabSelected(tab: BoatTab) {
-        _state.update { it.copy(selectedTab = tab) }
-    }
+    override val overviewComponent: OverviewComponent =
+        OverviewComponentImpl(componentContext, viewModel.uiState) { onBack() }
+    override val operationsComponent: OperationsComponent =
+        OperationsComponentImpl(componentContext, viewModel.uiState) { onBack() }
+    override val specsComponent: SpecsComponent =
+        SpecsComponentImpl(componentContext, viewModel.uiState) { onBack() }
 }
