@@ -87,7 +87,11 @@ fun MapContent(
     // New: indicate this content is for the overview sheet
     isOverview: Boolean = false,
     // Should the map show and track the user's location? Default true for MapScreen; BoatScreen will set false.
-    showUserLocation: Boolean = true
+    showUserLocation: Boolean = true,
+    // New: allow platform to pass explicit sheet height bounds
+    maxSheetHeight: Dp? = null,
+    minSheetHeight: Dp? = null,
+    initialSheetHeight: Dp? = null
 ) {
     // Local camera state for on-screen debug overlay
     val cameraLatState = remember { androidx.compose.runtime.mutableStateOf(initialCameraState.latitude) }
@@ -134,12 +138,15 @@ fun MapContent(
                     containerColor = sheetContainerColor,
                     contentColor = sheetContentColor,
                     shape = RoundedCornerShape(32.dp),
-                    modifier = Modifier.align(Alignment.End)
+                    modifier = Modifier
+                        .align(Alignment.End)
+                        .padding(bottom = 12.dp)
+                        .size(40.dp)
                 ) {
                     Icon(
                         imageVector = Lucide.Compass,
                         contentDescription = "Center on User Location",
-                        modifier = Modifier.size(28.dp)
+                        modifier = Modifier.size(24.dp)
                     )
                 }
 
@@ -151,12 +158,12 @@ fun MapContent(
                     modifier = Modifier
                         .align(Alignment.End)
                         .padding(bottom = 12.dp)
-                        .size(56.dp)
+                        .size(40.dp)
                 ) {
                     Icon(
                         imageVector = Lucide.UserRound,
                         contentDescription = "Profile",
-                        modifier = Modifier.size(28.dp)
+                        modifier = Modifier.size(24.dp)
                     )
                 }
             }
@@ -179,13 +186,13 @@ fun MapContent(
             onRefreshAnimationComplete = onRefreshAnimationComplete,
             listState = listState,
             // forward debug values so the sheet can render them at the top
-            debugCameraLat = cameraLatState.value,
-            debugCameraLon = cameraLonState.value,
-            debugZoom = cameraZoomState.value,
-            debugBoatName = boatMarker?.name,
-            debugBoatLat = boatMarker?.latitude,
-            debugBoatLon = boatMarker?.longitude,
-            debugVerticalDeg = boatMarker?.let { cameraLatState.value - it.latitude },
+            debugCameraLat = null,
+            debugCameraLon = null,
+            debugZoom = null,
+            debugBoatName = null,
+            debugBoatLat = null,
+            debugBoatLon = null,
+            debugVerticalDeg = null,
             // forward styling
             containerColor = sheetContainerColor,
             contentColor = sheetContentColor,
@@ -194,7 +201,11 @@ fun MapContent(
             cardBorderColor = cardBorderColor,
             cardBorderWidth = cardBorderWidth,
             // forward overview flag
-            isOverview = isOverview
+            isOverview = isOverview,
+            // forward explicit bounds
+            maxHeight = maxSheetHeight,
+            minHeight = minSheetHeight,
+            initialHeight = initialSheetHeight
         )
     }
 }

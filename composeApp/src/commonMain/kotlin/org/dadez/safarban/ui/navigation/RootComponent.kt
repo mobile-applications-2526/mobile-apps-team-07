@@ -34,14 +34,14 @@ class RootComponent(
 
     // Maintain an explicit user navigation history so system back can traverse every
     // step the user took (including bringToFront bottom-nav actions).
-    private val history = mutableListOf<Config>(Config.Home)
+    private val history = mutableListOf<Config>(Config.Map)
 
     private val scope = CoroutineScope(SupervisorJob() + Dispatchers.Main.immediate)
 
     val routerState: Value<ChildStack<*, Child>> = childStack(
         source = navigation,
         serializer = Config.serializer(),
-        initialConfiguration = Config.Home,
+        initialConfiguration = Config.Map,
         handleBackButton = true,
         childFactory = ::createChild
     )

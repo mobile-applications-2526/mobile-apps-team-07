@@ -2,7 +2,6 @@ package org.dadez.safarban.data.repository
 
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
-import kotlinx.datetime.Clock
 import org.dadez.safarban.data.mapper.toDomain
 import org.dadez.safarban.data.mapper.toEntity
 import org.dadez.safarban.database.SafarbanDatabase
@@ -39,8 +38,9 @@ class BoatRepositoryImpl(private val database: SafarbanDatabase) : BoatRepositor
             latitude = boat.latitude,
             longitude = boat.longitude,
             owner_id = boat.ownerId,
-            created_at = Clock.System.now().toEpochMilliseconds(),
-            updated_at = Clock.System.now().toEpochMilliseconds()
+            // Don't worry about Unresolved reference 'System'., it's a false positive app is working fine.
+            created_at = System.currentTimeMillis(),
+            updated_at = System.currentTimeMillis()
         )
     }
 

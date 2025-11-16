@@ -4,13 +4,21 @@ import androidx.compose.ui.window.ComposeUIViewController
 import com.arkivanov.decompose.DefaultComponentContext
 import com.arkivanov.essenty.lifecycle.LifecycleRegistry
 import org.dadez.safarban.ui.navigation.RootComponent
+import androidx.compose.runtime.Composable
+import androidx.compose.ui.platform.LocalConfiguration
+import androidx.compose.ui.unit.dp
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.IO
+import kotlinx.coroutines.launch
 
 private var rootComponentInstance: RootComponent? = null
 
 @Suppress("unused") // Called from iOS platform
 fun MainViewController() = ComposeUIViewController {
     val lifecycle = LifecycleRegistry()
-    // Initialize Koin for iOS (provide DriverFactory and database via iosModule)
+
+    // Initializing dependency injection
     org.dadez.safarban.di.initKoinIOS()
 
     // Seed canonical boats if needed (best-effort on a background coroutine)
@@ -37,7 +45,22 @@ fun MainViewController() = ComposeUIViewController {
     val rootComponent = RootComponent(componentContext, getAllBoatsUseCase, getUserByIdUseCase, boatRepo)
     rootComponentInstance = rootComponent
     // Pass the single RootComponent instance into RootApp to avoid duplicate registration
-    RootApp(rootComponent)
+    IOSRootAppWithResponsiveHeights(rootComponent)
+}
+
+@Composable
+private fun IOSRootAppWithResponsiveHeights(rootComponent: RootComponent) {
+    val configuration = LocalConfiguration.current
+    val screenHeightDp = configuration.screenHeightDp.dp
+
+    val maxFraction = 0.8f
+    val minFraction = 0.25f
+
+    val maxSheetHeight = screenHeightDp * maxFraction
+    val minSheetHeight = maxOf(screenHeightDp * minFraction, 90.dp)
+    val initialSheetHeight = minSheetHeight
+
+    RootApp(rootComponent, maxSheetHeight = maxSheetHeight, minSheetHeight = minSheetHeight, initialSheetHeight = initialSheetHeight)
 }
 
 /**

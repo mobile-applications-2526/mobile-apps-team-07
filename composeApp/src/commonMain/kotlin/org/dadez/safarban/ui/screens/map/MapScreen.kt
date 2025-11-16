@@ -34,7 +34,10 @@ import org.dadez.safarban.rememberPlatformContext
 fun MapScreen(
     component: MapComponent,
     onBack: () -> Unit,
-    onBoatClick: (String, String) -> Unit // <-- add this
+    onBoatClick: (String, String) -> Unit,
+    maxSheetHeight: Dp = 320.dp,
+    minSheetHeight: Dp = 80.dp,
+    initialSheetHeight: Dp? = null
 ) {
     val viewModel = component
     val context = rememberPlatformContext()
@@ -65,6 +68,11 @@ fun MapScreen(
         }
     }
 
+    // Use the Dp values directly
+    val maxHeight = maxSheetHeight
+    val minHeight = minSheetHeight
+    // If no explicit initial height provided by platform, we start MapScreen's visible state at minHeight
+    val initialHeight = initialSheetHeight ?: minHeight
 
     // Custom Saver for Dp type
     val DpSaver = Saver<Dp, Float>(
@@ -74,7 +82,7 @@ fun MapScreen(
 
     // Bottom sheet state with custom Saver
     var bottomSheetHeight by rememberSaveable(stateSaver = DpSaver) {
-        mutableStateOf(160.dp)
+        mutableStateOf(initialHeight)
     }
     val listState = rememberLazyListState()
     var shouldAnimateRefresh by rememberSaveable { mutableStateOf(false) }
@@ -91,7 +99,9 @@ fun MapScreen(
             initialCameraState = mapCameraState,
             recenter = recenter,
             bottomSheetHeight = bottomSheetHeight,
-            onBottomSheetHeightChanged = { height -> bottomSheetHeight = height },
+            onBottomSheetHeightChanged = { height ->
+                bottomSheetHeight = height.coerceIn(minimumValue = minHeight, maximumValue = maxHeight)
+            },
             listState = listState,
             locations = uiState.locations,
             shouldAnimateRefresh = shouldAnimateRefresh,
@@ -114,6 +124,11 @@ fun MapScreen(
             isOverview = false,
             // Map screen should show the user location
             showUserLocation = true,
+            // forward explicit bounds so MapContent -> BottomSheet uses them
+            maxSheetHeight = maxHeight,
+            minSheetHeight = minHeight,
+            // forward nullable initial so BottomSheet can compute collapsed height from measured card
+            initialSheetHeight = initialSheetHeight
         )
 
         // Floating search bar near the top (UI-only, no logic yet)
@@ -131,7 +146,7 @@ fun MapScreen(
             Icon(
                 imageVector = Lucide.Search,
                 contentDescription = "Search Icon",
-                tint = Color(0xFF888888),
+                tint = Color.Black,
                 modifier = Modifier
                     .padding(start = 12.dp, top = 12.dp)
             )

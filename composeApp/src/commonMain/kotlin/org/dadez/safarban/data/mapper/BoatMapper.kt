@@ -29,8 +29,8 @@ fun Boat.toEntity(): BoatEntity {
         latitude = this.latitude,
         longitude = this.longitude,
         owner_id = this.ownerId,
-        created_at = Clock.System.now().toEpochMilliseconds(),
-        updated_at = Clock.System.now().toEpochMilliseconds()
+        created_at = System.currentTimeMillis(),
+        updated_at = System.currentTimeMillis()
     )
 }
 

@@ -30,8 +30,9 @@ class MapComponentImpl(
                 val boats = boatRepository.getAllBoats()
                 val locations = boats.mapNotNull { b ->
                     if (b.latitude != null && b.longitude != null) {
+                        // Prefer the database numeric ID for navigation so Boat screen receives a parseable id
                         org.dadez.safarban.ui.components.maps.LocationItem(
-                            id = b.externalId ?: b.id?.toString() ?: (b.name ?: "unknown"),
+                            id = b.id?.toString() ?: b.externalId ?: (b.name ?: "unknown"),
                             name = b.name ?: "Unknown",
                             description = b.location ?: b.type ?: "",
                             latitude = b.latitude,
@@ -50,4 +51,3 @@ class MapComponentImpl(
         _uiState.value = _uiState.value.copy(userLocation = location)
     }
 }
-

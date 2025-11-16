@@ -46,6 +46,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.graphicsLayer
+import androidx.compose.ui.layout.onGloballyPositioned
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.Dp
@@ -72,7 +73,11 @@ data class LocationItem(
 @Composable
 fun BottomSheet(
     modifier: Modifier = Modifier,
-    // Max height ratio (expanded) - default to 70% of screen height
+    // New explicit heights in Dp. If not provided fall back to previous ratio behavior
+    maxHeight: Dp? = null,
+    minHeight: Dp? = null,
+    initialHeight: Dp? = null,
+    // Max height ratio (expanded) - used only when explicit heights not provided
     maxHeightRatio: Float = 0.7f,
     onHeightChanged: ((Dp) -> Unit)? = null,
     locations: List<LocationItem> = emptyList(),
@@ -104,22 +109,52 @@ fun BottomSheet(
 ) {
     val density = LocalDensity.current
 
-    // Calculate screen height in pixels
-    val screenHeightPx = with(density) {
-        // Using a reasonable default height for calculation
-        800.dp.toPx()
+    // State to capture measured card height in px (set when first LocationCard measures)
+    var measuredCardHeightPx by remember { mutableFloatStateOf(0f) }
+
+    // handle height in px
+    val handleHeightPx = with(density) { 36.dp.toPx() }
+    val extraPaddingPx = with(density) { 20.dp.toPx() } // bottom content padding
+
+    // If caller provided explicit Dp heights, convert them to px. Otherwise fall back to screen-based ratios
+    val screenHeightPx = with(density) { 800.dp.toPx() }
+    val expandedPx = with(density) { (maxHeight ?: (screenHeightPx.toDp() * maxHeightRatio)).toPx() }
+
+    // Determine collapsed height px: prefer measured card height (if available), but never go below explicit minHeight
+    val collapsedPx = with(density) {
+        val minHeightPx = minHeight?.toPx() ?: 0f
+        when {
+            measuredCardHeightPx > 0f -> {
+                val measuredCollapsed = (measuredCardHeightPx + handleHeightPx + extraPaddingPx)
+                // ensure we respect provided minHeight as a floor
+                maxOf(measuredCollapsed, minHeightPx).let { if (it > 0f) it else (screenHeightPx * 0.30f) }
+            }
+            minHeight != null -> minHeight.toPx()
+            else -> (screenHeightPx * 0.30f)
+        }
     }
 
-    // Expanded height is 70% of screen (configurable via maxHeightRatio)
-    val expandedPx = screenHeightPx * maxHeightRatio
-    // Collapsed height should be smaller than expanded so the sheet can be dragged
-    // We'll use 30% of screen as the collapsed height to give a visible handle/content and allow dragging
-    val collapsedPx = screenHeightPx * 0.30f
-    // Start the sheet at the expanded height (70%) so it appears tall initially but remains draggable
-    val initialPx = expandedPx // start at the 70% height
+    // initialPx should respect explicit initialHeight if provided, otherwise start collapsed
+    val initialPx = with(density) {
+        when {
+            initialHeight != null -> initialHeight.toPx()
+            minHeight != null -> minHeight.toPx()
+            measuredCardHeightPx > 0f -> collapsedPx
+            else -> (screenHeightPx * 0.30f)
+        }
+    }
 
     var heightPx by rememberSaveable { mutableFloatStateOf(initialPx) }
     var isDragging by remember { mutableStateOf(false) }
+
+    // If card measurement becomes available at runtime, and the caller did not provide an explicit initialHeight,
+    // set the sheet height to the computed collapsedPx so the sheet appears collapsed to one card on first load.
+    LaunchedEffect(measuredCardHeightPx) {
+        if (measuredCardHeightPx > 0f && initialHeight == null) {
+            val target = collapsedPx.coerceIn(collapsedPx, expandedPx)
+            heightPx = target
+        }
+    }
 
     val heightDp by remember(heightPx) { derivedStateOf { with(density) { heightPx.toDp() } } }
     val animatedHeightDp by animateDpAsState(targetValue = heightDp, label = "BottomSheetHeightAnimation")
@@ -388,9 +423,6 @@ fun BottomSheet(
 //                            }
 //                        }
 //                    }
-//
-//                    Spacer(modifier = Modifier.height(bottomContentPadding))
-//                }
 
             } else {
                 Row(
@@ -411,7 +443,7 @@ fun BottomSheet(
                         contentDescription = "Refresh",
                         tint = if (onRefresh != null && !rotation.isRunning) contentColor.copy(alpha = 0.8f) else Color.Gray,
                         modifier = Modifier
-                            .size(24.dp)
+                            .size(20.dp)
                             .graphicsLayer { rotationZ = rotation.value }
                             .clickable(enabled = onRefresh != null && !rotation.isRunning) {
                                 onRefresh?.invoke()
@@ -429,7 +461,7 @@ fun BottomSheet(
                         if (isLoading) {
                             CircularProgressIndicator(color = contentColor)
                         } else {
-                            Text("No nearby places found.", color = contentColor.copy(alpha = 0.7f))
+                            Text("No report data available.", color = contentColor.copy(alpha = 0.7f))
                         }
                     }
                 } else {
@@ -442,6 +474,10 @@ fun BottomSheet(
                         contentPadding = PaddingValues(bottom = bottomContentPadding)
                     ) {
                         items(sortedLocations, key = { it.id }) { location ->
+                            val onMeasured: ((Dp) -> Unit)? = if (sortedLocations.indexOf(location) == 0) {
+                                { h -> measuredCardHeightPx = with(density) { h.toPx() } }
+                            } else null
+
                             LocationCard(
                                 location = location,
                                 userLat = userLat,
@@ -450,7 +486,8 @@ fun BottomSheet(
                                 cardBackgroundColor = cardBackgroundColor,
                                 cardContentColor = cardContentColor,
                                 cardBorderColor = cardBorderColor,
-                                cardBorderWidth = cardBorderWidth
+                                cardBorderWidth = cardBorderWidth,
+                                onMeasured = onMeasured
                             )
                         }
                     }
@@ -469,11 +506,14 @@ private fun LocationCard(
     cardBackgroundColor: Color,
     cardContentColor: Color,
     cardBorderColor: Color,
-    cardBorderWidth: Dp
+    cardBorderWidth: Dp,
+    onMeasured: ((Dp) -> Unit)? = null
 ) {
     val distance = if (userLat != null && userLon != null) {
         calculateDistance(userLat, userLon, location.latitude, location.longitude)
     } else null
+
+    val density = LocalDensity.current
 
     Card(
         modifier = Modifier
@@ -484,6 +524,9 @@ private fun LocationCard(
                     Modifier.border(width = cardBorderWidth, color = cardBorderColor, shape = RoundedCornerShape(12.dp))
                 } else Modifier
             )
+            .onGloballyPositioned { layout ->
+                onMeasured?.invoke(with(density) { layout.size.height.toDp() })
+            }
             .clickable { onClick() },
         colors = CardDefaults.cardColors(
             containerColor = cardBackgroundColor
