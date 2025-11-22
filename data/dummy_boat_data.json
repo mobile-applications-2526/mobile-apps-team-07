@@ -1,0 +1,17 @@
+[
+  { "id": "1", "name": "Sea Breeze", "type": "Sailboat", "length": "27'", "location": "Marina Bay" },
+  { "id": "2", "name": "Ocean Runner", "type": "Motorboat", "length": "32'", "location": "Harbor Point" },
+  { "id": "3", "name": "Calm Voyager", "type": "Catamaran", "length": "40'", "location": "West Dock" },
+  { "id": "4", "name": "Wave Dancer", "type": "Sloop", "length": "22'", "location": "South Pier" },
+  { "id": "5", "name": "Blue Horizon", "type": "Yacht", "length": "55'", "location": "North Marina" },
+  { "id": "6", "name": "Sun Chaser", "type": "Trimaran", "length": "30'", "location": "East Bay" },
+  { "id": "7", "name": "Storm Rider", "type": "Fishing Boat", "length": "28'", "location": "Harbor View" },
+  { "id": "8", "name": "Wind Whisperer", "type": "Ketch", "length": "35'", "location": "Sunny Cove" },
+  { "id": "9", "name": "Coral Explorer", "type": "Dinghy", "length": "15'", "location": "Lagoon Side" },
+  { "id": "10", "name": "Harbor Spirit", "type": "Ferry", "length": "60'", "location": "Main Dock" },
+  { "id": "11", "name": "Tide Chaser", "type": "Sailboat", "length": "29'", "location": "East Marina" },
+  { "id": "12", "name": "Wave Rider", "type": "Motorboat", "length": "34'", "location": "South Harbor" },
+  { "id": "13", "name": "Sunset Cruiser", "type": "Yacht", "length": "50'", "location": "West Dock" },
+  { "id": "14", "name": "Coral Breeze", "type": "Catamaran", "length": "38'", "location": "North Pier" },
+  { "id": "15", "name": "Harbor Explorer", "type": "Fishing Boat", "length": "26'", "location": "Marina View" }
+]
