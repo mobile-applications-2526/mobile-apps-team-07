@@ -1,94 +1,52 @@
 import React from 'react';
-import { FlatList, StyleSheet, TouchableOpacity, View } from 'react-native';
+import { FlatList, TouchableOpacity, View } from 'react-native';
 import { Ship } from 'lucide-react-native';
 import { ThemedText } from '@/components/themed-text';
 import { ThemedView } from '@/components/themed-view';
-
+import { ThemeToggle } from '@/components/theme-toggle';
 import Boat from '@/types/boat';
-
 import DUMMY_BOATS from '@/data/dummy_boat_data.json';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 function BoatCard({ item }: { item: Boat }) {
   return (
-    <TouchableOpacity style={styles.card} activeOpacity={0.8}>
-      <View style={styles.iconWrap}>
+    <TouchableOpacity 
+      className="flex-row items-center px-3 py-3 rounded-xl mt-5 bg-black/[0.03] dark:bg-white/[0.05]" 
+      activeOpacity={0.8}>
+      <View className="w-14 h-14 rounded-[10px] mr-3 items-center justify-center bg-[#0a7ea4]/[0.08]">
         <Ship size={36} color="#0a7ea4" />
       </View>
-      <View style={styles.info}>
-        <ThemedText type="defaultSemiBold" style={styles.title} numberOfLines={1}>
+      <View className="flex-1">
+        <ThemedText type="defaultSemiBold" className="text-base leading-[18px]" numberOfLines={1}>
           {item.name}
         </ThemedText>
-        <ThemedText style={styles.subtitleText}>{item.type} • {item.length}</ThemedText>
-        <ThemedText style={styles.location}>{item.location}</ThemedText>
+        <ThemedText className="text-[13px] text-[#444] dark:text-[#bbb] leading-4">{item.type} • {item.length}</ThemedText>
+        <ThemedText className="text-xs text-[#666] dark:text-[#999] leading-[14px]">{item.location}</ThemedText>
       </View>
     </TouchableOpacity>
   );
 }
 
 export default function Overview() {
+  const insets = useSafeAreaInsets();
+
   return (
-    <ThemedView style={styles.container}>
+    <ThemedView className="flex-1">
+      {/* Theme Toggle Button */}
+      <View 
+        className="absolute right-4 z-10"
+        style={{ top: insets.top + 8 }}>
+        <ThemeToggle />
+      </View>
+      
       <FlatList
         data={DUMMY_BOATS}
         keyExtractor={(b) => b.id}
         renderItem={({ item }) => <BoatCard item={item} />}
-        contentContainerStyle={styles.list}
+        contentContainerClassName="p-4"
         showsVerticalScrollIndicator={false}
+        contentContainerStyle={{ paddingTop: insets.top + 60 }}
       />
     </ThemedView>
   );
 }
-
-const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-  },
-  list: {
-    padding: 16,
-  },
-  card: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    paddingHorizontal: 12,
-    paddingVertical: 12,
-    borderRadius: 12,
-    marginBottom: 0,
-    marginTop: 20,
-    backgroundColor: 'rgba(0,0,0,0.03)',
-  },
-  image: {
-    width: 72,
-    height: 72,
-    borderRadius: 8,
-    marginRight: 12,
-  },
-  iconWrap: {
-    width: 56,
-    height: 56,
-    borderRadius: 10,
-    marginRight: 12,
-    alignItems: 'center',
-    justifyContent: 'center',
-    backgroundColor: 'rgba(10,126,164,0.08)'
-  },
-  info: {
-    flex: 1,
-  },
-  title: {
-    marginBottom: 0,
-    fontSize: 16,
-    lineHeight: 18,
-  },
-  subtitleText: {
-    fontSize: 13,
-    color: '#444',
-    marginVertical: 0,
-    lineHeight: 16,
-  },
-  location: {
-    marginTop: 0,
-    fontSize: 12,
-    color: '#666',
-    lineHeight: 14,
-  },
-});
