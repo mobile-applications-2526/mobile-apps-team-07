@@ -7,12 +7,16 @@ import { ThemeToggle } from '@/components/theme-toggle';
 import Boat from '@/types/boat';
 import DUMMY_BOATS from '@/data/dummy_boat_data.json';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import { useRouter } from 'expo-router';
 
 function BoatCard({ item }: { item: Boat }) {
+  const router = useRouter();
+  
   return (
     <TouchableOpacity 
       className="flex-row items-center px-3 py-3 rounded-xl mt-5 bg-black/[0.03] dark:bg-white/[0.05]" 
-      activeOpacity={0.8}>
+      activeOpacity={0.8}
+      onPress={() => router.push(`/vessel/${item.id}`)}>
       <View className="w-14 h-14 rounded-[10px] mr-3 items-center justify-center bg-[#0a7ea4]/[0.08]">
         <Ship size={36} color="#0a7ea4" />
       </View>
