@@ -4,6 +4,7 @@ import { Ship, Navigation, Pencil, Trash2, Plus, Anchor, CheckCircle } from 'luc
 import { ThemedText } from '@/components/themed-text';
 import { ThemedView } from '@/components/themed-view';
 import { DeleteVesselModal } from '@/components/ui/delete-vessel-modal';
+import { AddVesselModal } from '@/components/ui/add-vessel-modal';
 import Boat from '@/types/boat';
 import DUMMY_BOATS from '@/data/dummy_boat_data.json';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
@@ -193,6 +194,7 @@ function EmptyState() {
 
 export default function Overview() {
   const insets = useSafeAreaInsets();
+  const router = useRouter();
   const [boats, setBoats] = useState<Boat[]>(DUMMY_BOATS as Boat[]);
   
   // Delete modal state
@@ -200,6 +202,10 @@ export default function Overview() {
   const [vesselToDelete, setVesselToDelete] = useState<Boat | null>(null);
   const [isDeleting, setIsDeleting] = useState(false);
   const [deleteError, setDeleteError] = useState(false);
+  
+  // Add vessel modal state
+  const [addModalVisible, setAddModalVisible] = useState(false);
+  const [isCreating, setIsCreating] = useState(false);
   
   // Toast state
   const [toastMessage, setToastMessage] = useState<string | null>(null);
@@ -266,6 +272,66 @@ export default function Overview() {
     setToastMessage(null);
   }, []);
 
+  // Add vessel handlers
+  const handleAddPress = useCallback(async () => {
+    await Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+    setAddModalVisible(true);
+  }, []);
+
+  const handleCancelAdd = useCallback(() => {
+    setAddModalVisible(false);
+  }, []);
+
+  const handleCreateVessel = useCallback(async (vesselData: {
+    name: string;
+    imo: string;
+    type: string;
+    subtype: string;
+    image?: string;
+  }) => {
+    setIsCreating(true);
+
+    try {
+      // Simulate network request (replace with actual API call)
+      await new Promise((resolve) => setTimeout(resolve, 1000));
+
+      // Create new vessel
+      const newVessel: Boat = {
+        id: Date.now().toString(), // Generate unique ID
+        name: vesselData.name,
+        imo: vesselData.imo,
+        type: vesselData.type,
+        subtype: vesselData.subtype,
+        image: vesselData.image,
+        hasQ88: false, // New vessels don't have Q88 yet
+      };
+
+      // Add to local state
+      setBoats(prevBoats => [newVessel, ...prevBoats]);
+      
+      // Close modal
+      setAddModalVisible(false);
+      
+      // Haptic feedback for success
+      await Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
+      
+      // Navigate to vessel specs page to upload Q88
+      router.push(`/vessel/${newVessel.id}/specs` as any);
+      
+      // Show toast after navigation (slight delay for better UX)
+      setTimeout(() => {
+        setToastMessage('Vessel created');
+      }, 500);
+    } catch (error) {
+      await Haptics.notificationAsync(Haptics.NotificationFeedbackType.Error);
+    } finally {
+      setIsCreating(false);
+    }
+  }, [router]);
+
+  // Get existing IMO numbers for validation
+  const existingImos = boats.map(boat => boat.imo);
+
   return (
     <ThemedView className="flex-1 bg-gray-100 dark:bg-[#000]">
       {/* Header */}
@@ -285,6 +351,7 @@ export default function Overview() {
           <TouchableOpacity 
             className="w-9 h-9 rounded-full bg-blue-500 items-center justify-center"
             activeOpacity={0.8}
+            onPress={handleAddPress}
           >
             <Plus size={22} color="#fff" strokeWidth={2.5} />
           </TouchableOpacity>
@@ -325,6 +392,15 @@ export default function Overview() {
         onCancel={handleCancelDelete}
         onConfirm={handleConfirmDelete}
         onRetry={handleConfirmDelete}
+      />
+
+      {/* Add Vessel Modal */}
+      <AddVesselModal
+        visible={addModalVisible}
+        existingImos={existingImos}
+        onCancel={handleCancelAdd}
+        onCreate={handleCreateVessel}
+        isCreating={isCreating}
       />
       
     </ThemedView>
