@@ -57,41 +57,61 @@ function TabBarItem({
     if (!isLocked) {
       onPress();
     } else {
-      // Show tooltip feedback for locked tabs
       await Haptics.notificationAsync(Haptics.NotificationFeedbackType.Warning);
     }
   };
 
+  // --- CENTER (HOME) TAB ---
   if (tab.isCenter) {
     return (
-      <TouchableOpacity
-        onPress={handlePress}
-        activeOpacity={0.8}
-        className="items-center justify-center -mt-7"
-      >
-        <View 
-          className="w-11 h-11 rounded-full items-center justify-center bg-white dark:bg-[#2c2c2e]"
+      <View className="flex-1 items-center justify-end pb-2 relative z-10">
+        <TouchableOpacity
+          onPress={handlePress}
+          activeOpacity={0.9}
+          // Absolute positioning here pulls the button UP out of the navbar flow
+          // bottom-6 pushes it 24px up from the text label
+          className="items-center absolute bottom-7"
           style={{
-            shadowColor: '#000',
-            shadowOffset: { width: 0, height: 2 },
-            shadowOpacity: 0.15,
-            shadowRadius: 6,
-            elevation: 4,
+            zIndex: 50,
           }}
         >
-          <IconComponent size={22} color={inactiveColor} />
-        </View>
-      </TouchableOpacity>
+          <View 
+            // Made significantly bigger (w-16 h-16)
+            className="w-12 h-12 rounded-[22px] items-center justify-center bg-white dark:bg-[#2c2c2e] border-[4px] border-gray-100 dark:border-[#000]"
+            style={{
+              shadowColor: '#000',
+              shadowOffset: { width: 0, height: 4 },
+              shadowOpacity: 0.2,
+              shadowRadius: 8,
+              elevation: 8,
+            }}
+          >
+            <IconComponent size={24} color={isActive ? activeColor : inactiveColor} />
+          </View>
+        </TouchableOpacity>
+        
+        {/* Label stays in the flow to maintain alignment with other tabs */}
+        <ThemedText 
+          className="text-[10px] font-medium mt-1"
+          style={{ color: isActive ? activeColor : inactiveColor }}
+          numberOfLines={1}
+        >
+          {tab.name}
+        </ThemedText>
+      </View>
     );
   }
 
+  // --- STANDARD TAB ---
   return (
     <TouchableOpacity
       onPress={handlePress}
       activeOpacity={0.7}
-      className="flex-1 items-center justify-center py-2"
+      // Ensure flex-1, justify-end, and pb-2 match the Center tab's container
+      // to keep text vertically aligned
+      className="flex-1 items-center justify-end pb-2"
     >
-      <View className="relative">
+      <View className="relative mb-1">
         <IconComponent size={24} color={iconColor} />
         {isLocked && (
           <View className="absolute -top-1 -right-1 w-3 h-3 bg-gray-400 dark:bg-gray-600 rounded-full items-center justify-center">
@@ -100,7 +120,7 @@ function TabBarItem({
         )}
       </View>
       <ThemedText 
-        className="text-[10px] mt-0.5 font-medium"
+        className="text-[10px] font-medium"
         style={{ color: textColor }}
         numberOfLines={1}
       >
@@ -119,12 +139,10 @@ export default function VesselLayout() {
   const boat = (DUMMY_BOATS as Boat[]).find((b) => b.id === id);
   const hasQ88 = boat?.hasQ88 ?? false;
 
-  // Determine current active tab from pathname
   const getCurrentTab = () => {
     if (pathname.includes('/voyages')) return 'voyages';
     if (pathname.includes('/specs')) return 'specs';
     if (pathname.includes('/invoices')) return 'invoices';
-    // Default to index (Overview) for vessel/[id] base route
     return 'index';
   };
   
@@ -132,10 +150,8 @@ export default function VesselLayout() {
 
   const handleTabPress = (tab: TabItem) => {
     if (tab.route === 'home') {
-      // Navigate directly to home with back animation
-      router.dismissAll();
+      router.dismissTo('/');
     } else if (tab.route === 'index') {
-      // Navigate to vessel overview (index)
       router.push(`/vessel/${id}` as any);
     } else {
       router.push(`/vessel/${id}/${tab.route}` as any);
@@ -153,24 +169,28 @@ export default function VesselLayout() {
   return (
     <VesselContext.Provider value={boat}>
       <ThemedView className="flex-1">
-        {/* Content */}
         <Slot />
 
-        {/* Bottom Navigation Bar */}
         <View 
           className="bg-white dark:bg-[#1c1c1e] border-t border-gray-200 dark:border-gray-800"
           style={{ paddingBottom: insets.bottom }}
         >
-          <View className="flex-row items-end justify-around h-16 px-2">
+          {/* Shrunk height from h-16 (64px) to h-[55px] */}
+          <View className="flex-row items-end justify-around h-[55px] px-2">
             {tabs.map((tab) => {
               const isActive = currentTab === tab.route;
+              // 'home' isn't a route inside the vessel ID, so it's only active if explicitly handled, 
+              // but visually we might want it neutral unless we are actually on a "Home" screen inside here.
+              // For now, Home is just a navigation action button.
+              const isCenterActive = tab.route === 'home' ? false : isActive; 
+              
               const isLocked = tab.requiresQ88 && !hasQ88 && tab.route !== 'specs';
               
               return (
                 <TabBarItem
                   key={tab.route}
                   tab={tab}
-                  isActive={isActive}
+                  isActive={isCenterActive}
                   isLocked={isLocked}
                   onPress={() => handleTabPress(tab)}
                 />
