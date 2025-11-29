@@ -31,14 +31,14 @@ function VesselCard({ item }: { item: Boat }) {
         elevation: 1,
       }}
     >
-      <View className="flex-row items-center px-3 py-2.5">
+      <View className="flex-row items-start px-3 py-2.5">
         {/* Compact Ship Icon */}
         <View className="w-10 h-10 rounded-lg mr-3 items-center justify-center bg-blue-50 dark:bg-blue-900/20">
           <Ship size={20} color="#3b82f6" />
         </View>
 
         {/* Vessel Info - Compact */}
-        <View className="flex-1 mr-2">
+        <View className="flex-1 mr-2 justify-center h-10">
           <View className="flex-row items-center">
             <ThemedText type="defaultSemiBold" className="text-[15px] flex-shrink" numberOfLines={1}>
               {displayName}
@@ -53,7 +53,7 @@ function VesselCard({ item }: { item: Boat }) {
         </View>
 
         {/* Action Icons - Column layout */}
-        <View className="items-center ml-2">
+        <View className="items-center justify-center h-10">
           <TouchableOpacity className="p-1.5" activeOpacity={0.6} hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}>
             <Trash2 size={16} color="#9ca3af" />
           </TouchableOpacity>
