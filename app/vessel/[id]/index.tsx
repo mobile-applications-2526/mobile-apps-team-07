@@ -1,12 +1,336 @@
-import React from 'react';
-import { View, StyleSheet } from 'react-native';
-import { Ship, MapPin } from 'lucide-react-native';
+import React, { useState, useEffect, useCallback } from 'react';
+import { View, ScrollView, RefreshControl, StyleSheet } from 'react-native';
 import { ThemedText, ThemedView } from '@/components/common';
 import { VesselTopBar } from '@/components/vessel';
 import { useVessel } from './_layout';
+import { useColorScheme } from 'nativewind';
+import { VesselKPIs } from '@/types';
+import { getLatestNoonReport, getActiveCharterParty, getActiveVoyage } from '@/lib/database';
 
-export default function VesselHome() {
+// ============================================
+// HELPER FUNCTIONS
+// ============================================
+
+// Format value with fallback to "-" for missing data
+function formatValue(value: string | number | null | undefined, suffix: string = ''): string {
+  if (value === null || value === undefined || value === '') return '-';
+  return `${value}${suffix}`;
+}
+
+// Calculate KPI status based on variance
+function calculateKPIStatus(
+  actual: number | null,
+  target: number | null,
+  isLowerBetter: boolean = false
+): 'green' | 'yellow' | 'red' {
+  if (actual === null || target === null) return 'green';
+  
+  const variance = isLowerBetter 
+    ? ((actual - target) / target) * 100
+    : ((target - actual) / target) * 100;
+  
+  if (variance <= 5) return 'green';
+  if (variance <= 15) return 'yellow';
+  return 'red';
+}
+
+// ============================================
+// DATA SECTION COMPONENT
+// ============================================
+
+interface DataRowProps {
+  label: string;
+  value: string;
+}
+
+function DataRow({ label, value }: DataRowProps) {
+  return (
+    <View className="flex-row justify-between py-2">
+      <ThemedText className="text-sm text-gray-500 dark:text-gray-400">
+        {label}:
+      </ThemedText>
+      <ThemedText className="text-sm font-medium text-right flex-1 ml-4">
+        {value}
+      </ThemedText>
+    </View>
+  );
+}
+
+interface DataSectionProps {
+  title: string;
+  children: React.ReactNode;
+}
+
+function DataSection({ title, children }: DataSectionProps) {
+  return (
+    <View className="bg-white dark:bg-[#1c1c1e] rounded-xl p-4 mb-3">
+      <ThemedText type="defaultSemiBold" className="text-base mb-2">
+        {title}
+      </ThemedText>
+      {children}
+    </View>
+  );
+}
+
+// ============================================
+// KPI GRAPH COMPONENT
+// ============================================
+
+interface KPIGraphProps {
+  title: string;
+  actual: number | null;
+  target: number | null;
+  actualLabel: string;
+  targetLabel: string;
+  unit: string;
+  status: 'green' | 'yellow' | 'red' | 'no_data' | 'no_cp' | 'no_voyage';
+  isLowerBetter?: boolean;
+}
+
+function KPIGraph({ 
+  title, 
+  actual, 
+  target, 
+  actualLabel, 
+  targetLabel, 
+  unit, 
+  status,
+  isLowerBetter = false,
+}: KPIGraphProps) {
+  const { colorScheme } = useColorScheme();
+  const isDark = colorScheme === 'dark';
+
+  // Get status color
+  const getStatusColor = () => {
+    switch (status) {
+      case 'green': return '#22c55e';
+      case 'yellow': return '#eab308';
+      case 'red': return '#ef4444';
+      default: return '#9ca3af';
+    }
+  };
+
+  // Get status icon
+  const getStatusIcon = () => {
+    switch (status) {
+      case 'green': return '✓';
+      case 'yellow': return '⚠';
+      case 'red': return '✗';
+      default: return '';
+    }
+  };
+
+  // Calculate progress percentage for the bar
+  const getProgress = () => {
+    if (actual === null || target === null || target === 0) return 0;
+    const ratio = actual / target;
+    return Math.min(ratio, 1.5) / 1.5 * 100; // Cap at 150% for display
+  };
+
+  // Calculate target position on the bar
+  const getTargetPosition = () => {
+    if (target === null || actual === null) return 66.67; // Default to 2/3 position
+    const maxVal = Math.max(actual, target) * 1.5;
+    return (target / maxVal) * 100;
+  };
+
+  // Placeholder states
+  if (status === 'no_data') {
+    return (
+      <View className="mb-4">
+        <ThemedText className="text-sm font-medium mb-2">{title}</ThemedText>
+        <View className="bg-gray-100 dark:bg-gray-800 rounded-lg p-4 items-center">
+          <ThemedText className="text-sm text-gray-500 dark:text-gray-400">
+            No data - awaiting noon report
+          </ThemedText>
+        </View>
+      </View>
+    );
+  }
+
+  if (status === 'no_cp') {
+    return (
+      <View className="mb-4">
+        <ThemedText className="text-sm font-medium mb-2">{title}</ThemedText>
+        <View className="bg-gray-100 dark:bg-gray-800 rounded-lg p-4 items-center">
+          <ThemedText className="text-sm text-gray-500 dark:text-gray-400">
+            No CP linked
+          </ThemedText>
+        </View>
+      </View>
+    );
+  }
+
+  if (status === 'no_voyage') {
+    return (
+      <View className="mb-4">
+        <ThemedText className="text-sm font-medium mb-2">{title}</ThemedText>
+        <View className="bg-gray-100 dark:bg-gray-800 rounded-lg p-4 items-center">
+          <ThemedText className="text-sm text-gray-500 dark:text-gray-400">
+            No active voyage
+          </ThemedText>
+        </View>
+      </View>
+    );
+  }
+
+  const statusColor = getStatusColor();
+  const progress = getProgress();
+  const targetPos = getTargetPosition();
+
+  return (
+    <View className="mb-4">
+      {/* Header with title and values */}
+      <View className="flex-row justify-between items-center mb-2">
+        <ThemedText className="text-sm font-medium">{title}</ThemedText>
+        <View className="flex-row items-center">
+          <ThemedText className="text-sm font-bold">
+            {actual !== null ? `${actual} ${unit}` : '-'}
+          </ThemedText>
+          <ThemedText className="text-sm text-gray-500 dark:text-gray-400 mx-1">|</ThemedText>
+          <ThemedText className="text-sm text-gray-500 dark:text-gray-400">
+            {target !== null ? `${target} ${unit} CP` : '-'}
+          </ThemedText>
+          <View 
+            className="w-5 h-5 rounded-full items-center justify-center ml-2"
+            style={{ backgroundColor: statusColor }}
+          >
+            <ThemedText className="text-xs text-white font-bold">
+              {getStatusIcon()}
+            </ThemedText>
+          </View>
+        </View>
+      </View>
+
+      {/* Progress bar */}
+      <View className="h-3 bg-gray-200 dark:bg-gray-700 rounded-full overflow-hidden relative">
+        {/* Actual progress */}
+        <View 
+          className="h-full rounded-full"
+          style={{ 
+            width: `${progress}%`,
+            backgroundColor: statusColor,
+          }}
+        />
+        {/* Target marker */}
+        <View 
+          className="absolute top-0 bottom-0 w-0.5 bg-gray-600 dark:bg-gray-300"
+          style={{ left: `${targetPos}%` }}
+        />
+        {/* Target marker dot */}
+        <View 
+          className="absolute w-3 h-3 rounded-full bg-gray-600 dark:bg-gray-300 border-2 border-white dark:border-gray-900"
+          style={{ 
+            left: `${targetPos}%`, 
+            top: 0,
+            marginLeft: -6,
+          }}
+        />
+      </View>
+
+      {/* Legend */}
+      <View className="flex-row justify-between mt-1">
+        <ThemedText className="text-xs text-gray-500 dark:text-gray-400">
+          {actualLabel}: {actual !== null ? `${actual} ${unit}` : '-'}
+        </ThemedText>
+        <ThemedText className="text-xs text-gray-500 dark:text-gray-400">
+          {targetLabel}: {target !== null ? `${target} ${unit}` : '-'}
+        </ThemedText>
+      </View>
+    </View>
+  );
+}
+
+// ============================================
+// MAIN COMPONENT
+// ============================================
+
+export default function VesselOverview() {
   const boat = useVessel();
+  const [refreshing, setRefreshing] = useState(false);
+  const [kpis, setKPIs] = useState<VesselKPIs | null>(null);
+
+  // Load KPI data
+  const loadKPIData = useCallback(async () => {
+    if (!boat) return;
+
+    try {
+      const [noonReport, charterParty, activeVoyage] = await Promise.all([
+        getLatestNoonReport(boat.id),
+        getActiveCharterParty(boat.id),
+        getActiveVoyage(boat.id),
+      ]);
+
+      // Calculate speed KPI
+      let speedStatus: VesselKPIs['speed']['status'] = 'no_data';
+      if (noonReport?.currentSpeed !== null && noonReport?.currentSpeed !== undefined) {
+        if (charterParty?.warrantySpeed !== null && charterParty?.warrantySpeed !== undefined) {
+          speedStatus = calculateKPIStatus(noonReport.currentSpeed, charterParty.warrantySpeed, false);
+        } else {
+          speedStatus = 'no_cp';
+        }
+      }
+
+      // Calculate fuel KPI (lower is better)
+      let fuelStatus: VesselKPIs['fuelConsumption']['status'] = 'no_data';
+      if (noonReport?.fuelConsumed !== null && noonReport?.fuelConsumed !== undefined) {
+        if (charterParty?.fuelAllowance !== null && charterParty?.fuelAllowance !== undefined) {
+          fuelStatus = calculateKPIStatus(noonReport.fuelConsumed, charterParty.fuelAllowance, true);
+        } else {
+          fuelStatus = 'no_cp';
+        }
+      }
+
+      // Calculate cargo temp KPI
+      let cargoTempStatus: VesselKPIs['cargoTemp']['status'] = 'no_voyage';
+      if (activeVoyage) {
+        if (noonReport?.cargoTemp !== null && noonReport?.cargoTemp !== undefined) {
+          if (activeVoyage.requiredMinTemp !== null) {
+            // For cargo temp, actual should be at or below required (warmer than min)
+            const variance = ((noonReport.cargoTemp - activeVoyage.requiredMinTemp) / Math.abs(activeVoyage.requiredMinTemp)) * 100;
+            if (variance >= -5) cargoTempStatus = 'green';
+            else if (variance >= -15) cargoTempStatus = 'yellow';
+            else cargoTempStatus = 'red';
+          } else {
+            cargoTempStatus = 'green'; // No requirement, so it's fine
+          }
+        } else {
+          cargoTempStatus = 'no_data';
+        }
+      }
+
+      setKPIs({
+        speed: {
+          actual: noonReport?.currentSpeed ?? null,
+          target: charterParty?.warrantySpeed ?? null,
+          status: speedStatus,
+        },
+        fuelConsumption: {
+          actual: noonReport?.fuelConsumed ?? null,
+          target: charterParty?.fuelAllowance ?? null,
+          status: fuelStatus,
+        },
+        cargoTemp: {
+          actual: noonReport?.cargoTemp ?? null,
+          required: activeVoyage?.requiredMinTemp ?? null,
+          status: cargoTempStatus,
+        },
+      });
+    } catch (error) {
+      console.error('Failed to load KPI data:', error);
+    }
+  }, [boat]);
+
+  useEffect(() => {
+    loadKPIData();
+  }, [loadKPIData]);
+
+  // Pull to refresh
+  const onRefresh = useCallback(async () => {
+    setRefreshing(true);
+    await loadKPIData();
+    setRefreshing(false);
+  }, [loadKPIData]);
 
   if (!boat) {
     return (
@@ -18,8 +342,8 @@ export default function VesselHome() {
 
   return (
     <View className="flex-1 bg-gray-100 dark:bg-[#000]">
-      {/* Top App Bar */}
-      <VesselTopBar vesselName={boat.name} />
+      {/* Top App Bar with vessel name and image */}
+      <VesselTopBar vesselName={boat.name} vesselImage={boat.image} />
 
       {/* MapLibre Map Placeholder - Half of the screen */}
       <View style={styles.mapContainer} className="bg-gray-200 dark:bg-gray-800 items-center justify-center">
@@ -32,57 +356,94 @@ export default function VesselHome() {
         </ThemedText>
       </View>
 
-      {/* Vessel Details */}
-      <View className="flex-1 p-4">
-        <View className="flex-row items-center mb-4">
-          <View className="w-14 h-14 rounded-xl mr-3 items-center justify-center bg-blue-50 dark:bg-blue-900/20">
-            <Ship size={32} color="#3b82f6" />
-          </View>
-          <View className="flex-1">
-            <ThemedText type="defaultSemiBold" className="text-lg" numberOfLines={1}>
-              {boat.name}
-            </ThemedText>
-            <ThemedText className="text-sm text-gray-500 dark:text-gray-400" numberOfLines={1}>
-              {boat.type} • {boat.subtype}
-            </ThemedText>
-          </View>
-        </View>
+      {/* Scrollable Content */}
+      <ScrollView 
+        className="flex-1"
+        contentContainerStyle={{ padding: 16, paddingBottom: 32 }}
+        refreshControl={
+          <RefreshControl refreshing={refreshing} onRefresh={onRefresh} />
+        }
+        showsVerticalScrollIndicator={false}
+      >
+        {/* Identification Section */}
+        <DataSection title="Identification">
+          <DataRow label="IMO" value={formatValue(boat.imo)} />
+          <DataRow label="Flag" value={formatValue(boat.flag)} />
+          <DataRow label="Classification" value={formatValue(boat.classification)} />
+          <DataRow label="Build Year" value={formatValue(boat.buildYear)} />
+        </DataSection>
 
-        <View className="bg-white dark:bg-[#1c1c1e] rounded-xl p-4">
-          <View className="flex-row justify-between mb-3">
-            <View className="flex-1">
-              <ThemedText className="text-xs text-gray-400 dark:text-gray-500 mb-0.5">
-                IMO Number
-              </ThemedText>
-              <ThemedText type="defaultSemiBold" className="text-sm">
-                {boat.imo}
-              </ThemedText>
-            </View>
-            <View className="flex-1">
-              <ThemedText className="text-xs text-gray-400 dark:text-gray-500 mb-0.5">
-                Status
-              </ThemedText>
-              <ThemedText type="defaultSemiBold" className="text-sm text-green-600">
-                Active
-              </ThemedText>
-            </View>
-          </View>
+        {/* Capacity Section */}
+        <DataSection title="Capacity">
+          <DataRow label="DWT" value={formatValue(boat.dwt, ' MT')} />
+          <DataRow label="Cubic Capacity" value={formatValue(boat.cubicCapacity, ' M³')} />
+          <DataRow label="Cargo Tanks" value={formatValue(boat.cargoTanks)} />
+          <DataRow label="Tank Coating" value={formatValue(boat.tankCoating)} />
+        </DataSection>
 
-          <View>
-            <ThemedText className="text-xs text-gray-400 dark:text-gray-500 mb-0.5">
-              Next Destination
-            </ThemedText>
-            <View className="flex-row items-center">
-              <MapPin size={14} color="#6b7280" />
-              <ThemedText type="defaultSemiBold" className="text-sm ml-1" numberOfLines={1}>
-                {boat.eta && boat.port 
-                  ? `ETA: ${boat.eta}, ${boat.port}` 
-                  : 'No active voyage'}
-              </ThemedText>
-            </View>
-          </View>
-        </View>
-      </View>
+        {/* Performance vs Charter Party Section */}
+        <DataSection title="Performance vs Charter Party">
+          <KPIGraph 
+            title="Speed"
+            actual={kpis?.speed.actual ?? null}
+            target={kpis?.speed.target ?? null}
+            actualLabel="Actual"
+            targetLabel="CP"
+            unit="kts"
+            status={kpis?.speed.status ?? 'no_data'}
+          />
+          <KPIGraph 
+            title="Fuel Consumption"
+            actual={kpis?.fuelConsumption.actual ?? null}
+            target={kpis?.fuelConsumption.target ?? null}
+            actualLabel="Actual"
+            targetLabel="CP"
+            unit="MT/day"
+            status={kpis?.fuelConsumption.status ?? 'no_data'}
+            isLowerBetter
+          />
+          <KPIGraph 
+            title="Cargo Temp"
+            actual={kpis?.cargoTemp.actual ?? null}
+            target={kpis?.cargoTemp.required ?? null}
+            actualLabel="Actual"
+            targetLabel="CP"
+            unit="°C"
+            status={kpis?.cargoTemp.status ?? 'no_voyage'}
+          />
+        </DataSection>
+
+        {/* Dimensions Section */}
+        <DataSection title="Dimensions">
+          <DataRow label="DWT" value={formatValue(boat.dwt, ' MT')} />
+          <DataRow label="Summer Draft" value={formatValue(boat.summerDraft, ' M')} />
+        </DataSection>
+
+        {/* Cargo Limits Section */}
+        <DataSection title="Cargo Limits">
+          <DataRow label="Max Cargo Temp" value={formatValue(boat.maxCargoTemp, '°C')} />
+          <DataRow label="Min Cargo Temp" value={formatValue(boat.minCargoTemp, '°C')} />
+          <DataRow label="Max Pressure" value={formatValue(boat.maxPressure, ' Bar')} />
+        </DataSection>
+
+        {/* Performance Section */}
+        <DataSection title="Performance">
+          <DataRow label="Average Speed" value={formatValue(boat.avgSpeed, ' Knots')} />
+          <DataRow label="Fuel Consumption" value={formatValue(boat.fuelConsumption, ' MT/Day')} />
+        </DataSection>
+
+        {/* Build Section */}
+        <DataSection title="Build">
+          <DataRow label="Build Year" value={formatValue(boat.buildYear)} />
+          <DataRow label="Drydock Due" value={formatValue(boat.drydockDue)} />
+        </DataSection>
+
+        {/* Type Section */}
+        <DataSection title="Type">
+          <DataRow label="Vessel Type" value={formatValue(boat.type)} />
+          <DataRow label="Vessel Subtype" value={formatValue(boat.subtype)} />
+        </DataSection>
+      </ScrollView>
     </View>
   );
 }
