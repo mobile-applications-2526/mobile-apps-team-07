@@ -1,18 +1,18 @@
 import React, { useState, useCallback, useEffect, useRef } from 'react';
-import { FlatList, TouchableOpacity, View, Animated } from 'react-native';
+import { FlatList, TouchableOpacity, View, Animated, ActivityIndicator } from 'react-native';
 import { Ship, Navigation, Pencil, Trash2, Plus, Anchor, CheckCircle } from 'lucide-react-native';
 import { ThemedText } from '@/components/themed-text';
 import { ThemedView } from '@/components/themed-view';
 import { DeleteVesselModal } from '@/components/ui/delete-vessel-modal';
 import { AddVesselModal } from '@/components/ui/add-vessel-modal';
-import Boat from '@/types/boat';
-import DUMMY_BOATS from '@/data/dummy_boat_data.json';
+import { Vessel } from '@/types/boat';
+import { useVessels } from '@/context/VesselContext';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useRouter } from 'expo-router';
 import * as Haptics from 'expo-haptics';
 
 // Toast item type for FlatList - no longer needed but keeping for reference
-type VesselItem = Boat & { isToast: false };
+type VesselItem = Vessel & { isToast: false };
 
 function OverlayToast({ message, onAnimationComplete }: { message: string; onAnimationComplete: () => void }) {
   const fadeAnim = useRef(new Animated.Value(0)).current;
@@ -83,7 +83,7 @@ function OverlayToast({ message, onAnimationComplete }: { message: string; onAni
   );
 }
 
-function VesselCard({ item, onDeletePress }: { item: Boat; onDeletePress: (vessel: Boat) => void }) {
+function VesselCard({ item, onDeletePress }: { item: Vessel; onDeletePress: (vessel: Vessel) => void }) {
   const router = useRouter();
 
   // Truncate vessel name after 25 characters
@@ -195,11 +195,20 @@ function EmptyState() {
 export default function Overview() {
   const insets = useSafeAreaInsets();
   const router = useRouter();
-  const [boats, setBoats] = useState<Boat[]>(DUMMY_BOATS as Boat[]);
+  
+  // Use the vessels context instead of local state
+  const { 
+    vessels, 
+    isLoading, 
+    isInitialized,
+    deleteVessel, 
+    createVessel, 
+    getAllImos 
+  } = useVessels();
   
   // Delete modal state
   const [deleteModalVisible, setDeleteModalVisible] = useState(false);
-  const [vesselToDelete, setVesselToDelete] = useState<Boat | null>(null);
+  const [vesselToDelete, setVesselToDelete] = useState<Vessel | null>(null);
   const [isDeleting, setIsDeleting] = useState(false);
   const [deleteError, setDeleteError] = useState(false);
   
@@ -211,11 +220,11 @@ export default function Overview() {
   const [toastMessage, setToastMessage] = useState<string | null>(null);
 
   // Calculate active voyages count for a vessel (vessels with eta and port have active voyage)
-  const getActiveVoyagesCount = (vessel: Boat): number => {
+  const getActiveVoyagesCount = (vessel: Vessel): number => {
     return vessel.eta && vessel.port ? 1 : 0;
   };
 
-  const handleDeletePress = useCallback((vessel: Boat) => {
+  const handleDeletePress = useCallback((vessel: Vessel) => {
     setVesselToDelete(vessel);
     setDeleteError(false);
     setDeleteModalVisible(true);
@@ -234,21 +243,12 @@ export default function Overview() {
     setDeleteError(false);
 
     try {
-      // Simulate network request (replace with actual API call)
-      await new Promise((resolve, reject) => {
-        setTimeout(() => {
-          // Simulate random network failure for testing (20% chance)
-          // In production, this would be your actual API call
-          if (Math.random() < 0.2) {
-            reject(new Error('Network error'));
-          } else {
-            resolve(true);
-          }
-        }, 1000);
-      });
-
-      // Remove vessel from local state
-      setBoats(prevBoats => prevBoats.filter(boat => boat.id !== vesselToDelete.id));
+      // Delete from database
+      const success = await deleteVessel(vesselToDelete.id);
+      
+      if (!success) {
+        throw new Error('Failed to delete vessel');
+      }
       
       // Close modal
       setDeleteModalVisible(false);
@@ -266,7 +266,7 @@ export default function Overview() {
     } finally {
       setIsDeleting(false);
     }
-  }, [vesselToDelete]);
+  }, [vesselToDelete, deleteVessel]);
 
   const handleToastAnimationComplete = useCallback(() => {
     setToastMessage(null);
@@ -292,22 +292,15 @@ export default function Overview() {
     setIsCreating(true);
 
     try {
-      // Simulate network request (replace with actual API call)
-      await new Promise((resolve) => setTimeout(resolve, 1000));
-
-      // Create new vessel
-      const newVessel: Boat = {
-        id: Date.now().toString(), // Generate unique ID
+      // Create vessel in database
+      const newVessel = await createVessel({
         name: vesselData.name,
         imo: vesselData.imo,
         type: vesselData.type,
         subtype: vesselData.subtype,
-        image: vesselData.image,
-        hasQ88: false, // New vessels don't have Q88 yet
-      };
-
-      // Add to local state
-      setBoats(prevBoats => [newVessel, ...prevBoats]);
+        image: vesselData.image ?? null,
+        hasQ88: false,
+      });
       
       // Close modal
       setAddModalVisible(false);
@@ -323,14 +316,25 @@ export default function Overview() {
         setToastMessage('Vessel created');
       }, 500);
     } catch (error) {
+      console.error('Failed to create vessel:', error);
       await Haptics.notificationAsync(Haptics.NotificationFeedbackType.Error);
     } finally {
       setIsCreating(false);
     }
-  }, [router]);
+  }, [router, createVessel]);
 
   // Get existing IMO numbers for validation
-  const existingImos = boats.map(boat => boat.imo);
+  const existingImos = getAllImos();
+
+  // Show loading state while database initializes
+  if (!isInitialized) {
+    return (
+      <ThemedView className="flex-1 bg-gray-100 dark:bg-[#000] items-center justify-center">
+        <ActivityIndicator size="large" color="#3b82f6" />
+        <ThemedText className="mt-4 text-gray-500">Loading vessels...</ThemedText>
+      </ThemedView>
+    );
+  }
 
   return (
     <ThemedView className="flex-1 bg-gray-100 dark:bg-[#000]">
@@ -345,7 +349,7 @@ export default function Overview() {
               My Fleet
             </ThemedText>
             <ThemedText className="text-xs text-gray-400 dark:text-gray-500 mt-0.5">
-              {boats.length} vessel{boats.length !== 1 ? 's' : ''}
+              {vessels.length} vessel{vessels.length !== 1 ? 's' : ''}
             </ThemedText>
           </View>
           <TouchableOpacity 
@@ -361,8 +365,8 @@ export default function Overview() {
       {/* Vessel List */}
       <View className="flex-1 relative">
         <FlatList
-          data={boats}
-          keyExtractor={(item) => item.id}
+          data={vessels}
+          keyExtractor={(item) => item.id.toString()}
           renderItem={({ item }) => <VesselCard item={item} onDeletePress={handleDeletePress} />}
           contentContainerStyle={{ 
             padding: 12, 
