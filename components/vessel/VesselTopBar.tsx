@@ -1,6 +1,12 @@
+/**
+ * VesselTopBar Component
+ * 
+ * Top app bar for vessel detail screens displaying the vessel name.
+ */
+
 import React from 'react';
 import { View } from 'react-native';
-import { ThemedText } from '@/components/themed-text';
+import { ThemedText } from '@/components/common';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 interface VesselTopBarProps {

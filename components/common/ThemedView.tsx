@@ -1,3 +1,9 @@
+/**
+ * ThemedView Component
+ * 
+ * A view component that supports theming.
+ */
+
 import { View, type ViewProps } from 'react-native';
 import { cn } from '@/lib/utils';
 

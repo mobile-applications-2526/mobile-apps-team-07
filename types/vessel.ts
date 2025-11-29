@@ -1,4 +1,10 @@
-// Vessel type from database
+/**
+ * Vessel Types
+ * 
+ * Type definitions for vessel-related data structures.
+ */
+
+// Vessel entity from database
 export interface Vessel {
   id: number;
   name: string;
@@ -37,17 +43,12 @@ export interface UpdateVesselInput {
   hasQ88?: boolean;
 }
 
-// Legacy type alias for backward compatibility during migration
-type Boat = {
-  id: string;
-  name: string;
-  imo: string;
-  type: string;
-  subtype: string;
-  eta?: string;
-  port?: string;
-  image?: string;
-  hasQ88?: boolean;
-};
+// Vessel type categories
+export type VesselTypeCategory = 'Gas Carrier' | 'Chemical Tanker' | 'MR Tanker';
 
-export default Boat;
+// Vessel subtypes mapped by type
+export type VesselSubtypes = {
+  'Gas Carrier': 'LPG' | 'LNG' | 'LEG';
+  'Chemical Tanker': 'Type 1' | 'Type 2' | 'Type 3';
+  'MR Tanker': 'Clean' | 'Dirty';
+};

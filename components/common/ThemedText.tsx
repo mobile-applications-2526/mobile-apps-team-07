@@ -1,3 +1,9 @@
+/**
+ * ThemedText Component
+ * 
+ * A text component that supports theming and various text styles.
+ */
+
 import { Text, type TextProps } from 'react-native';
 import { cn } from '@/lib/utils';
 
