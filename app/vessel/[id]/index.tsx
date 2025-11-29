@@ -1,23 +1,21 @@
 import React from 'react';
-import { View, TouchableOpacity, StyleSheet, Platform } from 'react-native';
+import { View, StyleSheet, TouchableOpacity, Platform } from 'react-native';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import { ChevronLeft, Ship, MapPin } from 'lucide-react-native';
 import { ThemedText } from '@/components/themed-text';
 import { ThemedView } from '@/components/themed-view';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
-// import { MapView } from '@maplibre/maplibre-react-native'; // Uncomment for dev build
-import DUMMY_BOATS from '@/data/dummy_boat_data.json';
 import { useColorScheme } from 'react-native';
-import Boat from '@/types/boat';
+import { useVessel } from './_layout';
 
-export default function VesselDetail() {
-  const { id } = useLocalSearchParams<{ id: string }>();
+export default function VesselHome() {
   const router = useRouter();
   const insets = useSafeAreaInsets();
   const colorScheme = useColorScheme();
+  const boat = useVessel();
   
-  const boat = (DUMMY_BOATS as Boat[]).find((b) => b.id === id);
-  
+  const isDark = colorScheme === 'dark';
+
   if (!boat) {
     return (
       <ThemedView className="flex-1 items-center justify-center">
@@ -26,13 +24,11 @@ export default function VesselDetail() {
     );
   }
 
-  const isDark = colorScheme === 'dark';
-
   return (
-    <ThemedView className="flex-1">
+    <View className="flex-1 bg-gray-100 dark:bg-[#000]">
       {/* Top App Bar with centered title and native-style back button */}
       <View 
-        className="flex-row items-center justify-center px-4 bg-white dark:bg-[#151718] border-b border-gray-200 dark:border-gray-800"
+        className="flex-row items-center justify-center px-4 bg-white dark:bg-[#1c1c1e] border-b border-gray-200 dark:border-gray-800"
         style={{ 
           paddingTop: insets.top + 8,
           paddingBottom: 12,
@@ -57,7 +53,7 @@ export default function VesselDetail() {
         </ThemedText>
       </View>
 
-      {/* MapLibre Map - Half of the screen */}
+      {/* MapLibre Map Placeholder - Half of the screen */}
       <View style={styles.mapContainer} className="bg-gray-200 dark:bg-gray-800 items-center justify-center">
         {/*
           MapLibre Map goes here. Uncomment the MapView import and usage below when running a dev build:
@@ -68,48 +64,49 @@ export default function VesselDetail() {
         </ThemedText>
       </View>
 
-      {/* Vessel Details - Lower half */}
+      {/* Vessel Details */}
       <View className="flex-1 p-4">
         <View className="flex-row items-center mb-4">
-          <View className="w-16 h-16 rounded-xl mr-4 items-center justify-center bg-blue-100 dark:bg-blue-900/30">
-            <Ship size={40} color="#3b82f6" />
+          <View className="w-14 h-14 rounded-xl mr-3 items-center justify-center bg-blue-50 dark:bg-blue-900/20">
+            <Ship size={32} color="#3b82f6" />
           </View>
           <View className="flex-1">
-            <ThemedText type="defaultSemiBold" className="text-xl mb-1">
+            <ThemedText type="defaultSemiBold" className="text-lg" numberOfLines={1}>
               {boat.name}
             </ThemedText>
-            <ThemedText className="text-sm text-gray-500 dark:text-gray-400">
+            <ThemedText className="text-sm text-gray-500 dark:text-gray-400" numberOfLines={1}>
               {boat.type} • {boat.subtype}
             </ThemedText>
           </View>
         </View>
 
-        <View className="bg-white dark:bg-[#1c1c1e] rounded-xl p-4 border border-gray-100 dark:border-gray-800">
-          <View className="mb-3">
-            <ThemedText className="text-xs text-gray-500 dark:text-gray-400 mb-1">
-              IMO Number
-            </ThemedText>
-            <ThemedText type="defaultSemiBold" className="text-base">
-              {boat.imo}
-            </ThemedText>
-          </View>
-          
-          <View className="mb-3">
-            <ThemedText className="text-xs text-gray-500 dark:text-gray-400 mb-1">
-              Vessel Type
-            </ThemedText>
-            <ThemedText type="defaultSemiBold" className="text-base">
-              {boat.type} - {boat.subtype}
-            </ThemedText>
+        <View className="bg-white dark:bg-[#1c1c1e] rounded-xl p-4">
+          <View className="flex-row justify-between mb-3">
+            <View className="flex-1">
+              <ThemedText className="text-xs text-gray-400 dark:text-gray-500 mb-0.5">
+                IMO Number
+              </ThemedText>
+              <ThemedText type="defaultSemiBold" className="text-sm">
+                {boat.imo}
+              </ThemedText>
+            </View>
+            <View className="flex-1">
+              <ThemedText className="text-xs text-gray-400 dark:text-gray-500 mb-0.5">
+                Status
+              </ThemedText>
+              <ThemedText type="defaultSemiBold" className="text-sm text-green-600">
+                Active
+              </ThemedText>
+            </View>
           </View>
 
           <View>
-            <ThemedText className="text-xs text-gray-500 dark:text-gray-400 mb-1">
+            <ThemedText className="text-xs text-gray-400 dark:text-gray-500 mb-0.5">
               Next Destination
             </ThemedText>
             <View className="flex-row items-center">
-              <MapPin size={16} color="#6b7280" />
-              <ThemedText type="defaultSemiBold" className="text-base ml-1">
+              <MapPin size={14} color="#6b7280" />
+              <ThemedText type="defaultSemiBold" className="text-sm ml-1" numberOfLines={1}>
                 {boat.eta && boat.port 
                   ? `ETA: ${boat.eta}, ${boat.port}` 
                   : 'No active voyage'}
@@ -118,13 +115,13 @@ export default function VesselDetail() {
           </View>
         </View>
       </View>
-    </ThemedView>
+    </View>
   );
 }
 
 const styles = StyleSheet.create({
   mapContainer: {
-    height: '50%',
+    height: '40%',
   },
   map: {
     flex: 1,
