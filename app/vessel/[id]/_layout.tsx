@@ -1,5 +1,5 @@
-import React, { createContext, useContext } from 'react';
-import { View, TouchableOpacity, Platform } from 'react-native';
+import React, { createContext, useContext, useState, useEffect } from 'react';
+import { View, TouchableOpacity, Platform, ActivityIndicator } from 'react-native';
 import { Slot, useLocalSearchParams, useRouter, usePathname } from 'expo-router';
 import { Ship, Route, FileText, Receipt, Home, Lock } from 'lucide-react-native';
 import { ThemedText } from '@/components/themed-text';
@@ -7,12 +7,12 @@ import { ThemedView } from '@/components/themed-view';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useColorScheme } from 'react-native';
 import * as Haptics from 'expo-haptics';
-import DUMMY_BOATS from '@/data/dummy_boat_data.json';
-import Boat from '@/types/boat';
+import { useVessels } from '@/context/VesselContext';
+import { Vessel } from '@/types/boat';
 
 // Context to share vessel data with child routes
-const VesselContext = createContext<Boat | null>(null);
-export const useVessel = () => useContext(VesselContext);
+const VesselDetailContext = createContext<Vessel | null>(null);
+export const useVessel = () => useContext(VesselDetailContext);
 
 type TabItem = {
   name: string;
@@ -136,7 +136,31 @@ export default function VesselLayout() {
   const pathname = usePathname();
   const insets = useSafeAreaInsets();
   
-  const boat = (DUMMY_BOATS as Boat[]).find((b) => b.id === id);
+  const { getVessel } = useVessels();
+  const [boat, setBoat] = useState<Vessel | null>(null);
+  const [isLoading, setIsLoading] = useState(true);
+  
+  // Load vessel from database
+  useEffect(() => {
+    async function loadVessel() {
+      if (!id) {
+        setIsLoading(false);
+        return;
+      }
+      
+      try {
+        const vessel = await getVessel(parseInt(id, 10));
+        setBoat(vessel);
+      } catch (error) {
+        console.error('Failed to load vessel:', error);
+      } finally {
+        setIsLoading(false);
+      }
+    }
+    
+    loadVessel();
+  }, [id, getVessel]);
+  
   const hasQ88 = boat?.hasQ88 ?? false;
 
   const getCurrentTab = () => {
@@ -158,6 +182,15 @@ export default function VesselLayout() {
     }
   };
 
+  // Show loading state
+  if (isLoading) {
+    return (
+      <ThemedView className="flex-1 items-center justify-center">
+        <ActivityIndicator size="large" color="#3b82f6" />
+      </ThemedView>
+    );
+  }
+
   if (!boat) {
     return (
       <ThemedView className="flex-1 items-center justify-center">
@@ -167,7 +200,7 @@ export default function VesselLayout() {
   }
 
   return (
-    <VesselContext.Provider value={boat}>
+    <VesselDetailContext.Provider value={boat}>
       <ThemedView className="flex-1">
         <Slot />
 
@@ -199,6 +232,6 @@ export default function VesselLayout() {
           </View>
         </View>
       </ThemedView>
-    </VesselContext.Provider>
+    </VesselDetailContext.Provider>
   );
 }
