@@ -6,7 +6,8 @@
     "type": "Gas Carrier",
     "subtype": "LPG",
     "eta": "Dec 15",
-    "port": "Jebel Ali"
+    "port": "Jebel Ali",
+    "hasQ88": true
   },
   {
     "id": "2",
@@ -15,7 +16,8 @@
     "type": "Container Ship",
     "subtype": "Ultra Large",
     "eta": "Dec 18",
-    "port": "Shanghai"
+    "port": "Shanghai",
+    "hasQ88": true
   },
   {
     "id": "3",
@@ -24,7 +26,8 @@
     "type": "Bulk Carrier",
     "subtype": "Panamax",
     "eta": "Dec 21",
-    "port": "Rotterdam"
+    "port": "Rotterdam",
+    "hasQ88": false
   },
   {
     "id": "4",
@@ -33,14 +36,16 @@
     "type": "General Cargo",
     "subtype": "Handysize",
     "eta": "Dec 24",
-    "port": "Hamburg"
+    "port": "Hamburg",
+    "hasQ88": true
   },
   {
     "id": "5",
     "name": "Atlantic Pioneer",
     "imo": "9387654",
     "type": "Tanker",
-    "subtype": "VLCC"
+    "subtype": "VLCC",
+    "hasQ88": false
   },
   {
     "id": "6",
@@ -49,6 +54,7 @@
     "type": "Ro-Ro",
     "subtype": "Vehicle Carrier",
     "eta": "Dec 30",
-    "port": "Gothenburg"
+    "port": "Gothenburg",
+    "hasQ88": true
   }
 ]

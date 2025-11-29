@@ -7,6 +7,7 @@ import Boat from '@/types/boat';
 import DUMMY_BOATS from '@/data/dummy_boat_data.json';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useRouter } from 'expo-router';
+import * as Haptics from 'expo-haptics';
 
 function VesselCard({ item }: { item: Boat }) {
   const router = useRouter();
@@ -18,11 +19,16 @@ function VesselCard({ item }: { item: Boat }) {
 
   const hasActiveVoyage = item.eta && item.port;
 
+  const handlePress = async () => {
+    await Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+    router.push(`/vessel/${item.id}` as any);
+  };
+
   return (
     <TouchableOpacity
       className="bg-white dark:bg-[#1c1c1e] rounded-xl mb-2.5 overflow-hidden"
       activeOpacity={0.7}
-      onPress={() => router.push(`/vessel/${item.id}`)}
+      onPress={handlePress}
       style={{
         shadowColor: '#000',
         shadowOffset: { width: 0, height: 1 },
