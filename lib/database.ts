@@ -1,5 +1,5 @@
 import * as SQLite from 'expo-sqlite';
-import { Vessel, CreateVesselInput, UpdateVesselInput } from '@/types/boat';
+import { Vessel, CreateVesselInput, UpdateVesselInput } from '@/types';
 
 // Database instance
 let db: SQLite.SQLiteDatabase | null = null;

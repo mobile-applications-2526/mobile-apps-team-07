@@ -1,7 +1,7 @@
 import React, { useEffect, useRef } from 'react';
 import { Animated, View, TouchableOpacity } from 'react-native';
 import { X, CheckCircle, AlertCircle } from 'lucide-react-native';
-import { ThemedText } from '@/components/themed-text';
+import { ThemedText } from '@/components/common';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 interface ToastProps {

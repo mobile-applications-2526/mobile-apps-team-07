@@ -15,7 +15,7 @@ import {
   Keyboard,
 } from 'react-native';
 import { Camera, ChevronDown, Check, ChevronUp } from 'lucide-react-native';
-import { ThemedText } from '@/components/themed-text';
+import { ThemedText } from '@/components/common';
 import { useColorScheme } from 'nativewind';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 

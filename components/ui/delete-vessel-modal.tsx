@@ -1,7 +1,7 @@
 import React from 'react';
 import { Modal, View, TouchableOpacity, ActivityIndicator } from 'react-native';
 import { AlertTriangle } from 'lucide-react-native';
-import { ThemedText } from '@/components/themed-text';
+import { ThemedText } from '@/components/common';
 
 interface DeleteVesselModalProps {
   visible: boolean;

@@ -1,9 +1,8 @@
 import React from 'react';
 import { View } from 'react-native';
 import { Route } from 'lucide-react-native';
-import { ThemedText } from '@/components/themed-text';
-import { ThemedView } from '@/components/themed-view';
-import { VesselTopBar } from '@/components/ui/vessel-top-bar';
+import { ThemedText, ThemedView } from '@/components/common';
+import { VesselTopBar } from '@/components/vessel';
 import { useVessel } from './_layout';
 
 export default function VesselVoyages() {

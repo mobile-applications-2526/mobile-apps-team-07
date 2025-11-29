@@ -1,0 +1,12 @@
+/**
+ * Hooks Index
+ * 
+ * Barrel exports for all custom hooks.
+ */
+
+export { useAnimatedModal } from './useAnimatedModal';
+export { useToast } from './useToast';
+export { useHaptics } from './useHaptics';
+
+// Re-export context hooks
+export { useVessels } from '@/context/VesselContext';

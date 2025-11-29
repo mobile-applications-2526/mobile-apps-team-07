@@ -1,7 +1,13 @@
+/**
+ * VesselContext
+ * 
+ * React context for managing vessel state throughout the application.
+ * Uses the vessel service for database operations.
+ */
+
 import React, { createContext, useContext, useEffect, useState, useCallback, ReactNode } from 'react';
-import { Vessel, CreateVesselInput, UpdateVesselInput } from '@/types/boat';
-import * as db from '@/lib/database';
-import DUMMY_BOATS from '@/data/dummy_boat_data.json';
+import { Vessel, CreateVesselInput, UpdateVesselInput } from '@/types';
+import { vesselService, databaseService } from '@/services';
 
 // ============================================
 // TYPES
@@ -61,25 +67,24 @@ export function VesselProvider({ children }: VesselProviderProps) {
 
   // Initialize database and load vessels
   useEffect(() => {
-    initializeDatabase();
+    initializeData();
   }, []);
 
-  const initializeDatabase = async () => {
+  const initializeData = async () => {
     try {
       setIsLoading(true);
       setError(null);
 
-      // Initialize DB and seed data if needed
-      await db.getDatabase();
-      await db.seedInitialData(DUMMY_BOATS as any);
+      // Initialize database and seed data
+      await databaseService.initializeDatabase();
 
       // Load vessels
-      const loadedVessels = await db.getAllVessels();
+      const loadedVessels = await vesselService.getAllVessels();
       setVessels(loadedVessels);
       setIsInitialized(true);
     } catch (err) {
-      console.error('Failed to initialize database:', err);
-      setError(err instanceof Error ? err.message : 'Failed to initialize database');
+      console.error('Failed to initialize:', err);
+      setError(err instanceof Error ? err.message : 'Failed to initialize');
     } finally {
       setIsLoading(false);
     }
@@ -89,7 +94,7 @@ export function VesselProvider({ children }: VesselProviderProps) {
   const refreshVessels = useCallback(async () => {
     try {
       setIsLoading(true);
-      const loadedVessels = await db.getAllVessels();
+      const loadedVessels = await vesselService.getAllVessels();
       setVessels(loadedVessels);
       setError(null);
     } catch (err) {
@@ -103,7 +108,7 @@ export function VesselProvider({ children }: VesselProviderProps) {
   // Get single vessel by ID
   const getVessel = useCallback(async (id: number): Promise<Vessel | null> => {
     try {
-      return await db.getVesselById(id);
+      return await vesselService.getVesselById(id);
     } catch (err) {
       console.error('Failed to get vessel:', err);
       return null;
@@ -112,23 +117,17 @@ export function VesselProvider({ children }: VesselProviderProps) {
 
   // Create new vessel
   const createVessel = useCallback(async (input: CreateVesselInput): Promise<Vessel> => {
-    const newVessel = await db.createVessel(input);
-    
-    // Update local state
+    const newVessel = await vesselService.createVessel(input);
     setVessels(prev => [newVessel, ...prev]);
-    
     return newVessel;
   }, []);
 
   // Update existing vessel
   const updateVessel = useCallback(async (id: number, input: UpdateVesselInput): Promise<Vessel | null> => {
-    const updatedVessel = await db.updateVessel(id, input);
+    const updatedVessel = await vesselService.updateVessel(id, input);
     
     if (updatedVessel) {
-      // Update local state
-      setVessels(prev => 
-        prev.map(v => v.id === id ? updatedVessel : v)
-      );
+      setVessels(prev => prev.map(v => v.id === id ? updatedVessel : v));
     }
     
     return updatedVessel;
@@ -136,10 +135,9 @@ export function VesselProvider({ children }: VesselProviderProps) {
 
   // Delete vessel
   const deleteVessel = useCallback(async (id: number): Promise<boolean> => {
-    const success = await db.deleteVessel(id);
+    const success = await vesselService.deleteVessel(id);
     
     if (success) {
-      // Update local state
       setVessels(prev => prev.filter(v => v.id !== id));
     }
     
@@ -148,7 +146,7 @@ export function VesselProvider({ children }: VesselProviderProps) {
 
   // Check if IMO exists
   const imoExists = useCallback(async (imo: string): Promise<boolean> => {
-    return await db.imoExists(imo);
+    return await vesselService.imoExists(imo);
   }, []);
 
   // Get all IMOs from current state (synchronous)
@@ -158,7 +156,7 @@ export function VesselProvider({ children }: VesselProviderProps) {
 
   // Search vessels
   const searchVessels = useCallback(async (query: string): Promise<Vessel[]> => {
-    return await db.searchVessels(query);
+    return await vesselService.searchVessels(query);
   }, []);
 
   const value: VesselContextType = {

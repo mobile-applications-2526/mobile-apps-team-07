@@ -2,13 +2,11 @@ import React, { createContext, useContext, useState, useEffect } from 'react';
 import { View, TouchableOpacity, Platform, ActivityIndicator } from 'react-native';
 import { Slot, useLocalSearchParams, useRouter, usePathname } from 'expo-router';
 import { Ship, Route, FileText, Receipt, Home, Lock } from 'lucide-react-native';
-import { ThemedText } from '@/components/themed-text';
-import { ThemedView } from '@/components/themed-view';
+import { ThemedText, ThemedView } from '@/components/common';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useColorScheme } from 'react-native';
-import * as Haptics from 'expo-haptics';
-import { useVessels } from '@/context/VesselContext';
-import { Vessel } from '@/types/boat';
+import { useVessels, useHaptics } from '@/hooks';
+import { Vessel } from '@/types';
 
 // Context to share vessel data with child routes
 const VesselDetailContext = createContext<Vessel | null>(null);
@@ -34,12 +32,14 @@ function TabBarItem({
   tab, 
   isActive, 
   isLocked, 
-  onPress 
+  onPress,
+  haptics,
 }: { 
   tab: TabItem; 
   isActive: boolean; 
   isLocked: boolean;
   onPress: () => void;
+  haptics: ReturnType<typeof useHaptics>;
 }) {
   const colorScheme = useColorScheme();
   const isDark = colorScheme === 'dark';
@@ -53,11 +53,11 @@ function TabBarItem({
   const textColor = isLocked ? lockedColor : (isActive ? activeColor : inactiveColor);
 
   const handlePress = async () => {
-    await Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+    await haptics.lightImpact();
     if (!isLocked) {
       onPress();
     } else {
-      await Haptics.notificationAsync(Haptics.NotificationFeedbackType.Warning);
+      await haptics.warningNotification();
     }
   };
 
@@ -135,6 +135,7 @@ export default function VesselLayout() {
   const router = useRouter();
   const pathname = usePathname();
   const insets = useSafeAreaInsets();
+  const haptics = useHaptics();
   
   const { getVessel } = useVessels();
   const [boat, setBoat] = useState<Vessel | null>(null);
@@ -226,6 +227,7 @@ export default function VesselLayout() {
                   isActive={isCenterActive}
                   isLocked={isLocked}
                   onPress={() => handleTabPress(tab)}
+                  haptics={haptics}
                 />
               );
             })}
