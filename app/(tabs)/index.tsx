@@ -310,11 +310,6 @@ export default function Overview() {
       
       // Navigate to vessel specs page to upload Q88
       router.push(`/vessel/${newVessel.id}/specs` as any);
-      
-      // Show toast after navigation (slight delay for better UX)
-      setTimeout(() => {
-        setToastMessage('Vessel created');
-      }, 500);
     } catch (error) {
       console.error('Failed to create vessel:', error);
       await Haptics.notificationAsync(Haptics.NotificationFeedbackType.Error);
