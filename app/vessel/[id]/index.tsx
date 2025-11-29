@@ -1,20 +1,14 @@
 import React from 'react';
-import { View, StyleSheet, TouchableOpacity, Platform } from 'react-native';
-import { useLocalSearchParams, useRouter } from 'expo-router';
-import { ChevronLeft, Ship, MapPin } from 'lucide-react-native';
+import { View, StyleSheet } from 'react-native';
+import { Ship, MapPin } from 'lucide-react-native';
 import { ThemedText } from '@/components/themed-text';
 import { ThemedView } from '@/components/themed-view';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
-import { useColorScheme } from 'react-native';
 import { useVessel } from './_layout';
 
 export default function VesselHome() {
-  const router = useRouter();
   const insets = useSafeAreaInsets();
-  const colorScheme = useColorScheme();
   const boat = useVessel();
-  
-  const isDark = colorScheme === 'dark';
 
   if (!boat) {
     return (
@@ -26,7 +20,7 @@ export default function VesselHome() {
 
   return (
     <View className="flex-1 bg-gray-100 dark:bg-[#000]">
-      {/* Top App Bar with centered title and native-style back button */}
+      {/* Top App Bar with centered title */}
       <View 
         className="flex-row items-center justify-center px-4 bg-white dark:bg-[#1c1c1e] border-b border-gray-200 dark:border-gray-800"
         style={{ 
@@ -34,19 +28,6 @@ export default function VesselHome() {
           paddingBottom: 12,
         }}
       >
-        {/* Back button - positioned absolutely on the left */}
-        <TouchableOpacity 
-          onPress={() => router.back()}
-          className="absolute left-2 flex-row items-center p-2"
-          style={{ top: insets.top + 4 }}
-          activeOpacity={0.7}
-        >
-          <ChevronLeft size={28} color={Platform.OS === 'ios' ? '#007AFF' : (isDark ? '#ECEDEE' : '#11181C')} />
-          {Platform.OS === 'ios' && (
-            <ThemedText className="text-[#007AFF] text-base -ml-1">Back</ThemedText>
-          )}
-        </TouchableOpacity>
-        
         {/* Centered title */}
         <ThemedText type="defaultSemiBold" className="text-lg text-center" numberOfLines={1}>
           {boat.name}

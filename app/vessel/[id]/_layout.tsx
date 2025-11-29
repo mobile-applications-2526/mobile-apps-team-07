@@ -1,7 +1,7 @@
 import React, { createContext, useContext } from 'react';
 import { View, TouchableOpacity, Platform } from 'react-native';
 import { Slot, useLocalSearchParams, useRouter, usePathname } from 'expo-router';
-import { Ship, Route, FileText, Receipt, Home, Lock } from 'lucide-react-native';
+import { Ship, Route, FileText, Receipt, ChevronDown, Lock } from 'lucide-react-native';
 import { ThemedText } from '@/components/themed-text';
 import { ThemedView } from '@/components/themed-view';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
@@ -25,7 +25,7 @@ type TabItem = {
 const tabs: TabItem[] = [
   { name: 'Overview', route: 'index', icon: Ship, requiresQ88: false },
   { name: 'Voyages', route: 'voyages', icon: Route, requiresQ88: true },
-  { name: 'Home', route: 'home', icon: Home, requiresQ88: false, isCenter: true },
+  { name: 'Back', route: 'back', icon: ChevronDown, requiresQ88: false, isCenter: true },
   { name: 'Specs', route: 'specs', icon: FileText, requiresQ88: false },
   { name: 'Invoices', route: 'invoices', icon: Receipt, requiresQ88: true },
 ];
@@ -67,28 +67,20 @@ function TabBarItem({
       <TouchableOpacity
         onPress={handlePress}
         activeOpacity={0.8}
-        className="items-center justify-center -mt-4"
+        className="items-center justify-center -mt-6"
       >
         <View 
-          className={`w-14 h-14 rounded-2xl items-center justify-center ${
-            isActive ? 'bg-blue-500' : 'bg-white dark:bg-[#2c2c2e]'
-          }`}
+          className="w-10 h-10 rounded-full items-center justify-center bg-gray-100 dark:bg-[#2c2c2e]"
           style={{
             shadowColor: '#000',
             shadowOffset: { width: 0, height: 2 },
-            shadowOpacity: 0.15,
-            shadowRadius: 8,
-            elevation: 5,
+            shadowOpacity: 0.1,
+            shadowRadius: 4,
+            elevation: 3,
           }}
         >
-          <IconComponent size={26} color={isActive ? '#fff' : inactiveColor} />
+          <IconComponent size={22} color={inactiveColor} />
         </View>
-        <ThemedText 
-          className="text-[10px] mt-1 font-medium"
-          style={{ color: textColor }}
-        >
-          {tab.name}
-        </ThemedText>
       </TouchableOpacity>
     );
   }
@@ -139,9 +131,9 @@ export default function VesselLayout() {
   const currentTab = getCurrentTab();
 
   const handleTabPress = (tab: TabItem) => {
-    if (tab.route === 'home') {
-      // Navigate back to fleet list (main home screen)
-      router.push('/(tabs)' as any);
+    if (tab.route === 'back') {
+      // Go back to previous screen
+      router.back();
     } else if (tab.route === 'index') {
       // Navigate to vessel overview (index)
       router.push(`/vessel/${id}` as any);
