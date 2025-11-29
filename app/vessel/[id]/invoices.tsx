@@ -1,14 +1,28 @@
 import React from 'react';
 import { View } from 'react-native';
+import { Receipt } from 'lucide-react-native';
+import { ThemedText } from '@/components/themed-text';
 import { ThemedView } from '@/components/themed-view';
-import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import { VesselTopBar } from '@/components/ui/vessel-top-bar';
+import { useVessel } from './_layout';
 
 export default function VesselInvoices() {
-  const insets = useSafeAreaInsets();
+  const vessel = useVessel();
 
   return (
-    <ThemedView className="flex-1" style={{ paddingTop: insets.top }}>
-      <View className="flex-1" />
+    <ThemedView className="flex-1 bg-gray-100 dark:bg-[#000]">
+      {/* Top App Bar */}
+      <VesselTopBar vesselName={vessel?.name ?? ''} />
+
+      {/* Content */}
+      <View className="flex-1 items-center justify-center p-6">
+        <View className="w-16 h-16 rounded-full bg-gray-100 dark:bg-gray-800 items-center justify-center mb-4">
+          <Receipt size={32} color="#9ca3af" />
+        </View>
+        <ThemedText className="text-gray-400 text-center text-sm">
+          No invoices yet
+        </ThemedText>
+      </View>
     </ThemedView>
   );
 }

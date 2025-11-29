@@ -3,11 +3,10 @@ import { View, StyleSheet } from 'react-native';
 import { Ship, MapPin } from 'lucide-react-native';
 import { ThemedText } from '@/components/themed-text';
 import { ThemedView } from '@/components/themed-view';
-import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import { VesselTopBar } from '@/components/ui/vessel-top-bar';
 import { useVessel } from './_layout';
 
 export default function VesselHome() {
-  const insets = useSafeAreaInsets();
   const boat = useVessel();
 
   if (!boat) {
@@ -20,19 +19,8 @@ export default function VesselHome() {
 
   return (
     <View className="flex-1 bg-gray-100 dark:bg-[#000]">
-      {/* Top App Bar with centered title */}
-      <View 
-        className="flex-row items-center justify-center px-4 bg-white dark:bg-[#1c1c1e] border-b border-gray-200 dark:border-gray-800"
-        style={{ 
-          paddingTop: insets.top + 8,
-          paddingBottom: 12,
-        }}
-      >
-        {/* Centered title */}
-        <ThemedText type="defaultSemiBold" className="text-lg text-center" numberOfLines={1}>
-          {boat.name}
-        </ThemedText>
-      </View>
+      {/* Top App Bar */}
+      <VesselTopBar vesselName={boat.name} />
 
       {/* MapLibre Map Placeholder - Half of the screen */}
       <View style={styles.mapContainer} className="bg-gray-200 dark:bg-gray-800 items-center justify-center">
