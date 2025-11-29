@@ -14,7 +14,7 @@ import {
   TouchableWithoutFeedback,
   Keyboard,
 } from 'react-native';
-import { Camera, ChevronDown, Check, ChevronUp, Ship } from 'lucide-react-native';
+import { Camera, ChevronDown, Check, ChevronUp } from 'lucide-react-native';
 import { ThemedText } from '@/components/themed-text';
 import { useColorScheme } from 'nativewind';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
@@ -60,10 +60,12 @@ export function AddVesselModal({
 
   // Animation for drag gesture
   const translateY = useRef(new Animated.Value(0)).current;
+  
   const panResponder = useRef(
     PanResponder.create({
       onStartShouldSetPanResponder: () => true,
       onMoveShouldSetPanResponder: (_, gestureState) => {
+        // Only trigger drag if moving down significantly
         return gestureState.dy > 5;
       },
       onPanResponderMove: (_, gestureState) => {
@@ -73,32 +75,33 @@ export function AddVesselModal({
       },
       onPanResponderRelease: (_, gestureState) => {
         if (gestureState.dy > DISMISS_THRESHOLD || gestureState.vy > 0.5) {
-          // Dismiss modal
+          // Dismiss modal smoothly
           Animated.timing(translateY, {
             toValue: SCREEN_HEIGHT,
-            duration: 200,
+            duration: 250, // Slightly slower for smoothness
             useNativeDriver: true,
           }).start(() => {
-            translateY.setValue(0);
-            onCancel();
+            // FIX: Do NOT reset translateY here. 
+            // Just trigger the close action. The reset happens in useEffect when it opens again.
+            onCancel(); 
           });
         } else {
-          // Snap back
+          // Snap back to top if threshold not met
           Animated.spring(translateY, {
             toValue: 0,
             useNativeDriver: true,
-            tension: 100,
-            friction: 10,
+            bounciness: 4,
           }).start();
         }
       },
     })
   ).current;
 
-  // Reset animation when modal opens
+  // Reset animation ONLY when modal becomes visible
   useEffect(() => {
     if (visible) {
       translateY.setValue(0);
+      // Optional: Reset form state here if desired
     }
   }, [visible]);
 
@@ -122,22 +125,24 @@ export function AddVesselModal({
     subtype: false,
   });
 
-  // Reset form when modal closes
+  // Reset form logic when modal closes
   useEffect(() => {
     if (!visible) {
-      setName('');
-      setImo('');
-      setVesselType('');
-      setSubtype('');
-      setImage(undefined);
-      setImoError(null);
-      setTouched({ name: false, imo: false, type: false, subtype: false });
-      setTypeDropdownOpen(false);
-      setSubtypeDropdownOpen(false);
+      const timer = setTimeout(() => {
+        setName('');
+        setImo('');
+        setVesselType('');
+        setSubtype('');
+        setImage(undefined);
+        setImoError(null);
+        setTouched({ name: false, imo: false, type: false, subtype: false });
+        setTypeDropdownOpen(false);
+        setSubtypeDropdownOpen(false);
+      }, 300); // Wait for animation to finish
+      return () => clearTimeout(timer);
     }
   }, [visible]);
 
-  // Reset subtype when vessel type changes
   useEffect(() => {
     if (vesselType) {
       setSubtype('');
@@ -172,7 +177,6 @@ export function AddVesselModal({
   const handleTypeSelect = (type: VesselType) => {
     setVesselType(type);
     setTypeDropdownOpen(false);
-    // Automatically open subtype if type is selected
     setSubtypeDropdownOpen(true);
     setTouched(prev => ({ ...prev, type: true }));
   };
@@ -201,13 +205,15 @@ export function AddVesselModal({
     });
   };
 
-  const placeholderColor = isDark ? '#9ca3af' : '#6b7280';
+  const placeholderColor = isDark ? '#9ca3af' : '#9ca3af';
+  const borderColor = isDark ? 'border-gray-700' : 'border-gray-300';
+  const inputBg = isDark ? 'bg-gray-800' : 'bg-white';
 
   return (
     <Modal
       visible={visible}
       transparent
-      animationType="slide"
+      animationType="fade" // Fade backing, slide content via Animated
       onRequestClose={onCancel}
     >
       <TouchableWithoutFeedback onPress={Keyboard.dismiss}>
@@ -216,65 +222,66 @@ export function AddVesselModal({
           className="flex-1"
         >
           {/* Backdrop */}
-          <View className="flex-1 justify-end bg-black/60">
+          <View className="flex-1 justify-end bg-black/50">
             <TouchableOpacity 
               className="absolute inset-0"
               activeOpacity={1}
               onPress={onCancel}
             />
             
-            {/* Modal Content */}
+            {/* Modal Content - Rounded Top Corners applied here */}
             <Animated.View 
-              className="bg-white dark:bg-[#1c1c1e] rounded-t-[28px] overflow-hidden shadow-2xl"
+              className="bg-white dark:bg-[#1c1c1e] rounded-t-3xl overflow-hidden w-full"
               style={{ 
-                maxHeight: '92%',
+                minHeight: '80%',
+                maxHeight: '90%',
                 transform: [{ translateY }],
               }}
             >
-              {/* Drag Handle */}
+              {/* Drag Handle Area */}
               <View 
                 {...panResponder.panHandlers}
-                className="items-center pt-3 pb-2"
+                className="items-center pt-4 pb-2 bg-white dark:bg-[#1c1c1e] z-10"
               >
-                <View className="w-10 h-1 rounded-full bg-gray-300 dark:bg-gray-600" />
+                <View className="w-10 h-1.5 rounded-full bg-gray-300 dark:bg-gray-600" />
               </View>
 
               {/* Header */}
-              <View className="px-6 pb-4 border-b border-gray-100 dark:border-gray-800">
-                <ThemedText type="subtitle" className="text-xl text-center">
-                  New Vessel
+              <View className="px-6 pb-4 border-b border-gray-100 dark:border-gray-800 bg-white dark:bg-[#1c1c1e]">
+                <ThemedText type="subtitle" className="text-lg font-bold text-center">
+                  Add New Vessel
                 </ThemedText>
               </View>
 
+              {/* Scrollable Form Body - Flex 1 allows scrolling regardless of content size */}
               <ScrollView 
-                className="px-6 pt-4"
-                contentContainerStyle={{ paddingBottom: 24 }}
-                showsVerticalScrollIndicator={false}
+                className="flex-1 px-6 pt-5 bg-gray-50 dark:bg-[#1c1c1e]"
+                contentContainerStyle={{ paddingBottom: 40 }}
+                showsVerticalScrollIndicator={true}
                 keyboardShouldPersistTaps="handled"
-                bounces={false}
               >
                 {/* Photo Upload */}
                 <TouchableOpacity
-                  className="h-32 rounded-2xl border-2 border-dashed border-gray-200 dark:border-gray-700 items-center justify-center bg-gray-50 dark:bg-gray-800/50 mb-6 active:opacity-70"
+                  className={`h-24 rounded-xl border border-dashed ${borderColor} items-center justify-center bg-white dark:bg-gray-800/30 mb-6 active:opacity-70`}
                   onPress={() => console.log('Image picker')}
                 >
-                  <View className="w-12 h-12 rounded-full bg-blue-100 dark:bg-blue-900/40 items-center justify-center mb-2">
-                    <Camera size={24} color="#3b82f6" />
+                  <View className="flex-row items-center gap-2 opacity-70">
+                    <Camera size={20} color="#3b82f6" />
+                    <ThemedText className="text-sm text-blue-500 font-medium">
+                      Upload Photo
+                    </ThemedText>
                   </View>
-                  <ThemedText className="text-sm text-gray-500 dark:text-gray-400 font-medium">
-                    Upload Vessel Photo
-                  </ThemedText>
                 </TouchableOpacity>
 
                 {/* Form Fields */}
                 <View className="gap-5">
-                  {/* Name */}
-                  <View className="gap-2">
-                    <ThemedText className="text-sm font-semibold text-gray-700 dark:text-gray-300 ml-1">
+                  {/* Name Input */}
+                  <View>
+                    <ThemedText className="text-sm font-medium text-gray-700 dark:text-gray-300 mb-2 ml-1">
                       Vessel Name
                     </ThemedText>
                     <TextInput
-                      className="h-12 px-4 rounded-xl bg-gray-50 dark:bg-gray-800/80 border border-gray-200 dark:border-gray-700 text-base text-gray-900 dark:text-white"
+                      className={`h-11 px-3 rounded-lg border ${borderColor} ${inputBg} text-base text-gray-900 dark:text-white`}
                       placeholder="e.g. MT Her Majesty"
                       placeholderTextColor={placeholderColor}
                       value={name}
@@ -283,14 +290,14 @@ export function AddVesselModal({
                     />
                   </View>
 
-                  {/* IMO */}
-                  <View className="gap-2">
-                    <ThemedText className="text-sm font-semibold text-gray-700 dark:text-gray-300 ml-1">
+                  {/* IMO Input */}
+                  <View>
+                    <ThemedText className="text-sm font-medium text-gray-700 dark:text-gray-300 mb-2 ml-1">
                       IMO Number
                     </ThemedText>
                     <TextInput
-                      className={`h-12 px-4 rounded-xl bg-gray-50 dark:bg-gray-800/80 border text-base text-gray-900 dark:text-white ${
-                        imoError ? 'border-red-500 bg-red-50/50' : 'border-gray-200 dark:border-gray-700'
+                      className={`h-11 px-3 rounded-lg border ${inputBg} text-base text-gray-900 dark:text-white ${
+                        imoError ? 'border-red-500' : borderColor
                       }`}
                       placeholder="7-digit number"
                       placeholderTextColor={placeholderColor}
@@ -301,15 +308,15 @@ export function AddVesselModal({
                       maxLength={7}
                     />
                     {imoError && touched.imo && (
-                      <ThemedText className="text-xs text-red-500 ml-1">
+                      <ThemedText className="text-xs text-red-500 mt-1 ml-1">
                         {imoError}
                       </ThemedText>
                     )}
                   </View>
 
-                  {/* Type Selection (Accordion Style) */}
-                  <View className="gap-2">
-                    <ThemedText className="text-sm font-semibold text-gray-700 dark:text-gray-300 ml-1">
+                  {/* Classification Dropdowns */}
+                  <View>
+                    <ThemedText className="text-sm font-medium text-gray-700 dark:text-gray-300 mb-2 ml-1">
                       Classification
                     </ThemedText>
                     
@@ -320,10 +327,10 @@ export function AddVesselModal({
                         setSubtypeDropdownOpen(false);
                         Keyboard.dismiss();
                       }}
-                      className="h-12 px-4 rounded-xl bg-gray-50 dark:bg-gray-800/80 border border-gray-200 dark:border-gray-700 flex-row items-center justify-between"
+                      className={`h-11 px-3 rounded-lg border ${borderColor} ${inputBg} flex-row items-center justify-between`}
                     >
-                      <ThemedText className={vesselType ? 'text-gray-900 dark:text-white' : 'text-gray-400'}>
-                        {vesselType || 'Select Vessel Type'}
+                      <ThemedText className={`text-base ${vesselType ? 'text-gray-900 dark:text-white' : 'text-gray-400'}`}>
+                        {vesselType || 'Select Type'}
                       </ThemedText>
                       {typeDropdownOpen ? (
                         <ChevronUp size={20} color={placeholderColor} />
@@ -332,37 +339,37 @@ export function AddVesselModal({
                       )}
                     </TouchableOpacity>
 
-                    {/* Type Options */}
+                    {/* Type List */}
                     {typeDropdownOpen && (
-                      <View className="bg-white dark:bg-gray-800 border border-gray-100 dark:border-gray-700 rounded-xl overflow-hidden mt-1 shadow-sm">
+                      <View className={`border ${borderColor} ${inputBg} rounded-lg overflow-hidden mt-2 shadow-sm`}>
                         {VESSEL_TYPES.map((type, index) => (
                           <TouchableOpacity
                             key={type}
-                            className={`p-4 flex-row justify-between items-center ${
-                              index !== VESSEL_TYPES.length - 1 ? 'border-b border-gray-100 dark:border-gray-700' : ''
+                            className={`p-3 flex-row justify-between items-center ${
+                              index !== VESSEL_TYPES.length - 1 ? `border-b ${borderColor}` : ''
                             }`}
                             onPress={() => handleTypeSelect(type)}
                           >
-                            <ThemedText>{type}</ThemedText>
-                            {vesselType === type && <Check size={18} color="#3b82f6" />}
+                            <ThemedText className="text-sm">{type}</ThemedText>
+                            {vesselType === type && <Check size={16} color="#3b82f6" />}
                           </TouchableOpacity>
                         ))}
                       </View>
                     )}
 
-                    {/* Subtype (Only visible if type selected) */}
+                    {/* Subtype Selector */}
                     {vesselType && (
-                      <View className="mt-2">
+                      <View className="mt-3">
                         <TouchableOpacity
                           onPress={() => {
                             setSubtypeDropdownOpen(!subtypeDropdownOpen);
                             setTypeDropdownOpen(false);
                             Keyboard.dismiss();
                           }}
-                          className="h-12 px-4 rounded-xl bg-gray-50 dark:bg-gray-800/80 border border-gray-200 dark:border-gray-700 flex-row items-center justify-between"
+                          className={`h-11 px-3 rounded-lg border ${borderColor} ${inputBg} flex-row items-center justify-between`}
                         >
-                          <ThemedText className={subtype ? 'text-gray-900 dark:text-white' : 'text-gray-400'}>
-                            {subtype || `Select ${vesselType.split(' ')[0]} Type`}
+                          <ThemedText className={`text-base ${subtype ? 'text-gray-900 dark:text-white' : 'text-gray-400'}`}>
+                            {subtype || 'Select Subtype'}
                           </ThemedText>
                           {subtypeDropdownOpen ? (
                             <ChevronUp size={20} color={placeholderColor} />
@@ -371,19 +378,19 @@ export function AddVesselModal({
                           )}
                         </TouchableOpacity>
 
-                        {/* Subtype Options */}
+                        {/* Subtype List */}
                         {subtypeDropdownOpen && (
-                          <View className="bg-white dark:bg-gray-800 border border-gray-100 dark:border-gray-700 rounded-xl overflow-hidden mt-1 shadow-sm">
+                          <View className={`border ${borderColor} ${inputBg} rounded-lg overflow-hidden mt-2 shadow-sm`}>
                             {SUBTYPES[vesselType].map((sub, index) => (
                               <TouchableOpacity
                                 key={sub}
-                                className={`p-4 flex-row justify-between items-center ${
-                                  index !== SUBTYPES[vesselType].length - 1 ? 'border-b border-gray-100 dark:border-gray-700' : ''
+                                className={`p-3 flex-row justify-between items-center ${
+                                  index !== SUBTYPES[vesselType].length - 1 ? `border-b ${borderColor}` : ''
                                 }`}
                                 onPress={() => handleSubtypeSelect(sub)}
                               >
-                                <ThemedText>{sub}</ThemedText>
-                                {subtype === sub && <Check size={18} color="#3b82f6" />}
+                                <ThemedText className="text-sm">{sub}</ThemedText>
+                                {subtype === sub && <Check size={16} color="#3b82f6" />}
                               </TouchableOpacity>
                             ))}
                           </View>
@@ -396,31 +403,28 @@ export function AddVesselModal({
 
               {/* Footer Button */}
               <View 
-                className="px-6 pt-4 pb-2 bg-white dark:bg-[#1c1c1e]"
-                style={{ paddingBottom: Math.max(insets.bottom, 16) }}
+                className="px-6 pt-3 bg-white dark:bg-[#1c1c1e] border-t border-gray-100 dark:border-gray-800"
+                style={{ paddingBottom: Math.max(insets.bottom, 20) }}
               >
                 <TouchableOpacity
                   onPress={handleCreate}
                   disabled={!isFormValid || isCreating}
-                  className={`h-14 rounded-2xl flex-row items-center justify-center gap-2 ${
+                  className={`h-12 rounded-xl flex-row items-center justify-center gap-2 shadow-sm ${
                     isFormValid && !isCreating 
-                      ? 'bg-blue-500 active:bg-blue-600' 
-                      : 'bg-gray-200 dark:bg-gray-700'
+                      ? 'bg-blue-600 active:bg-blue-700' 
+                      : 'bg-gray-200 dark:bg-gray-800'
                   }`}
                 >
                   {isCreating ? (
                     <ActivityIndicator color="#fff" />
                   ) : (
-                    <>
-                      <Ship size={20} color={isFormValid ? '#fff' : isDark ? '#9ca3af' : '#6b7280'} />
-                      <ThemedText 
-                        className={`font-semibold text-base ${
-                          isFormValid ? 'text-white' : 'text-gray-500 dark:text-gray-400'
-                        }`}
-                      >
-                        Add to Fleet
-                      </ThemedText>
-                    </>
+                    <ThemedText 
+                      className={`font-semibold text-base ${
+                        isFormValid ? 'text-white' : 'text-gray-400 dark:text-gray-500'
+                      }`}
+                    >
+                      Create Vessel
+                    </ThemedText>
                   )}
                 </TouchableOpacity>
               </View>
