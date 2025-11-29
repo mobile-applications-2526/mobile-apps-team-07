@@ -22,6 +22,7 @@ android/app/build/
 android/**/build/
 android/local.properties
 *.keystore
+android
 
 # iOS
 # CocoaPods
@@ -29,6 +30,9 @@ ios/Pods/
 ios/Podfile.lock
 ios/build/
 ios/DerivedData/
+ios
+
+package-lock.json
 
 # Xcode
 *.xcworkspace/xcuserdata/
