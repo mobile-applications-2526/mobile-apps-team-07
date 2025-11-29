@@ -10,16 +10,28 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useRouter } from 'expo-router';
 import * as Haptics from 'expo-haptics';
 
-// Toast item type for FlatList
-type ToastItem = { id: string; isToast: true; message: string };
+// Toast item type for FlatList - no longer needed but keeping for reference
 type VesselItem = Boat & { isToast: false };
-type ListItem = ToastItem | VesselItem;
 
-function ToastCard({ message, onAnimationComplete }: { message: string; onAnimationComplete: () => void }) {
-  const fadeAnim = useRef(new Animated.Value(1)).current;
-  const translateY = useRef(new Animated.Value(0)).current;
+function OverlayToast({ message, onAnimationComplete }: { message: string; onAnimationComplete: () => void }) {
+  const fadeAnim = useRef(new Animated.Value(0)).current;
+  const translateY = useRef(new Animated.Value(-20)).current;
 
   useEffect(() => {
+    // Animate in
+    Animated.parallel([
+      Animated.timing(fadeAnim, {
+        toValue: 1,
+        duration: 200,
+        useNativeDriver: true,
+      }),
+      Animated.timing(translateY, {
+        toValue: 0,
+        duration: 200,
+        useNativeDriver: true,
+      }),
+    ]).start();
+
     // Wait 2.5 seconds, then animate out
     const timer = setTimeout(() => {
       Animated.parallel([
@@ -43,11 +55,13 @@ function ToastCard({ message, onAnimationComplete }: { message: string; onAnimat
 
   return (
     <Animated.View 
-      className="items-center mb-2"
+      className="absolute left-0 right-0 items-center z-50"
       style={{
+        top: 12,
         opacity: fadeAnim,
         transform: [{ translateY }],
       }}
+      pointerEvents="none"
     >
       <View 
         className="flex-row items-center bg-green-500 rounded-full px-4 py-2.5"
@@ -252,11 +266,6 @@ export default function Overview() {
     setToastMessage(null);
   }, []);
 
-  // Combine toast item with boats for FlatList
-  const listData: ListItem[] = toastMessage 
-    ? [{ id: '__toast__', isToast: true as const, message: toastMessage }, ...boats.map(b => ({ ...b, isToast: false as const }))]
-    : boats.map(b => ({ ...b, isToast: false as const }));
-
   return (
     <ThemedView className="flex-1 bg-gray-100 dark:bg-[#000]">
       {/* Header */}
@@ -283,23 +292,28 @@ export default function Overview() {
       </View>
 
       {/* Vessel List */}
-      <FlatList
-        data={listData}
-        keyExtractor={(item) => item.id}
-        renderItem={({ item }) => {
-          if (item.isToast) {
-            return <ToastCard message={item.message} onAnimationComplete={handleToastAnimationComplete} />;
-          }
-          return <VesselCard item={item} onDeletePress={handleDeletePress} />;
-        }}
-        contentContainerStyle={{ 
-          padding: 12, 
-          paddingBottom: insets.bottom + 20,
-          gap: 10,
-        }}
-        showsVerticalScrollIndicator={false}
-        ListEmptyComponent={<EmptyState />}
-      /> 
+      <View className="flex-1 relative">
+        <FlatList
+          data={boats}
+          keyExtractor={(item) => item.id}
+          renderItem={({ item }) => <VesselCard item={item} onDeletePress={handleDeletePress} />}
+          contentContainerStyle={{ 
+            padding: 12, 
+            paddingBottom: insets.bottom + 20,
+            gap: 10,
+          }}
+          showsVerticalScrollIndicator={false}
+          ListEmptyComponent={<EmptyState />}
+        />
+        
+        {/* Toast Overlay */}
+        {toastMessage && (
+          <OverlayToast 
+            message={toastMessage} 
+            onAnimationComplete={handleToastAnimationComplete} 
+          />
+        )}
+      </View> 
 
       {/* Delete Confirmation Modal */}
       <DeleteVesselModal
