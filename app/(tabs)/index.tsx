@@ -1,15 +1,74 @@
-import React from 'react';
-import { FlatList, TouchableOpacity, View } from 'react-native';
-import { Ship, Navigation, Pencil, Trash2, Plus, Anchor } from 'lucide-react-native';
+import React, { useState, useCallback, useEffect, useRef } from 'react';
+import { FlatList, TouchableOpacity, View, Animated } from 'react-native';
+import { Ship, Navigation, Pencil, Trash2, Plus, Anchor, CheckCircle } from 'lucide-react-native';
 import { ThemedText } from '@/components/themed-text';
 import { ThemedView } from '@/components/themed-view';
+import { DeleteVesselModal } from '@/components/ui/delete-vessel-modal';
 import Boat from '@/types/boat';
 import DUMMY_BOATS from '@/data/dummy_boat_data.json';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useRouter } from 'expo-router';
 import * as Haptics from 'expo-haptics';
 
-function VesselCard({ item }: { item: Boat }) {
+// Toast item type for FlatList
+type ToastItem = { id: string; isToast: true; message: string };
+type VesselItem = Boat & { isToast: false };
+type ListItem = ToastItem | VesselItem;
+
+function ToastCard({ message, onAnimationComplete }: { message: string; onAnimationComplete: () => void }) {
+  const fadeAnim = useRef(new Animated.Value(1)).current;
+  const translateY = useRef(new Animated.Value(0)).current;
+
+  useEffect(() => {
+    // Wait 2.5 seconds, then animate out
+    const timer = setTimeout(() => {
+      Animated.parallel([
+        Animated.timing(fadeAnim, {
+          toValue: 0,
+          duration: 300,
+          useNativeDriver: true,
+        }),
+        Animated.timing(translateY, {
+          toValue: -20,
+          duration: 300,
+          useNativeDriver: true,
+        }),
+      ]).start(() => {
+        onAnimationComplete();
+      });
+    }, 2500);
+
+    return () => clearTimeout(timer);
+  }, []);
+
+  return (
+    <Animated.View 
+      className="items-center mb-2"
+      style={{
+        opacity: fadeAnim,
+        transform: [{ translateY }],
+      }}
+    >
+      <View 
+        className="flex-row items-center bg-green-500 rounded-full px-4 py-2.5"
+        style={{
+          shadowColor: '#22c55e',
+          shadowOffset: { width: 0, height: 2 },
+          shadowOpacity: 0.3,
+          shadowRadius: 4,
+          elevation: 3,
+        }}
+      >
+        <CheckCircle size={16} color="#fff" />
+        <ThemedText className="text-white text-sm font-medium ml-2">
+          {message}
+        </ThemedText>
+      </View>
+    </Animated.View>
+  );
+}
+
+function VesselCard({ item, onDeletePress }: { item: Boat; onDeletePress: (vessel: Boat) => void }) {
   const router = useRouter();
 
   // Truncate vessel name after 25 characters
@@ -22,6 +81,11 @@ function VesselCard({ item }: { item: Boat }) {
   const handlePress = async () => {
     await Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
     router.push(`/vessel/${item.id}` as any);
+  };
+
+  const handleDeletePress = async () => {
+    await Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
+    onDeletePress(item);
   };
 
   return (
@@ -60,7 +124,12 @@ function VesselCard({ item }: { item: Boat }) {
 
         {/* Action Icons - Column layout */}
         <View className="items-center justify-center h-10">
-          <TouchableOpacity className="p-1.5" activeOpacity={0.6} hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}>
+          <TouchableOpacity 
+            className="p-1.5" 
+            activeOpacity={0.6} 
+            hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
+            onPress={handleDeletePress}
+          >
             <Trash2 size={16} color="#9ca3af" />
           </TouchableOpacity>
           <TouchableOpacity className="p-1.5 mt-1" activeOpacity={0.6} hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}>
@@ -110,7 +179,83 @@ function EmptyState() {
 
 export default function Overview() {
   const insets = useSafeAreaInsets();
-  const boats = DUMMY_BOATS as Boat[];
+  const [boats, setBoats] = useState<Boat[]>(DUMMY_BOATS as Boat[]);
+  
+  // Delete modal state
+  const [deleteModalVisible, setDeleteModalVisible] = useState(false);
+  const [vesselToDelete, setVesselToDelete] = useState<Boat | null>(null);
+  const [isDeleting, setIsDeleting] = useState(false);
+  const [deleteError, setDeleteError] = useState(false);
+  
+  // Toast state
+  const [toastMessage, setToastMessage] = useState<string | null>(null);
+
+  // Calculate active voyages count for a vessel (vessels with eta and port have active voyage)
+  const getActiveVoyagesCount = (vessel: Boat): number => {
+    return vessel.eta && vessel.port ? 1 : 0;
+  };
+
+  const handleDeletePress = useCallback((vessel: Boat) => {
+    setVesselToDelete(vessel);
+    setDeleteError(false);
+    setDeleteModalVisible(true);
+  }, []);
+
+  const handleCancelDelete = useCallback(() => {
+    setDeleteModalVisible(false);
+    setVesselToDelete(null);
+    setDeleteError(false);
+  }, []);
+
+  const handleConfirmDelete = useCallback(async () => {
+    if (!vesselToDelete) return;
+
+    setIsDeleting(true);
+    setDeleteError(false);
+
+    try {
+      // Simulate network request (replace with actual API call)
+      await new Promise((resolve, reject) => {
+        setTimeout(() => {
+          // Simulate random network failure for testing (20% chance)
+          // In production, this would be your actual API call
+          if (Math.random() < 0.2) {
+            reject(new Error('Network error'));
+          } else {
+            resolve(true);
+          }
+        }, 1000);
+      });
+
+      // Remove vessel from local state
+      setBoats(prevBoats => prevBoats.filter(boat => boat.id !== vesselToDelete.id));
+      
+      // Close modal
+      setDeleteModalVisible(false);
+      setVesselToDelete(null);
+      
+      // Show success toast
+      setToastMessage('Vessel deleted');
+      
+      // Haptic feedback for success
+      await Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
+    } catch (error) {
+      // Show error state in modal with retry option
+      setDeleteError(true);
+      await Haptics.notificationAsync(Haptics.NotificationFeedbackType.Error);
+    } finally {
+      setIsDeleting(false);
+    }
+  }, [vesselToDelete]);
+
+  const handleToastAnimationComplete = useCallback(() => {
+    setToastMessage(null);
+  }, []);
+
+  // Combine toast item with boats for FlatList
+  const listData: ListItem[] = toastMessage 
+    ? [{ id: '__toast__', isToast: true as const, message: toastMessage }, ...boats.map(b => ({ ...b, isToast: false as const }))]
+    : boats.map(b => ({ ...b, isToast: false as const }));
 
   return (
     <ThemedView className="flex-1 bg-gray-100 dark:bg-[#000]">
@@ -139,9 +284,14 @@ export default function Overview() {
 
       {/* Vessel List */}
       <FlatList
-        data={boats}
-        keyExtractor={(b) => b.id}
-        renderItem={({ item }) => <VesselCard item={item} />}
+        data={listData}
+        keyExtractor={(item) => item.id}
+        renderItem={({ item }) => {
+          if (item.isToast) {
+            return <ToastCard message={item.message} onAnimationComplete={handleToastAnimationComplete} />;
+          }
+          return <VesselCard item={item} onDeletePress={handleDeletePress} />;
+        }}
         contentContainerStyle={{ 
           padding: 12, 
           paddingBottom: insets.bottom + 20,
@@ -150,6 +300,18 @@ export default function Overview() {
         showsVerticalScrollIndicator={false}
         ListEmptyComponent={<EmptyState />}
       /> 
+
+      {/* Delete Confirmation Modal */}
+      <DeleteVesselModal
+        visible={deleteModalVisible}
+        vesselName={vesselToDelete?.name || ''}
+        activeVoyagesCount={vesselToDelete ? getActiveVoyagesCount(vesselToDelete) : 0}
+        isDeleting={isDeleting}
+        hasError={deleteError}
+        onCancel={handleCancelDelete}
+        onConfirm={handleConfirmDelete}
+        onRetry={handleConfirmDelete}
+      />
       
     </ThemedView>
   );
