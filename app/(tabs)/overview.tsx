@@ -138,11 +138,13 @@ export default function Overview() {
         renderItem={({ item }) => <VesselCard item={item} />}
         contentContainerStyle={{ 
           padding: 12, 
-          paddingBottom: insets.bottom + 20 
+          paddingBottom: insets.bottom + 20,
+          gap: 10,
         }}
         showsVerticalScrollIndicator={false}
         ListEmptyComponent={<EmptyState />}
-      />
+      /> 
+      
     </ThemedView>
   );
 }
