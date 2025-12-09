@@ -6,18 +6,19 @@
  */
 
 import { Voyage } from "@/types";
+import { API_URL } from ".";
 
 export async function getAllVoyages(): Promise<Voyage[]> {
-  const response = await fetch(`http://10.0.2.2:8080/api/voyages`);
+  const response = await fetch(`${API_URL}/api/voyages`);
   return await response.json();
 }
 
 export async function getVoyageById(id: number): Promise<Voyage | null> {
-  const response = await fetch(`http://10.0.2.2:8080/api/voyages/${id}`);
+  const response = await fetch(`${API_URL}/api/voyages/${id}`);
   return await response.json();
 }
 
 export async function getVoyagesByVesselId(vesselId: number): Promise<Voyage[]> {
-  const response = await fetch(`http://10.0.2.2:8080/api/vessels/${vesselId}/voyages`);
+  const response = await fetch(`${API_URL}/api/vessels/${vesselId}/voyages`);
   return await response.json();
 }

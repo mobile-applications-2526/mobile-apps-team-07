@@ -6,6 +6,7 @@
  */
 
 import { Vessel, CreateVesselInput, Document, VesselWithStatus } from '@/types';
+import { API_URL } from '.';
 
 // ============================================
 // VESSEL CRUD OPERATIONS
@@ -15,7 +16,7 @@ import { Vessel, CreateVesselInput, Document, VesselWithStatus } from '@/types';
  * Get all vessels
  */
 export async function getAllVessels(): Promise<Vessel[]> {
-  const response = await fetch('http://10.0.2.2:8080/api/vessels');
+  const response = await fetch(`${API_URL}/api/vessels`);
   return await response.json();
 }
 
@@ -23,7 +24,7 @@ export async function getAllVessels(): Promise<Vessel[]> {
  * Get all vessels with status
  */
 export async function getAllVesselsWithStatus(): Promise<VesselWithStatus[]> {
-  const response = await fetch(`http://10.0.2.2:8080/api/vessels/with-status`);
+  const response = await fetch(`${API_URL}/api/vessels/with-status`);
   return await response.json();
 }
 
@@ -31,7 +32,7 @@ export async function getAllVesselsWithStatus(): Promise<VesselWithStatus[]> {
  * Get a vessel by ID
  */
 export async function getVesselById(id: number): Promise<Vessel | null> {
-  const response = await fetch(`http://10.0.2.2:8080/api/vessels/${id}`);
+  const response = await fetch(`${API_URL}/api/vessels/${id}`);
   return await response.json();
 }
 
@@ -39,7 +40,7 @@ export async function getVesselById(id: number): Promise<Vessel | null> {
  * Get a vessel with status by ID
  */
 export async function getVesselByIdWithStatus(id: number): Promise<VesselWithStatus | null> {
-  const response = await fetch(`http://10.0.2.2:8080/api/vessels/${id}/with-status`);
+  const response = await fetch(`${API_URL}/api/vessels/${id}/with-status`);
   return await response.json();
 }
 
@@ -47,7 +48,7 @@ export async function getVesselByIdWithStatus(id: number): Promise<VesselWithSta
  * Get a vessel by IMO number
  */
 export async function getVesselByImo(imoNumber: string): Promise<Response> {
-  const response = await fetch(`http://10.0.2.2:8080/api/vessels/imo/${imoNumber}`);
+  const response = await fetch(`${API_URL}/api/vessels/imo/${imoNumber}`);
   return response;
 }
 
@@ -59,7 +60,7 @@ export async function createVessel(input: CreateVesselInput): Promise<Vessel> {
   if (await imoExists(input.imoNumber)) 
     throw new Error(`Vessel with IMO ${input.imoNumber} already exists`);
   
-  const response = await fetch(`http://10.0.2.2:8080/api/vessels`, {
+  const response = await fetch(`${API_URL}/api/vessels`, {
     method: 'POST',
     headers: {
       "content-type": "application/json"
@@ -80,7 +81,7 @@ export async function updateVessel(vessel: Vessel): Promise<Vessel | null> {
  * Delete a vessel
  */
 export async function deleteVessel(id: number): Promise<boolean> {
-  const response = await fetch(`http://10.0.2.2:8080/api/vessels/${id}`,{
+  const response = await fetch(`${API_URL}/api/vessels/${id}`,{
     method: "DELETE"
   });
   return response.status === 204;
@@ -90,7 +91,7 @@ export async function deleteVessel(id: number): Promise<boolean> {
  * get Documents By Vessel id
  */
 export async function getVesselDocuments(id: number): Promise<Document[]> {
-  const response = await fetch(`http://10.0.2.2:8080/api/vessels/${id}/documents`);
+  const response = await fetch(`${API_URL}/api/vessels/${id}/documents`);
   return await response.json();
 }
 
