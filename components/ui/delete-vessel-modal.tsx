@@ -6,7 +6,7 @@ import { ThemedText } from '@/components/common';
 interface DeleteVesselModalProps {
   visible: boolean;
   vesselName: string;
-  activeVoyagesCount?: number;
+  hasActiveVoyage: boolean;
   isDeleting?: boolean;
   onCancel: () => void;
   onConfirm: () => void;
@@ -17,15 +17,13 @@ interface DeleteVesselModalProps {
 export function DeleteVesselModal({
   visible,
   vesselName,
-  activeVoyagesCount = 0,
+  hasActiveVoyage,
   isDeleting = false,
   onCancel,
   onConfirm,
   onRetry,
   hasError = false,
 }: DeleteVesselModalProps) {
-  const hasActiveVoyages = activeVoyagesCount > 0;
-
   return (
     <Modal
       visible={visible}
@@ -56,10 +54,10 @@ export function DeleteVesselModal({
                 <ThemedText className="text-sm text-center text-gray-600 dark:text-gray-400">
                   This will permanently remove all associated voyages, noon reports, and documents.
                 </ThemedText>
-                {hasActiveVoyages && (
+                {hasActiveVoyage && (
                   <View className="mt-4 p-3 bg-amber-50 dark:bg-amber-900/20 rounded-lg">
                     <ThemedText className="text-sm text-center text-amber-700 dark:text-amber-400 font-medium">
-                      ⚠️ This vessel has {activeVoyagesCount} active voyage{activeVoyagesCount !== 1 ? 's' : ''}. Deleting will remove all voyage history.
+                      ⚠️ This vessel has an active voyage. Deleting will remove all voyage history.
                     </ThemedText>
                   </View>
                 )}

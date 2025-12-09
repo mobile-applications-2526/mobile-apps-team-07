@@ -16,6 +16,7 @@ import { Camera, ChevronDown, Check, ChevronUp } from 'lucide-react-native';
 import { ThemedText } from '@/components/common';
 import { useColorScheme } from 'nativewind';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import { CreateVesselInput } from '@/types';
 
 // Vessel type options
 const VESSEL_TYPES = ['Gas Carrier', 'Chemical Tanker', 'MR Tanker'] as const;
@@ -32,13 +33,7 @@ interface AddVesselModalProps {
   visible: boolean;
   existingImos: string[];
   onCancel: () => void;
-  onCreate: (vessel: {
-    name: string;
-    imo: string;
-    type: string;
-    subtype: string;
-    image?: string;
-  }) => void;
+  onCreate: (vessel: CreateVesselInput) => void;
   isCreating?: boolean;
 }
 
@@ -54,11 +49,11 @@ export function AddVesselModal({
   const insets = useSafeAreaInsets();
 
   // Form state
-  const [name, setName] = useState('');
-  const [imo, setImo] = useState('');
+  const [vesselName, setVesselName] = useState('');
+  const [imoNumber, setImoNumber] = useState('');
   const [vesselType, setVesselType] = useState<VesselType | ''>('');
-  const [subtype, setSubtype] = useState('');
-  const [image, setImage] = useState<string | undefined>(undefined);
+  const [vesselSubtype, setVesselSubtype] = useState('');
+  const [vesselPictureUrl, setVesselPictureUrl] = useState<string | null>(null);
   
   // Dropdown state
   const [typeDropdownOpen, setTypeDropdownOpen] = useState(false);
@@ -67,23 +62,23 @@ export function AddVesselModal({
   // Validation state
   const [imoError, setImoError] = useState<string | null>(null);
   const [touched, setTouched] = useState({
-    name: false,
-    imo: false,
+    vesselName: false,
+    imoNumber: false,
     type: false,
-    subtype: false,
+    vesselSubtype: false,
   });
 
   // Reset form logic when modal closes
   useEffect(() => {
     if (!visible) {
       const timer = setTimeout(() => {
-        setName('');
-        setImo('');
+        setVesselName('');
+        setImoNumber('');
         setVesselType('');
-        setSubtype('');
-        setImage(undefined);
+        setVesselSubtype('');
+        setVesselPictureUrl(null);
         setImoError(null);
-        setTouched({ name: false, imo: false, type: false, subtype: false });
+        setTouched({ vesselName: false, imoNumber: false, type: false, vesselSubtype: false });
         setTypeDropdownOpen(false);
         setSubtypeDropdownOpen(false);
       }, 300); // Wait for animation to finish
@@ -93,8 +88,8 @@ export function AddVesselModal({
 
   useEffect(() => {
     if (vesselType) {
-      setSubtype('');
-      setTouched(prev => ({ ...prev, subtype: false }));
+      setVesselSubtype('');
+      setTouched(prev => ({ ...prev, vesselSubtype: false }));
     }
   }, [vesselType]);
 
@@ -111,15 +106,15 @@ export function AddVesselModal({
 
   const handleImoChange = (value: string) => {
     const cleaned = value.replace(/\D/g, '').slice(0, 7);
-    setImo(cleaned);
-    if (touched.imo) {
+    setImoNumber(cleaned);
+    if (touched.imoNumber) {
       setImoError(validateImo(cleaned));
     }
   };
 
   const handleImoBlur = () => {
-    setTouched(prev => ({ ...prev, imo: true }));
-    setImoError(validateImo(imo));
+    setTouched(prev => ({ ...prev, imoNumber: true }));
+    setImoError(validateImo(imoNumber));
   };
 
   const handleTypeSelect = (type: VesselType) => {
@@ -130,26 +125,26 @@ export function AddVesselModal({
   };
 
   const handleSubtypeSelect = (sub: string) => {
-    setSubtype(sub);
+    setVesselSubtype(sub);
     setSubtypeDropdownOpen(false);
-    setTouched(prev => ({ ...prev, subtype: true }));
+    setTouched(prev => ({ ...prev, vesselSubtype: true }));
   };
 
   const isFormValid = 
-    name.trim().length > 0 &&
-    imo.length === 7 &&
+    vesselName.trim().length > 0 &&
+    imoNumber.length === 7 &&
     !imoError &&
     vesselType !== '' &&
-    subtype !== '';
+    vesselSubtype !== '';
 
   const handleCreate = () => {
     if (!isFormValid || isCreating) return;
     onCreate({
-      name: name.trim(),
-      imo,
-      type: vesselType,
-      subtype,
-      image,
+      vesselName: vesselName.trim(),
+      imoNumber,
+      vesselType,
+      vesselSubtype,
+      vesselPictureUrl,
     });
   };
 
@@ -224,8 +219,8 @@ export function AddVesselModal({
                       ]}
                       placeholder="e.g. MT Her Majesty"
                       placeholderTextColor={placeholderColor}
-                      value={name}
-                      onChangeText={setName}
+                      value={vesselName}
+                      onChangeText={setVesselName}
                       autoCapitalize="words"
                     />
                   </View>
@@ -245,13 +240,13 @@ export function AddVesselModal({
                       ]}
                       placeholder="7-digit number"
                       placeholderTextColor={placeholderColor}
-                      value={imo}
+                      value={imoNumber}
                       onChangeText={handleImoChange}
                       onBlur={handleImoBlur}
                       keyboardType="numeric"
                       maxLength={7}
                     />
-                    {imoError && touched.imo && (
+                    {imoError && touched.imoNumber && (
                       <ThemedText className="text-xs text-red-500 mt-1">
                         {imoError}
                       </ThemedText>
@@ -325,8 +320,8 @@ export function AddVesselModal({
                             { borderColor: isDark ? '#4b5563' : '#d1d5db' }
                           ]}
                         >
-                          <ThemedText className={`text-base ${subtype ? 'text-gray-900 dark:text-white' : 'text-gray-400'}`}>
-                            {subtype || 'Select Subtype'}
+                          <ThemedText className={`text-base ${vesselSubtype ? 'text-gray-900 dark:text-white' : 'text-gray-400'}`}>
+                            {vesselSubtype || 'Select Subtype'}
                           </ThemedText>
                           {subtypeDropdownOpen ? (
                             <ChevronUp size={18} color={placeholderColor} />
@@ -354,7 +349,7 @@ export function AddVesselModal({
                                 onPress={() => handleSubtypeSelect(sub)}
                               >
                                 <ThemedText className="text-sm">{sub}</ThemedText>
-                                {subtype === sub && <Check size={16} color="#3b82f6" />}
+                                {vesselSubtype === sub && <Check size={16} color="#3b82f6" />}
                               </TouchableOpacity>
                             ))}
                           </View>

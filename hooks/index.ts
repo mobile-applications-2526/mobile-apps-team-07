@@ -10,3 +10,4 @@ export { useHaptics } from './useHaptics';
 
 // Re-export context hooks
 export { useVessels } from '@/context/VesselContext';
+export { useVesselDetails } from '@/context/VesselDetailsContext';

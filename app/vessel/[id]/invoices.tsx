@@ -3,15 +3,15 @@ import { View } from 'react-native';
 import { Receipt } from 'lucide-react-native';
 import { ThemedText, ThemedView } from '@/components/common';
 import { VesselTopBar } from '@/components/vessel';
-import { useVessel } from './_layout';
+import { useVesselDetails } from '@/hooks';
 
 export default function VesselInvoices() {
-  const vessel = useVessel();
+  const {vessel} = useVesselDetails();
 
   return (
     <ThemedView className="flex-1 bg-gray-100 dark:bg-[#000]">
       {/* Top App Bar */}
-      <VesselTopBar vesselName={vessel?.name ?? ''} />
+      <VesselTopBar vesselName={vessel?.vesselName ?? ''} />
 
       {/* Content */}
       <View className="flex-1 items-center justify-center p-6">

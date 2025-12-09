@@ -4,73 +4,44 @@
  * Type definitions for vessel-related data structures.
  */
 
+import { Timestamp } from "react-native-reanimated/lib/typescript/commonTypes";
+
 // Vessel entity from database
 export interface Vessel {
   id: number;
-  name: string;
-  imo: string;
-  type: string;
-  subtype: string;
+  vesselName: string;
+  imoNumber: string;
+  vesselType: VesselTypeCategory;
+  vesselSubtype: string;
   // Identification
   flag: string | null;
-  classification: string | null;
+  classificationSociety: string | null;
   // Build info
   buildYear: number | null;
-  drydockDue: string | null;
   // Dimensions
-  dwt: number | null;           // Deadweight tonnage (MT)
-  summerDraft: number | null;    // Summer draft (M)
+  dwtMt: number | null;           // Deadweight tonnage (MT)
   // Capacity
-  cubicCapacity: number | null;  // Cubic capacity (M³)
-  cargoTanks: number | null;     // Number of cargo tanks
+  cubicCapacityM3: number | null;  // Cubic capacity (M³)
+  cargoTanksCount: number | null;     // Number of cargo tanks
   tankCoating: string | null;    // Tank coating type
   // Cargo limits
-  maxCargoTemp: number | null;   // Max cargo temp (°C)
-  minCargoTemp: number | null;   // Min cargo temp (°C)
-  maxPressure: number | null;    // Max pressure (Bar)
+  maxCargoTempC: number | null;   // Max cargo temp (°C)
+  minCargoTempC: number | null;   // Min cargo temp (°C)
+  maxPressureBar: number | null;    // Max pressure (Bar)
+  summerDraftM: number | null;    // Summer draft (M)
   // Performance
-  avgSpeed: number | null;       // Average speed (Knots)
-  fuelConsumption: number | null; // Fuel consumption (MT/Day)
-  // Voyage info (legacy)
-  eta: string | null;
-  port: string | null;
-  image: string | null;
-  hasQ88: boolean;
-  createdAt: string;
-  updatedAt: string;
+  drydockDueDate: Date;
+  averageSpeedKnots: number | null;       // Average speed (Knots)
+  fuelConsumptionMtDay: number | null; // Fuel consumption (MT/Day)
+  vesselPictureUrl: string | null;
 }
 
-// Input type for creating a new vessel
 export interface CreateVesselInput {
-  name: string;
-  imo: string;
-  type: string;
-  subtype: string;
-  // Identification
-  flag?: string | null;
-  classification?: string | null;
-  // Build info
-  buildYear?: number | null;
-  drydockDue?: string | null;
-  // Dimensions
-  dwt?: number | null;
-  summerDraft?: number | null;
-  // Capacity
-  cubicCapacity?: number | null;
-  cargoTanks?: number | null;
-  tankCoating?: string | null;
-  // Cargo limits
-  maxCargoTemp?: number | null;
-  minCargoTemp?: number | null;
-  maxPressure?: number | null;
-  // Performance
-  avgSpeed?: number | null;
-  fuelConsumption?: number | null;
-  // Legacy voyage info
-  eta?: string | null;
-  port?: string | null;
-  image?: string | null;
-  hasQ88?: boolean;
+  vesselName: string;
+  imoNumber: string;
+  vesselType: string;
+  vesselSubtype: string;
+  vesselPictureUrl: string | null;
 }
 
 // Input type for updating a vessel
@@ -101,45 +72,109 @@ export interface UpdateVesselInput {
 
 // Noon report for KPI data
 export interface NoonReport {
-  id: number;
-  vesselId: number;
-  reportDate: string;
-  currentSpeed: number;        // Current speed (Knots)
-  fuelConsumed: number;        // Fuel consumed (MT/Day)
-  cargoTemp: number | null;    // Current cargo temp (°C)
-  position: {
-    lat: number;
-    lng: number;
-  } | null;
-  createdAt: string;
+  id: 0,
+  reportDateTime: Timestamp,
+  reportType: string,
+  latitude: number,
+  longitude: number,
+  activity: string,
+  portName: string,
+  distanceTravelledNm: number,
+  distanceToGoNm: number,
+  averageSpeedKnots: number,
+  swellHeightM: number,
+  windForceBeaufort: number,
+  seaCondition: string,
+  cargoTempAvgC: number,
+  cargoPressureAvgBar: number,
+  fuelConsumptionMe: number,
+  fuelConsumptionAe: number,
+  fuelRob: number,
+  remarks: string
 }
 
 // Charter Party data
-export interface CharterParty {
-  id: number;
-  vesselId: number;
-  voyageId: number;
-  warrantySpeed: number;       // Charter party warranty speed (Knots)
-  fuelAllowance: number;       // Fuel allowance (MT/Day)
-  startDate: string;
-  endDate: string | null;
-  createdAt: string;
+export interface CharterBase {
+  id: number,
+  charterReference: string,
+  chartererName: string,
+  charterDateStart: Date,
+  charterDateEnd: Date,
+  isActive: boolean,
+  charterRepresentativeName: string,
+  charterRepresentativeTel: string,
+  charterRepresentativeEmail: string,
+  charterTerms: string,
+  remarks: string,
+};
+
+export interface TCCharter extends CharterBase{
+  dailyHireRate: number;
+  paymentTerms: string;
+  hirePaymentAdvanceDays: number;
 }
+
+export interface VCCharter extends CharterBase{
+  freightRateMt: number;
+  freightBasis: string;
+  freightLumpsum: boolean,
+  demurrageRateHourly: number,
+  despatchRateHourly: number,
+  laytimeHoursLoad: number,
+  laytimeHoursDischarge: number,
+  isCvc: boolean;
+}
+
+//vessel status
+export interface VesselStatus {
+  id: number;
+  reportDateTime: Timestamp;
+  reportType: string;
+  latitude: number; 
+  longitude: number; 
+  activity: VesselActivityCategory;
+  portName: number; 
+  distanceTravelledNm: number; 
+  distanceToGoNm: number; 
+  averageSpeedKnots: number; 
+  swellHeightM: number; 
+  windForceBeaufort: number;
+  seaCondition: string;
+  cargoTempAvgC: number; 
+  cargoPressureAvgBar: number; 
+  fuelConsumptionMe: number;
+  fuelConsumptionAe: number;
+  fuelRob: number;
+  remarks: string;
+};
 
 // Voyage data
 export interface Voyage {
   id: number;
-  vesselId: number;
   voyageNumber: string;
-  origin: string;
-  destination: string;
-  cargoType: string | null;
-  requiredMinTemp: number | null;  // Required minimum cargo temp (°C)
-  departureDate: string | null;
-  arrivalDate: string | null;
-  status: 'planned' | 'in_progress' | 'completed' | 'cancelled';
-  charterPartyId: number | null;
-  createdAt: string;
+  voyageStatus: VoyageStatus;
+  loadRegion: string;
+  dischargeRegion: string;
+  voyageStartDate: Date;
+  voyageEndDate: Date;
+  voyageInstructions: string;
+  remarks: string;
+}
+
+export interface VesselWithStatus {
+  vessel: Vessel;
+  latestStatus: VesselStatus;
+  activeVoyage: Voyage;
+  activeCharter: CharterBase
+}
+
+export interface Document {
+  id: number,
+  documentType: DocumentTypeCategory;
+  documentNumber: string;
+  documentDate: Date;
+  fileUrl: string;
+  remarks: string;
 }
 
 // KPI Performance data for overview
@@ -162,10 +197,52 @@ export interface VesselKPIs {
 }
 
 // Vessel type categories
-export type VesselTypeCategory = 'Gas Carrier' | 'Chemical Tanker' | 'MR Tanker';
+export type VesselTypeCategory = 
+  | 'Gas Carrier' 
+  | 'Chemical Tanker' 
+  | 'MR Tanker';
+
+export type VesselActivityCategory = 
+  | 'Underway '
+  | 'Loading' 
+  | 'Discharging' 
+  | 'Anchored' 
+  | 'Drifting';
+
+export type VoyageStatus = 
+  | 'Ballast' 
+  | 'Loading' 
+  | 'Laden' 
+  | 'Discharging' 
+  | 'Complete';
+
+export type DocumentTypeCategory =   
+  | 'Q88'
+  | 'FormC'
+  | 'ClassCert'
+  | 'CharterParty'
+  | 'BillOfLading'
+  | 'CargoManifest'
+  | 'CertificateOrigin'
+  | 'PackingList'
+  | 'CommercialInvoice'
+  | 'StatementFacts'
+  | 'NoticeReadiness'
+  | 'LetterProtest'
+  | 'SurveyorReport'
+  | 'UllageReport'
+  | 'TimeSheet'
+  | 'BunkerDeliveryNote'
+  | 'LoadingPlan'
+  | 'StowagePlan'
+  | 'DischargePlan'
+  | 'PortClearance'
+  | 'CustomsDeclaration'
+  | 'CrewList';
+
 
 // Vessel subtypes mapped by type
-export type VesselSubtypes = {
+export type VesselSubtypeCategory = {
   'Gas Carrier': 'LPG' | 'LNG' | 'LEG';
   'Chemical Tanker': 'Type 1' | 'Type 2' | 'Type 3';
   'MR Tanker': 'Clean' | 'Dirty';

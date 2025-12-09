@@ -5,10 +5,10 @@ import { ThemedText, ThemedView, OverlayToast } from '@/components/common';
 import { VesselCard, EmptyVesselList } from '@/components/vessel';
 import { DeleteVesselModal } from '@/components/ui/delete-vessel-modal';
 import { AddVesselModal } from '@/components/ui/add-vessel-modal';
-import { Vessel } from '@/types';
+import { CreateVesselInput, Vessel, VesselStatus, VesselWithStatus } from '@/types';
 import { useVessels, useHaptics } from '@/hooks';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
-import { useRouter } from 'expo-router';
+import { useFocusEffect, useRouter } from 'expo-router';
 
 export default function Overview() {
   const insets = useSafeAreaInsets();
@@ -17,17 +17,31 @@ export default function Overview() {
   
   // Use the vessels context instead of local state
   const { 
-    vessels, 
+    vesselsWithStatus,
+    refreshVesselsWithStatus,
     isLoading, 
     isInitialized,
     deleteVessel, 
     createVessel, 
-    getAllImos 
+    getAllImos
   } = useVessels();
+
+  useFocusEffect(
+      useCallback(()=>{
+          refreshVesselsWithStatus();
+
+          const pollInterval = setInterval(()=>{
+            refreshVesselsWithStatus();
+          }, 30000)
+
+          return ()=>{clearInterval(pollInterval)};
+      }, [refreshVesselsWithStatus])
+  );
   
   // Delete modal state
   const [deleteModalVisible, setDeleteModalVisible] = useState(false);
   const [vesselToDelete, setVesselToDelete] = useState<Vessel | null>(null);
+  const [vesselHasActiveVoyage, setVesselHasActiveVoyage] = useState(false);
   const [isDeleting, setIsDeleting] = useState(false);
   const [deleteError, setDeleteError] = useState(false);
   
@@ -38,20 +52,26 @@ export default function Overview() {
   // Toast state
   const [toastMessage, setToastMessage] = useState<string | null>(null);
 
-  // Calculate active voyages count for a vessel (vessels with eta and port have active voyage)
-  const getActiveVoyagesCount = (vessel: Vessel): number => {
-    return vessel.eta && vessel.port ? 1 : 0;
-  };
+  const hasActiveVoyage = useCallback((vesselId: number): boolean => {
+      const vesselWithStatus = vesselsWithStatus.find(v => v.vessel.id === vesselId);
+      return vesselWithStatus?.activeVoyage !== null && vesselWithStatus?.activeVoyage !== undefined;
+  }, [vesselsWithStatus]);
 
-  const handleDeletePress = useCallback((vessel: Vessel) => {
+  const handleDeletePress = useCallback(async (vessel: Vessel) => {
     setVesselToDelete(vessel);
     setDeleteError(false);
+    
+    //Check if vessel has active voyage
+    const hasActive = hasActiveVoyage(vessel.id);
+    setVesselHasActiveVoyage(hasActive);
+    
     setDeleteModalVisible(true);
   }, []);
 
   const handleCancelDelete = useCallback(() => {
     setDeleteModalVisible(false);
     setVesselToDelete(null);
+    setVesselHasActiveVoyage(false);
     setDeleteError(false);
   }, []);
 
@@ -62,7 +82,7 @@ export default function Overview() {
     setDeleteError(false);
 
     try {
-      // Delete from database
+      // Delete from service
       const success = await deleteVessel(vesselToDelete.id);
       
       if (!success) {
@@ -72,6 +92,9 @@ export default function Overview() {
       // Close modal
       setDeleteModalVisible(false);
       setVesselToDelete(null);
+      setVesselHasActiveVoyage(false);
+
+      refreshVesselsWithStatus();
       
       // Show success toast
       setToastMessage('Vessel deleted');
@@ -85,7 +108,7 @@ export default function Overview() {
     } finally {
       setIsDeleting(false);
     }
-  }, [vesselToDelete, deleteVessel, haptics]);
+  }, [vesselToDelete, deleteVessel, haptics, refreshVesselsWithStatus]);
 
   const handleToastAnimationComplete = useCallback(() => {
     setToastMessage(null);
@@ -101,25 +124,12 @@ export default function Overview() {
     setAddModalVisible(false);
   }, []);
 
-  const handleCreateVessel = useCallback(async (vesselData: {
-    name: string;
-    imo: string;
-    type: string;
-    subtype: string;
-    image?: string;
-  }) => {
+  const handleCreateVessel = useCallback(async (vesselInput: CreateVesselInput) => {
     setIsCreating(true);
 
     try {
       // Create vessel in database
-      const newVessel = await createVessel({
-        name: vesselData.name,
-        imo: vesselData.imo,
-        type: vesselData.type,
-        subtype: vesselData.subtype,
-        image: vesselData.image ?? null,
-        hasQ88: false,
-      });
+      const newVessel = await createVessel(vesselInput);
       
       // Close modal
       setAddModalVisible(false);
@@ -163,7 +173,7 @@ export default function Overview() {
               My Fleet
             </ThemedText>
             <ThemedText className="text-xs text-gray-400 dark:text-gray-500 mt-0.5">
-              {vessels.length} vessel{vessels.length !== 1 ? 's' : ''}
+              {vesselsWithStatus.length} vessel{vesselsWithStatus.length !== 1 ? 's' : ''}
             </ThemedText>
           </View>
           <TouchableOpacity 
@@ -179,9 +189,15 @@ export default function Overview() {
       {/* Vessel List */}
       <View className="flex-1 relative">
         <FlatList
-          data={vessels}
-          keyExtractor={(item) => item.id.toString()}
-          renderItem={({ item }) => <VesselCard vessel={item} onDeletePress={handleDeletePress} />}
+          data={vesselsWithStatus}
+          keyExtractor={(item) => item.vessel.id.toString()}
+          renderItem={({ item }) => 
+              <VesselCard 
+              vessel={item.vessel} 
+              voyage={item.activeVoyage} 
+              status={item.latestStatus}
+              onDeletePress={handleDeletePress} />
+          }
           contentContainerStyle={{ 
             padding: 12, 
             paddingBottom: insets.bottom + 20,
@@ -203,9 +219,9 @@ export default function Overview() {
       {/* Delete Confirmation Modal */}
       <DeleteVesselModal
         visible={deleteModalVisible}
-        vesselName={vesselToDelete?.name || ''}
-        activeVoyagesCount={vesselToDelete ? getActiveVoyagesCount(vesselToDelete) : 0}
+        vesselName={vesselToDelete?.vesselName || ''}
         isDeleting={isDeleting}
+        hasActiveVoyage={vesselHasActiveVoyage}
         hasError={deleteError}
         onCancel={handleCancelDelete}
         onConfirm={handleConfirmDelete}

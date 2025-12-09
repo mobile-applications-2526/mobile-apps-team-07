@@ -10,24 +10,90 @@ import { Ship, Navigation, Pencil, Trash2, Anchor } from 'lucide-react-native';
 import { useRouter } from 'expo-router';
 import { ThemedText } from '@/components/common';
 import { useHaptics } from '@/hooks';
-import { Vessel } from '@/types';
+import { Vessel, VesselStatus, Voyage } from '@/types';
 import { VESSEL_NAME_TRUNCATE_LENGTH } from '@/constants';
 
 interface VesselCardProps {
   vessel: Vessel;
+  voyage: Voyage | null;
+  status: VesselStatus | null;
   onDeletePress: (vessel: Vessel) => void;
 }
 
-export function VesselCard({ vessel, onDeletePress }: VesselCardProps) {
+export function VesselCard({ vessel, voyage, status, onDeletePress }: VesselCardProps) {
   const router = useRouter();
   const { lightImpact, mediumImpact } = useHaptics();
+  
 
-  // Truncate vessel name
-  const displayName = vessel.name.length > VESSEL_NAME_TRUNCATE_LENGTH 
-    ? `${vessel.name.substring(0, VESSEL_NAME_TRUNCATE_LENGTH)}...` 
-    : vessel.name;
+  // Truncate vessel vesselName
+  const displayName = vessel.vesselName.length > VESSEL_NAME_TRUNCATE_LENGTH 
+    ? `${vessel.vesselName.substring(0, VESSEL_NAME_TRUNCATE_LENGTH)}...` 
+    : vessel.vesselName;
 
-  const hasActiveVoyage = vessel.eta && vessel.port;
+  const hasActiveVoyage = voyage != null;
+
+  const formatETA = (distanceNm: number, speedKnots: number): string => {
+    const hours = distanceNm / speedKnots;
+    const etaDate = new Date();
+    etaDate.setHours(etaDate.getHours() + hours);
+    
+    const monthAbbr = etaDate.toLocaleString('en-US', { month: 'short' });
+    const day = etaDate.getDate();
+    
+    return `${monthAbbr} ${day}`;
+  };
+
+  const renderETAContent = () => {
+    // No voyage - show idle state
+    if (!voyage) {
+      return (
+        <>
+          <Anchor size={12} color="#9ca3af" />
+          <ThemedText className="text-xs text-gray-400 dark:text-gray-500 ml-1.5" numberOfLines={1}>
+            No Active Voyage
+          </ThemedText>
+        </>
+      );
+    }
+
+    const portname = voyage.voyageStatus === 'Laden'
+      ? voyage.dischargeRegion
+      : voyage.loadRegion;
+
+    // Has voyage with tracking status - show ETA
+    if (status) {
+      return (
+        <>
+          <Navigation size={12} color="#3b82f6" />
+          <ThemedText className="text-xs text-blue-600 dark:text-blue-400 ml-1.5 font-medium" numberOfLines={1}>
+            ETA {formatETA(status.distanceToGoNm, status.averageSpeedKnots)}
+          </ThemedText>
+          <ThemedText className="text-xs text-gray-400 dark:text-gray-500 mx-1" numberOfLines={1}>
+            →
+          </ThemedText>
+          <ThemedText className="text-xs text-gray-600 dark:text-gray-300 flex-1" numberOfLines={1}>
+            {portname}
+          </ThemedText>
+        </>
+      );
+    }
+
+    // Has voyage but no status - show port activity
+    const message = voyage.voyageStatus === 'Loading'
+      ? `Ship is Loading at port ${voyage.loadRegion}`
+      : voyage.voyageStatus === 'Discharging'
+      ? `Ship is Discharging at port ${voyage.dischargeRegion}`
+      : `Voyage ${voyage.voyageStatus}`;
+
+    return (
+      <>
+        <Anchor size={12} color="#9ca3af" />
+        <ThemedText className="text-xs text-gray-400 dark:text-gray-500 ml-1.5" numberOfLines={1}>
+          {message}
+        </ThemedText>
+      </>
+    );
+  };
 
   const handlePress = async () => {
     await lightImpact();
@@ -65,11 +131,11 @@ export function VesselCard({ vessel, onDeletePress }: VesselCardProps) {
               {displayName}
             </ThemedText>
             <ThemedText className="text-xs text-gray-400 dark:text-gray-500 ml-2" numberOfLines={1}>
-              {vessel.imo}
+              {vessel.imoNumber}
             </ThemedText>
           </View>
           <ThemedText className="text-xs text-gray-500 dark:text-gray-400 mt-0.5" numberOfLines={1}>
-            {vessel.type} • {vessel.subtype}
+            {vessel.vesselType} • {vessel.vesselSubtype}
           </ThemedText>
         </View>
 
@@ -95,25 +161,7 @@ export function VesselCard({ vessel, onDeletePress }: VesselCardProps) {
 
       {/* ETA Strip */}
       <View className={`flex-row items-center px-3 py-1.5 ${hasActiveVoyage ? 'bg-blue-50 dark:bg-blue-900/10' : 'bg-gray-50 dark:bg-gray-800/50'}`}>
-        {hasActiveVoyage ? (
-          <>
-            <Navigation size={12} color="#3b82f6" />
-            <ThemedText className="text-xs text-blue-600 dark:text-blue-400 ml-1.5 font-medium" numberOfLines={1}>
-              ETA {vessel.eta}
-            </ThemedText>
-            <ThemedText className="text-xs text-gray-400 dark:text-gray-500 mx-1" numberOfLines={1}>→</ThemedText>
-            <ThemedText className="text-xs text-gray-600 dark:text-gray-300 flex-1" numberOfLines={1}>
-              {vessel.port}
-            </ThemedText>
-          </>
-        ) : (
-          <>
-            <Anchor size={12} color="#9ca3af" />
-            <ThemedText className="text-xs text-gray-400 dark:text-gray-500 ml-1.5" numberOfLines={1}>
-              No active voyage
-            </ThemedText>
-          </>
-        )}
+        {renderETAContent()}
       </View>
     </TouchableOpacity>
   );

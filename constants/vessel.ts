@@ -4,7 +4,7 @@
  * Constants related to vessel types and configurations.
  */
 
-import { VesselTypeCategory } from '@/types';
+import { DocumentTypeCategory, VesselTypeCategory } from '@/types';
 
 // Available vessel types
 export const VESSEL_TYPES: VesselTypeCategory[] = [
@@ -12,6 +12,10 @@ export const VESSEL_TYPES: VesselTypeCategory[] = [
   'Chemical Tanker', 
   'MR Tanker',
 ];
+
+export const DOCUMENT_TYPES: DocumentTypeCategory[] = [
+    'Q88', 'FormC', 'ClassCert', 'CharterParty'
+]
 
 // Subtypes mapped by vessel type
 export const VESSEL_SUBTYPES: Record<VesselTypeCategory, string[]> = {

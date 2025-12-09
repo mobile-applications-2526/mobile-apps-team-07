@@ -5,9 +5,10 @@
  * Uses the vessel service for database operations.
  */
 
-import React, { createContext, useContext, useEffect, useState, useCallback, ReactNode } from 'react';
-import { Vessel, CreateVesselInput, UpdateVesselInput } from '@/types';
-import { vesselService, databaseService } from '@/services';
+import React, { createContext, useContext, useEffect, useCallback, useState, ReactNode } from 'react';
+import { Vessel, VesselWithStatus, CreateVesselInput, Document, DocumentTypeCategory } from '@/types';
+import { vesselService } from '@/services';
+import { DOCUMENT_TYPES } from '@/constants';
 
 // ============================================
 // TYPES
@@ -16,15 +17,18 @@ import { vesselService, databaseService } from '@/services';
 interface VesselContextType {
   // State
   vessels: Vessel[];
+  vesselsWithStatus: VesselWithStatus[];
   isLoading: boolean;
   isInitialized: boolean;
   error: string | null;
 
   // Actions
   refreshVessels: () => Promise<void>;
+  refreshVesselsWithStatus: () => Promise<void> 
   getVessel: (id: number) => Promise<Vessel | null>;
+  getVesselWithStatus: (id: number) => Promise<VesselWithStatus | null> 
   createVessel: (input: CreateVesselInput) => Promise<Vessel>;
-  updateVessel: (id: number, input: UpdateVesselInput) => Promise<Vessel | null>;
+  updateVessel: (input: Vessel) => Promise<Vessel | null>;
   deleteVessel: (id: number) => Promise<boolean>;
   
   // Utilities
@@ -60,6 +64,8 @@ interface VesselProviderProps {
 }
 
 export function VesselProvider({ children }: VesselProviderProps) {
+
+  const [vesselsWithStatus, setVesselsWithStatus] = useState<VesselWithStatus[]>([]);
   const [vessels, setVessels] = useState<Vessel[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [isInitialized, setIsInitialized] = useState(false);
@@ -75,12 +81,10 @@ export function VesselProvider({ children }: VesselProviderProps) {
       setIsLoading(true);
       setError(null);
 
-      // Initialize database and seed data
-      await databaseService.initializeDatabase();
-
       // Load vessels
-      const loadedVessels = await vesselService.getAllVessels();
-      setVessels(loadedVessels);
+      const loadedVesselsWithStatus = await vesselService.getAllVesselsWithStatus();
+      setVessels(loadedVesselsWithStatus.map(v => v.vessel));
+      setVesselsWithStatus(loadedVesselsWithStatus);
       setIsInitialized(true);
     } catch (err) {
       console.error('Failed to initialize:', err);
@@ -105,10 +109,36 @@ export function VesselProvider({ children }: VesselProviderProps) {
     }
   }, []);
 
+  //Get All Vessels With Status
+  const refreshVesselsWithStatus = useCallback(async () => {
+    try {
+      setIsLoading(true);
+      const loadedVesselsWithStatus = await vesselService.getAllVesselsWithStatus();
+      setVesselsWithStatus(loadedVesselsWithStatus);
+      setError(null);
+    } catch (err) {
+      console.error('Failed to refresh vessels with Status:', err);
+      setError(err instanceof Error ? err.message : 'Failed to refresh vessels with Status');
+    } finally {
+      setIsLoading(false);
+    }
+  }, []);
+
+
   // Get single vessel by ID
   const getVessel = useCallback(async (id: number): Promise<Vessel | null> => {
     try {
       return await vesselService.getVesselById(id);
+    } catch (err) {
+      console.error('Failed to get vessel:', err);
+      return null;
+    }
+  }, []);
+
+  // Get single vessel by ID
+  const getVesselWithStatus = useCallback(async (id: number): Promise<VesselWithStatus| null> => {
+    try {
+      return await vesselService.getVesselByIdWithStatus(id);
     } catch (err) {
       console.error('Failed to get vessel:', err);
       return null;
@@ -123,11 +153,11 @@ export function VesselProvider({ children }: VesselProviderProps) {
   }, []);
 
   // Update existing vessel
-  const updateVessel = useCallback(async (id: number, input: UpdateVesselInput): Promise<Vessel | null> => {
-    const updatedVessel = await vesselService.updateVessel(id, input);
+  const updateVessel = useCallback(async (input: Vessel): Promise<Vessel | null> => {
+    const updatedVessel = await vesselService.updateVessel(input);
     
     if (updatedVessel) {
-      setVessels(prev => prev.map(v => v.id === id ? updatedVessel : v));
+      setVessels(prev => prev.map(v => v.id === input.id ? updatedVessel : v));
     }
     
     return updatedVessel;
@@ -138,9 +168,10 @@ export function VesselProvider({ children }: VesselProviderProps) {
     const success = await vesselService.deleteVessel(id);
     
     if (success) {
+      setVesselsWithStatus(prev => prev.filter(v => v.vessel.id !== id));
       setVessels(prev => prev.filter(v => v.id !== id));
     }
-    
+
     return success;
   }, []);
 
@@ -151,7 +182,7 @@ export function VesselProvider({ children }: VesselProviderProps) {
 
   // Get all IMOs from current state (synchronous)
   const getAllImos = useCallback((): string[] => {
-    return vessels.map(v => v.imo);
+    return vessels.map(v => v.imoNumber);
   }, [vessels]);
 
   // Search vessels
@@ -159,13 +190,17 @@ export function VesselProvider({ children }: VesselProviderProps) {
     return await vesselService.searchVessels(query);
   }, []);
 
+
   const value: VesselContextType = {
     vessels,
+    vesselsWithStatus,
     isLoading,
     isInitialized,
     error,
     refreshVessels,
+    refreshVesselsWithStatus,
     getVessel,
+    getVesselWithStatus,
     createVessel,
     updateVessel,
     deleteVessel,

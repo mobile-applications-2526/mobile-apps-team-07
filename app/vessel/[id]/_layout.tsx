@@ -1,16 +1,12 @@
-import React, { createContext, useContext, useState, useEffect } from 'react';
+import React, { useState } from 'react';
 import { View, TouchableOpacity, Platform, ActivityIndicator } from 'react-native';
 import { Slot, useLocalSearchParams, useRouter, usePathname } from 'expo-router';
 import { Ship, Route, FileText, Receipt, Home, Lock } from 'lucide-react-native';
 import { ThemedText, ThemedView } from '@/components/common';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useColorScheme } from 'react-native';
-import { useVessels, useHaptics } from '@/hooks';
-import { Vessel } from '@/types';
-
-// Context to share vessel data with child routes
-const VesselDetailContext = createContext<Vessel | null>(null);
-export const useVessel = () => useContext(VesselDetailContext);
+import { useHaptics, useVesselDetails } from '@/hooks';
+import VesselDetailsProvider from '@/context/VesselDetailsContext';
 
 type TabItem = {
   name: string;
@@ -22,7 +18,7 @@ type TabItem = {
 
 const tabs: TabItem[] = [
   { name: 'Overview', route: 'index', icon: Ship, requiresQ88: false },
-  { name: 'Voyages', route: 'voyages', icon: Route, requiresQ88: true },
+  { name: 'Voyages', route: 'voyages', icon: Route, requiresQ88: false},
   { name: 'Home', route: 'home', icon: Home, requiresQ88: false, isCenter: true },
   { name: 'Specs', route: 'specs', icon: FileText, requiresQ88: false },
   { name: 'Invoices', route: 'invoices', icon: Receipt, requiresQ88: true },
@@ -130,39 +126,18 @@ function TabBarItem({
   );
 }
 
-export default function VesselLayout() {
+export function VesselLayoutContent() {
   const { id } = useLocalSearchParams<{ id: string }>();
   const router = useRouter();
   const pathname = usePathname();
   const insets = useSafeAreaInsets();
   const haptics = useHaptics();
-  
-  const { getVessel } = useVessels();
-  const [boat, setBoat] = useState<Vessel | null>(null);
-  const [isLoading, setIsLoading] = useState(true);
-  
-  // Load vessel from database
-  useEffect(() => {
-    async function loadVessel() {
-      if (!id) {
-        setIsLoading(false);
-        return;
-      }
-      
-      try {
-        const vessel = await getVessel(parseInt(id, 10));
-        setBoat(vessel);
-      } catch (error) {
-        console.error('Failed to load vessel:', error);
-      } finally {
-        setIsLoading(false);
-      }
-    }
-    
-    loadVessel();
-  }, [id, getVessel]);
-  
-  const hasQ88 = boat?.hasQ88 ?? false;
+
+  const {
+    vessel,
+    hasQ88,
+    isLoading
+  } = useVesselDetails();
 
   const getCurrentTab = () => {
     if (pathname.includes('/voyages')) return 'voyages';
@@ -192,7 +167,7 @@ export default function VesselLayout() {
     );
   }
 
-  if (!boat) {
+  if (!vessel) {
     return (
       <ThemedView className="flex-1 items-center justify-center">
         <ThemedText>Vessel not found</ThemedText>
@@ -201,39 +176,45 @@ export default function VesselLayout() {
   }
 
   return (
-    <VesselDetailContext.Provider value={boat}>
-      <ThemedView className="flex-1">
-        <Slot />
+    <ThemedView className="flex-1">
+      <Slot />
 
-        <View 
-          className="bg-white dark:bg-[#1c1c1e] border-t border-gray-200 dark:border-gray-800"
-          style={{ paddingBottom: insets.bottom }}
-        >
-          {/* Shrunk height from h-16 (64px) to h-[55px] */}
-          <View className="flex-row items-end justify-around h-[55px] px-2">
-            {tabs.map((tab) => {
-              const isActive = currentTab === tab.route;
-              // 'home' isn't a route inside the vessel ID, so it's only active if explicitly handled, 
-              // but visually we might want it neutral unless we are actually on a "Home" screen inside here.
-              // For now, Home is just a navigation action button.
-              const isCenterActive = tab.route === 'home' ? false : isActive; 
-              
-              const isLocked = tab.requiresQ88 && !hasQ88 && tab.route !== 'specs';
-              
-              return (
-                <TabBarItem
-                  key={tab.route}
-                  tab={tab}
-                  isActive={isCenterActive}
-                  isLocked={isLocked}
-                  onPress={() => handleTabPress(tab)}
-                  haptics={haptics}
-                />
-              );
-            })}
-          </View>
+      <View 
+        className="bg-white dark:bg-[#1c1c1e] border-t border-gray-200 dark:border-gray-800"
+        style={{ paddingBottom: insets.bottom }}
+      >
+        {/* Shrunk height from h-16 (64px) to h-[55px] */}
+        <View className="flex-row items-end justify-around h-[55px] px-2">
+          {tabs.map((tab) => {
+            const isActive = currentTab === tab.route;
+            // 'home' isn't a route inside the vessel ID, so it's only active if explicitly handled, 
+            // but visually we might want it neutral unless we are actually on a "Home" screen inside here.
+            // For now, Home is just a navigation action button.
+            const isCenterActive = tab.route === 'home' ? false : isActive; 
+            
+            const isLocked = tab.requiresQ88 && !hasQ88 && tab.route !== 'specs';
+            
+            return (
+              <TabBarItem
+                key={tab.route}
+                tab={tab}
+                isActive={isCenterActive}
+                isLocked={isLocked}
+                onPress={() => handleTabPress(tab)}
+                haptics={haptics}
+              />
+            );
+          })}
         </View>
-      </ThemedView>
-    </VesselDetailContext.Provider>
+      </View>
+    </ThemedView>
+  );
+}
+
+export default function VesselLayout() {
+  return (
+    <VesselDetailsProvider>
+      <VesselLayoutContent />
+    </VesselDetailsProvider>
   );
 }

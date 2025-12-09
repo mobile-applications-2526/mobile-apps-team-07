@@ -5,4 +5,5 @@
  */
 
 export * as vesselService from './vessel.service';
-export * as databaseService from './database.service';
+export * as voyageService from './voyage.service'
+export * as noonReportService from './noonReport.service'

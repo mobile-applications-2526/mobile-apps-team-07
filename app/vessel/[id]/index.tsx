@@ -2,10 +2,10 @@ import React, { useState, useEffect, useCallback } from 'react';
 import { View, ScrollView, RefreshControl, StyleSheet } from 'react-native';
 import { ThemedText, ThemedView } from '@/components/common';
 import { VesselTopBar } from '@/components/vessel';
-import { useVessel } from './_layout';
 import { useColorScheme } from 'nativewind';
 import { VesselKPIs } from '@/types';
-import { getLatestNoonReport, getActiveCharterParty, getActiveVoyage } from '@/lib/database';
+import { useVesselDetails } from '@/hooks';
+import { useFocusEffect } from 'expo-router';
 
 // ============================================
 // HELPER FUNCTIONS
@@ -246,93 +246,104 @@ function KPIGraph({
 // ============================================
 
 export default function VesselOverview() {
-  const boat = useVessel();
+  const {
+      vessel, 
+      activeVoyage,
+      activeCharterParty,
+      refreshVessel, 
+      getLatestNoonReport
+  } = useVesselDetails();
   const [refreshing, setRefreshing] = useState(false);
   const [kpis, setKPIs] = useState<VesselKPIs | null>(null);
 
+  useEffect(()=>{
+    const pollInterval = setInterval(()=>{
+      refreshVessel();
+    }, 30000)
+
+    return () => clearInterval(pollInterval);
+  }, [vessel?.id]);
+
   // Load KPI data
-  const loadKPIData = useCallback(async () => {
-    if (!boat) return;
+  // const loadKPIData = useCallback(async () => {
+  //   if (!vessel) return;
+  //
+  //   try {
+  //     const noonReport = await getLatestNoonReport(vessel.id);
+  //
+  //     // Calculate speed KPI
+  //     let speedStatus: VesselKPIs['speed']['status'] = 'no_data';
+  //     if (noonReport?.currentSpeed !== null && noonReport?.currentSpeed !== undefined) {
+  //       if (activeCharterParty?.warrantySpeed !== null && activeCharterParty?.warrantySpeed !== undefined) {
+  //         speedStatus = calculateKPIStatus(noonReport.currentSpeed, activeCharterParty.warrantySpeed, false);
+  //       } else {
+  //         speedStatus = 'no_cp';
+  //       }
+  //     }
+  //
+  //     // Calculate fuel KPI (lower is better)
+  //     let fuelStatus: VesselKPIs['fuelConsumption']['status'] = 'no_data';
+  //     if (noonReport?.fuelConsumed !== null && noonReport?.fuelConsumed !== undefined) {
+  //       if (activeCharterParty?.fuelAllowance !== null && activeCharterParty?.fuelAllowance !== undefined) {
+  //         fuelStatus = calculateKPIStatus(noonReport.fuelConsumed, activeCharterParty.fuelAllowance, true);
+  //       } else {
+  //         fuelStatus = 'no_cp';
+  //       }
+  //     }
+  //
+  //     // Calculate cargo temp KPI
+  //     let cargoTempStatus: VesselKPIs['cargoTemp']['status'] = 'no_voyage';
+  //     if (activeVoyage) {
+  //       if (noonReport?.cargoTemp !== null && noonReport?.cargoTemp !== undefined) {
+  //         if (activeVoyage.requiredMinTemp !== null) {
+  //           // For cargo temp, actual should be at or below required (warmer than min)
+  //           const variance = ((noonReport.cargoTemp - activeVoyage.requiredMinTemp) / Math.abs(activeVoyage.requiredMinTemp)) * 100;
+  //           if (variance >= -5) cargoTempStatus = 'green';
+  //           else if (variance >= -15) cargoTempStatus = 'yellow';
+  //           else cargoTempStatus = 'red';
+  //         } else {
+  //           cargoTempStatus = 'green'; // No requirement, so it's fine
+  //         }
+  //       } else {
+  //         cargoTempStatus = 'no_data';
+  //       }
+  //     }
+  //
+  //     setKPIs({
+  //       speed: {
+  //         actual: noonReport?.currentSpeed ?? null,
+  //         target: activeCharterParty?.warrantySpeed ?? null,
+  //         status: speedStatus,
+  //       },
+  //       fuelConsumption: {
+  //         actual: noonReport?.fuelConsumed ?? null,
+  //         target: activeCharterParty?.fuelAllowanc ?? null,
+  //         status: fuelStatus,
+  //       },
+  //       cargoTemp: {
+  //         actual: noonReport?.cargoTemp ?? null,
+  //         required: activeVoyage?.requiredMinTemp ?? null,
+  //         status: cargoTempStatus,
+  //       },
+  //     });
+  //   } catch (error) {
+  //     console.error('Failed to load KPI data:', error);
+  //   }
+  // }, [vessel]);
 
-    try {
-      const [noonReport, charterParty, activeVoyage] = await Promise.all([
-        getLatestNoonReport(boat.id),
-        getActiveCharterParty(boat.id),
-        getActiveVoyage(boat.id),
-      ]);
-
-      // Calculate speed KPI
-      let speedStatus: VesselKPIs['speed']['status'] = 'no_data';
-      if (noonReport?.currentSpeed !== null && noonReport?.currentSpeed !== undefined) {
-        if (charterParty?.warrantySpeed !== null && charterParty?.warrantySpeed !== undefined) {
-          speedStatus = calculateKPIStatus(noonReport.currentSpeed, charterParty.warrantySpeed, false);
-        } else {
-          speedStatus = 'no_cp';
-        }
-      }
-
-      // Calculate fuel KPI (lower is better)
-      let fuelStatus: VesselKPIs['fuelConsumption']['status'] = 'no_data';
-      if (noonReport?.fuelConsumed !== null && noonReport?.fuelConsumed !== undefined) {
-        if (charterParty?.fuelAllowance !== null && charterParty?.fuelAllowance !== undefined) {
-          fuelStatus = calculateKPIStatus(noonReport.fuelConsumed, charterParty.fuelAllowance, true);
-        } else {
-          fuelStatus = 'no_cp';
-        }
-      }
-
-      // Calculate cargo temp KPI
-      let cargoTempStatus: VesselKPIs['cargoTemp']['status'] = 'no_voyage';
-      if (activeVoyage) {
-        if (noonReport?.cargoTemp !== null && noonReport?.cargoTemp !== undefined) {
-          if (activeVoyage.requiredMinTemp !== null) {
-            // For cargo temp, actual should be at or below required (warmer than min)
-            const variance = ((noonReport.cargoTemp - activeVoyage.requiredMinTemp) / Math.abs(activeVoyage.requiredMinTemp)) * 100;
-            if (variance >= -5) cargoTempStatus = 'green';
-            else if (variance >= -15) cargoTempStatus = 'yellow';
-            else cargoTempStatus = 'red';
-          } else {
-            cargoTempStatus = 'green'; // No requirement, so it's fine
-          }
-        } else {
-          cargoTempStatus = 'no_data';
-        }
-      }
-
-      setKPIs({
-        speed: {
-          actual: noonReport?.currentSpeed ?? null,
-          target: charterParty?.warrantySpeed ?? null,
-          status: speedStatus,
-        },
-        fuelConsumption: {
-          actual: noonReport?.fuelConsumed ?? null,
-          target: charterParty?.fuelAllowance ?? null,
-          status: fuelStatus,
-        },
-        cargoTemp: {
-          actual: noonReport?.cargoTemp ?? null,
-          required: activeVoyage?.requiredMinTemp ?? null,
-          status: cargoTempStatus,
-        },
-      });
-    } catch (error) {
-      console.error('Failed to load KPI data:', error);
-    }
-  }, [boat]);
-
-  useEffect(() => {
-    loadKPIData();
-  }, [loadKPIData]);
-
-  // Pull to refresh
+  // useEffect(() => {
+  //   loadKPIData();
+  // }, [loadKPIData]);
+  //
+  // // Pull to refresh
   const onRefresh = useCallback(async () => {
     setRefreshing(true);
-    await loadKPIData();
+    await refreshVessel();
+    // await loadKPIData();
     setRefreshing(false);
-  }, [loadKPIData]);
+  }, []);
 
-  if (!boat) {
+  if (!vessel) {
     return (
       <ThemedView className="flex-1 items-center justify-center">
         <ThemedText>Vessel not found</ThemedText>
@@ -343,7 +354,7 @@ export default function VesselOverview() {
   return (
     <View className="flex-1 bg-gray-100 dark:bg-[#000]">
       {/* Top App Bar with vessel name and image */}
-      <VesselTopBar vesselName={boat.name} vesselImage={boat.image} />
+      <VesselTopBar vesselName={vessel.vesselName} vesselImage={vessel.vesselPictureUrl} />
 
       {/* MapLibre Map Placeholder - Half of the screen */}
       <View style={styles.mapContainer} className="bg-gray-200 dark:bg-gray-800 items-center justify-center">
@@ -367,18 +378,18 @@ export default function VesselOverview() {
       >
         {/* Identification Section */}
         <DataSection title="Identification">
-          <DataRow label="IMO" value={formatValue(boat.imo)} />
-          <DataRow label="Flag" value={formatValue(boat.flag)} />
-          <DataRow label="Classification" value={formatValue(boat.classification)} />
-          <DataRow label="Build Year" value={formatValue(boat.buildYear)} />
+          <DataRow label="IMO" value={formatValue(vessel.imoNumber)} />
+          <DataRow label="Flag" value={formatValue(vessel.flag)} />
+          <DataRow label="Classification" value={formatValue(vessel.classificationSociety)} />
+          <DataRow label="Build Year" value={formatValue(vessel.buildYear)} />
         </DataSection>
 
         {/* Capacity Section */}
         <DataSection title="Capacity">
-          <DataRow label="DWT" value={formatValue(boat.dwt, ' MT')} />
-          <DataRow label="Cubic Capacity" value={formatValue(boat.cubicCapacity, ' M³')} />
-          <DataRow label="Cargo Tanks" value={formatValue(boat.cargoTanks)} />
-          <DataRow label="Tank Coating" value={formatValue(boat.tankCoating)} />
+          <DataRow label="DWT" value={formatValue(vessel.dwtMt, ' MT')} />
+          <DataRow label="Cubic Capacity" value={formatValue(vessel.cubicCapacityM3, ' M³')} />
+          <DataRow label="Cargo Tanks" value={formatValue(vessel.cargoTanksCount)} />
+          <DataRow label="Tank Coating" value={formatValue(vessel.tankCoating)} />
         </DataSection>
 
         {/* Performance vs Charter Party Section */}
@@ -415,33 +426,33 @@ export default function VesselOverview() {
 
         {/* Dimensions Section */}
         <DataSection title="Dimensions">
-          <DataRow label="DWT" value={formatValue(boat.dwt, ' MT')} />
-          <DataRow label="Summer Draft" value={formatValue(boat.summerDraft, ' M')} />
+          <DataRow label="DWT" value={formatValue(vessel.dwtMt, ' MT')} />
+          <DataRow label="Summer Draft" value={formatValue(vessel.summerDraftM, ' M')} />
         </DataSection>
 
         {/* Cargo Limits Section */}
         <DataSection title="Cargo Limits">
-          <DataRow label="Max Cargo Temp" value={formatValue(boat.maxCargoTemp, '°C')} />
-          <DataRow label="Min Cargo Temp" value={formatValue(boat.minCargoTemp, '°C')} />
-          <DataRow label="Max Pressure" value={formatValue(boat.maxPressure, ' Bar')} />
+          <DataRow label="Max Cargo Temp" value={formatValue(vessel.maxCargoTempC, '°C')} />
+          <DataRow label="Min Cargo Temp" value={formatValue(vessel.minCargoTempC, '°C')} />
+          <DataRow label="Max Pressure" value={formatValue(vessel.maxPressureBar, ' Bar')} />
         </DataSection>
 
         {/* Performance Section */}
         <DataSection title="Performance">
-          <DataRow label="Average Speed" value={formatValue(boat.avgSpeed, ' Knots')} />
-          <DataRow label="Fuel Consumption" value={formatValue(boat.fuelConsumption, ' MT/Day')} />
+          <DataRow label="Average Speed" value={formatValue(vessel.averageSpeedKnots, ' Knots')} />
+          <DataRow label="Fuel Consumption" value={formatValue(vessel.fuelConsumptionMtDay, ' MT/Day')} />
         </DataSection>
 
         {/* Build Section */}
         <DataSection title="Build">
-          <DataRow label="Build Year" value={formatValue(boat.buildYear)} />
-          <DataRow label="Drydock Due" value={formatValue(boat.drydockDue)} />
+          <DataRow label="Build Year" value={formatValue(vessel.buildYear)} />
+          <DataRow label="Drydock Due" value={formatValue(vessel.drydockDueDate.toString())} />
         </DataSection>
 
         {/* Type Section */}
         <DataSection title="Type">
-          <DataRow label="Vessel Type" value={formatValue(boat.type)} />
-          <DataRow label="Vessel Subtype" value={formatValue(boat.subtype)} />
+          <DataRow label="Vessel Type" value={formatValue(vessel.vesselType)} />
+          <DataRow label="Vessel Subtype" value={formatValue(vessel.vesselSubtype)} />
         </DataSection>
       </ScrollView>
     </View>
