@@ -3,6 +3,7 @@ import { View, TouchableOpacity, Text } from 'react-native';
 import { FileUp, Download, CheckCircle } from 'lucide-react-native';
 import { ThemedText } from '@/components/common';
 import { Document as DocType, DocumentTypeCategory } from '@/types';
+import { DocumentViewer } from './DocumentViewer';
 
 type Props = {
   doc: DocType | undefined;
@@ -35,13 +36,7 @@ export const DocumentUpload: React.FC<Props> = ({
 
       {doc ? (
         <View className="flex-row items-start">
-          <View className="w-20 h-28 bg-gray-50 dark:bg-gray-900 rounded-lg items-center justify-center mr-4 border border-gray-200 dark:border-gray-700">
-            <View className="items-center">
-              <FileUp size={28} color="#3b82f6" />
-              <Text className="text-[10px] text-gray-400 mt-1">PDF</Text>
-            </View>
-          </View>
-
+          <DocumentViewer doc={doc} />
           <View className="flex-1">
             <ThemedText className="text-sm font-medium mb-1">{doc.documentNumber || 'Document.pdf'}</ThemedText>
             <ThemedText className="text-xs text-gray-500 mb-3">
