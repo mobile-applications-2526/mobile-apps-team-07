@@ -1,7 +1,7 @@
 import { useState, useCallback } from 'react';
 import { Alert, Linking } from 'react-native';
 import { Document as DocType, DocumentTypeCategory } from '@/types';
-import { useVesselDetails } from '@/hooks';
+import { useVesselDetails } from '@/context/VesselDetailsContext';
 import { documentService } from '@/services';
 
 // Acceptance constants
