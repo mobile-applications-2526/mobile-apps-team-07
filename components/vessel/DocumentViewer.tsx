@@ -1,9 +1,20 @@
 import React, { useState, useEffect } from 'react';
 import { View, Dimensions, ActivityIndicator } from 'react-native';
-import Pdf from 'react-native-pdf';
 import { FileUp } from 'lucide-react-native';
 import { ThemedText } from '@/components/common';
 import { Document } from '@/types/vessel';
+import { IS_EXPO_GO } from '@/constants/env';
+
+// Conditionally import Pdf only if not in Expo Go
+let Pdf;
+if (!IS_EXPO_GO) {
+  try {
+    Pdf = require('react-native-pdf').default;
+  } catch (e) {
+    console.warn('react-native-pdf could not be loaded outside of Expo Go:', e);
+    Pdf = null; // Ensure Pdf is null if import fails
+  }
+}
 
 interface DocumentViewerProps {
   doc: Document | undefined;
@@ -36,6 +47,18 @@ export const DocumentViewer: React.FC<DocumentViewerProps> = ({ doc }) => {
   const isPdf = doc.fileUrl.toLowerCase().endsWith('.pdf');
 
   if (isPdf) {
+    if (IS_EXPO_GO || !Pdf) {
+      // Render fallback for Expo Go or if Pdf failed to load
+      return (
+        <View className="w-20 h-28 bg-gray-50 dark:bg-gray-900 rounded-lg items-center justify-center mr-4 border border-gray-200 dark:border-gray-700">
+          <View className="items-center">
+            <FileUp size={28} color="#3b82f6" />
+            <ThemedText className="text-[10px] text-gray-400 mt-1">PDF (No Preview in Expo Go)</ThemedText>
+          </View>
+        </View>
+      );
+    }
+
     return (
       <View className="w-20 h-28 bg-gray-50 dark:bg-gray-900 rounded-lg items-center justify-center mr-4 border border-gray-200 dark:border-gray-700 overflow-hidden">
         {loading && (
@@ -78,3 +101,4 @@ export const DocumentViewer: React.FC<DocumentViewerProps> = ({ doc }) => {
     </View>
   );
 };
+

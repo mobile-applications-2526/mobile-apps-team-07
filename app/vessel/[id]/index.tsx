@@ -6,6 +6,18 @@ import { useColorScheme } from 'nativewind';
 import { VesselKPIs } from '@/types';
 import { useVesselDetails } from '@/hooks';
 import { useFocusEffect } from 'expo-router';
+import { IS_EXPO_GO } from '@/constants/env';
+
+// Conditionally import MapView only if not in Expo Go
+let MapView;
+if (!IS_EXPO_GO) {
+  try {
+    MapView = require('@maplibre/maplibre-react-native').default;
+  } catch (e) {
+    console.warn('@maplibre/maplibre-react-native could not be loaded outside of Expo Go:', e);
+    MapView = null; // Ensure MapView is null if import fails
+  }
+}
 
 // ============================================
 // HELPER FUNCTIONS
@@ -358,13 +370,13 @@ export default function VesselOverview() {
 
       {/* MapLibre Map Placeholder - Half of the screen */}
       <View style={styles.mapContainer} className="bg-gray-200 dark:bg-gray-800 items-center justify-center">
-        {/*
-          MapLibre Map goes here. Uncomment the MapView import and usage below when running a dev build:
+        {IS_EXPO_GO || !MapView ? (
+          <ThemedText className="text-sm text-gray-500 text-center px-4">
+            [Map Placeholder]{'\n'}Map is not available in Expo Go. Please use a dev build.
+          </ThemedText>
+        ) : (
           <MapView style={styles.map} />
-        */}
-        <ThemedText className="text-sm text-gray-500 text-center px-4">
-          [Map Placeholder]{'\n'}MapLibre map will appear here in dev build.
-        </ThemedText>
+        )}
       </View>
 
       {/* Scrollable Content */}
