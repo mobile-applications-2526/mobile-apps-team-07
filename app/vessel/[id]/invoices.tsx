@@ -42,7 +42,7 @@ function TypeBadge({type}:{type:string}){
   return <ThemedText className="px-0.5 py-0.5 rounded-full bg-blue-50 text-blue-700 border border-blue-100 text-xs font-medium uppercase">{type}</ThemedText>;
 }
 
-function InvoiceCard({invoice, onDownload, onEdit, onDelete}:{invoice:Invoice; onDownload:(i:Invoice)=>void; onEdit:(i:Invoice)=>void; onDelete:(i:Invoice)=>void}){
+function InvoiceCard({invoice, onDownload, onEdit, onDelete, processing}:{invoice:Invoice; onDownload:(i:Invoice)=>void; onEdit:(i:Invoice)=>void; onDelete:(i:Invoice)=>void; processing?:boolean}){
   // small helper for status color accent
   const statusColor = invoice.status === 'Paid' ? '#10b981' : invoice.status === 'Overdue' ? '#ef4444' : '#f59e0b';
 
@@ -78,14 +78,14 @@ function InvoiceCard({invoice, onDownload, onEdit, onDelete}:{invoice:Invoice; o
 
       {/* Right: actions */}
       <View className="items-end justify-between">
-        <Pressable onPress={()=>onDownload(invoice)} accessibilityLabel="Download invoice" className="p-1 rounded-full">
-          <Download size={16} color="#374151" />
+        <Pressable onPress={()=>onDownload(invoice)} accessibilityLabel="Download invoice" className="p-1 rounded-full" disabled={!!processing}>
+          <Download size={16} color={processing ? '#9ca3af' : '#374151'} />
         </Pressable>
-        <Pressable onPress={()=>onEdit(invoice)} className="mt-2 p-1 rounded-full">
-          <Pencil size={16} color="#374151" />
+        <Pressable onPress={()=>onEdit(invoice)} className="mt-2 p-1 rounded-full" disabled={!!processing}>
+          <Pencil size={16} color={processing ? '#9ca3af' : '#374151'} />
         </Pressable>
-        <Pressable onPress={()=>onDelete(invoice)} className="mt-2 p-1 rounded-full">
-          <Trash2 size={16} color="#374151" />
+        <Pressable onPress={()=>onDelete(invoice)} className="mt-2 p-1 rounded-full" disabled={!!processing}>
+          <Trash2 size={16} color={processing ? '#9ca3af' : '#374151'} />
         </Pressable>
       </View>
     </View>
@@ -98,6 +98,11 @@ export default function VesselInvoices() {
   // Load invoices from backend because the vessel object does not include them by default
   const [invoicesState, setInvoicesState] = React.useState<Invoice[]>([]);
   const [isLoadingInvoices, setIsLoadingInvoices] = React.useState(false);
+  const [processingMap, setProcessingMap] = React.useState<Record<string, boolean>>({});
+
+  function setProcessing(id: string, value: boolean){
+    setProcessingMap(prev=>({ ...prev, [id]: value }));
+  }
 
   React.useEffect(() => {
     let mounted = true;
@@ -134,18 +139,71 @@ export default function VesselInvoices() {
   const sorted = useMemo(()=>[...invoicesState].sort((a,b)=>new Date(b.date).getTime() - new Date(a.date).getTime()), [invoicesState]);
 
   function handleDownload(inv:Invoice){
-    if(!inv.pdfUrl){
-      Alert.alert('PDF not available', 'PDF is still being generated. Please try again later.');
-      return;
-    }
-    Linking.openURL(inv.pdfUrl).catch(()=>{
-      Alert.alert('Could not open PDF', 'An error occurred while opening the PDF.');
-    });
+    // If we already have a URL open it. Otherwise try to refresh the invoice from backend and check again.
+    (async ()=>{
+      try{
+        setProcessing(inv.id, true);
+        if(inv.pdfUrl){
+          await Linking.openURL(inv.pdfUrl);
+          return;
+        }
+        // fetch latest invoice from backend
+        const fresh = await invoiceService.getInvoiceById(Number(inv.id));
+        const pdf = fresh?.fileUrl ?? fresh?.pdfUrl ?? null;
+        if(pdf){
+          // update local state with new url
+          setInvoicesState(prev=>prev.map(i=> i.id === inv.id ? { ...i, pdfUrl: pdf, pdfReady: true } : i));
+          await Linking.openURL(pdf);
+        } else {
+          Alert.alert('PDF not available', 'PDF is still being generated. Please try again later.');
+        }
+      }catch(err){
+        console.error('Download failed', err);
+        Alert.alert('Could not open PDF', 'An error occurred while opening the PDF.');
+      }finally{
+        setProcessing(inv.id, false);
+      }
+    })();
   }
 
   function handleEdit(inv:Invoice){
-    // Navigation to edit screen would go here. For now, show a placeholder alert.
-    Alert.alert('Edit invoice', `Edit invoice ${inv.number}`);
+    // Provide quick status edit options and call backend
+    Alert.alert(
+      'Edit invoice',
+      `Change status for ${inv.number}`,
+      [
+        { text: 'Mark Paid', onPress: ()=>changeStatus(inv, 'Paid') },
+        { text: 'Mark Pending', onPress: ()=>changeStatus(inv, 'Pending') },
+        { text: 'Mark Overdue', onPress: ()=>changeStatus(inv, 'Overdue') },
+        { text: 'Cancel', style: 'cancel' }
+      ]
+    );
+  }
+
+  async function changeStatus(inv:Invoice, newStatus: Invoice['status']){
+    try{
+      setProcessing(inv.id, true);
+      const updated = await invoiceService.updateInvoiceStatus(Number(inv.id), newStatus);
+      // map returned invoice to local Invoice shape (best-effort)
+      const mapped: Invoice = {
+        id: String(updated.invoiceId ?? updated.id ?? updated.invoice_id ?? inv.id),
+        number: updated.invoiceNumber ?? updated.number ?? inv.number,
+        type: updated.invoiceType ?? updated.type ?? inv.type,
+        date: updated.invoiceDate ?? updated.date ?? inv.date,
+        dueDate: updated.dueDate ?? updated.due_date ?? inv.dueDate,
+  amount: Number((updated.totalAmount ?? updated.amount ?? inv.amount) || 0),
+        currency: updated.currency ?? inv.currency,
+        status: updated.paymentStatus ?? updated.status ?? newStatus,
+        pdfUrl: updated.fileUrl ?? updated.pdfUrl ?? inv.pdfUrl ?? null,
+        pdfReady: !!(updated.pdfReady ?? updated.fileUrl ?? inv.pdfReady)
+      };
+      setInvoicesState(prev=> prev.map(i=> i.id === inv.id ? mapped : i));
+    }catch(err){
+      console.error('Failed to update status', err);
+      Alert.alert('Update failed', 'Could not update invoice status.');
+    }finally{
+      setProcessing(inv.id, false);
+    }
   }
 
   function handleDelete(inv:Invoice){
@@ -154,9 +212,18 @@ export default function VesselInvoices() {
       `Are you sure you want to delete ${inv.number}? This action cannot be undone.`,
       [
         { text: 'Cancel', style: 'cancel' },
-        { text: 'Delete', style: 'destructive', onPress: ()=>{
-          // Replace with real deletion code (API call / state update)
-          Alert.alert('Deleted', `${inv.number} has been deleted (stub).`);
+        { text: 'Delete', style: 'destructive', onPress: async ()=>{
+          try{
+            setProcessing(inv.id, true);
+            await invoiceService.deleteInvoice(Number(inv.id));
+            setInvoicesState(prev=> prev.filter(i=> i.id !== inv.id));
+            Alert.alert('Deleted', `${inv.number} has been deleted.`);
+          }catch(err){
+            console.error('Delete failed', err);
+            Alert.alert('Delete failed', 'Could not delete invoice.');
+          }finally{
+            setProcessing(inv.id, false);
+          }
         } }
       ]
     );
@@ -167,12 +234,6 @@ export default function VesselInvoices() {
       <VesselTopBar vesselName={vessel?.vesselName ?? ''} />
 
       <View className="flex-1 p-3">
-        <View className="flex-row items-center justify-end mb-3">
-          {/* Create button remains visible but the 'Invoices' page heading was removed per request */}
-          <Pressable onPress={()=>Alert.alert('Create invoice','Open invoice creation (stub)')} accessibilityLabel="Create invoice">
-            <PlusCircle size={28} color="#2563eb" />
-          </Pressable>
-        </View>
 
         {sorted.length === 0 ? (
           <View className="flex-1 items-center justify-center p-6">
@@ -186,13 +247,37 @@ export default function VesselInvoices() {
             data={sorted}
             keyExtractor={i=>i.id}
             renderItem={({item})=> (
-              <InvoiceCard invoice={item} onDownload={handleDownload} onEdit={handleEdit} onDelete={handleDelete} />
+              <InvoiceCard invoice={item} onDownload={handleDownload} onEdit={handleEdit} onDelete={handleDelete} processing={!!processingMap[item.id]} />
             )}
             contentContainerStyle={{paddingBottom: 48}}
             showsVerticalScrollIndicator={false}
           />
         )}
       </View>
+
+      {/* Floating Create Invoice button (bottom-right above navbar) */}
+      <Pressable
+        accessibilityLabel="Create invoice"
+        onPress={()=>Alert.alert('Create invoice','Open invoice creation (stub)')}
+        style={{
+          position: 'absolute',
+          right: 16,
+          bottom: 24,
+          width: 56,
+          height: 56,
+          borderRadius: 28,
+          backgroundColor: '#2563eb',
+          alignItems: 'center',
+          justifyContent: 'center',
+          elevation: 6,
+          shadowColor: '#000',
+          shadowOpacity: 0.25,
+          shadowRadius: 4,
+          shadowOffset: { width: 0, height: 2 }
+        }}
+      >
+        <PlusCircle size={28} color="#fff" />
+      </Pressable>
     </ThemedView>
   );
 }

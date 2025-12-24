@@ -22,4 +22,26 @@ export async function getInvoiceById(id: number) {
   return await response.json();
 }
 
-export default { getInvoicesByVessel, getInvoiceById };
+/**
+ * Update the payment status for an invoice
+ */
+export async function updateInvoiceStatus(id: number, status: string) {
+  const response = await fetch(`${API_URL}/api/invoices/${id}/status`, {
+    method: 'PUT',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ status })
+  });
+  if (!response.ok) throw new Error(`Failed to update invoice ${id} status: ${response.status}`);
+  return await response.json();
+}
+
+/**
+ * Delete an invoice
+ */
+export async function deleteInvoice(id: number) {
+  const response = await fetch(`${API_URL}/api/invoices/${id}`, { method: 'DELETE' });
+  if (!response.ok && response.status !== 204) throw new Error(`Failed to delete invoice ${id}: ${response.status}`);
+  return;
+}
+
+export default { getInvoicesByVessel, getInvoiceById, updateInvoiceStatus, deleteInvoice };

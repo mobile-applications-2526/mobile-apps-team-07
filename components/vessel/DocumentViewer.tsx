@@ -52,7 +52,7 @@ export const DocumentViewer: React.FC<DocumentViewerProps & { style?: any }> = (
     if (IS_EXPO_GO || !Pdf) {
       // Render fallback for Expo Go or if Pdf failed to load
       return (
-        <View className="bg-gray-50 dark:bg-gray-900 rounded-lg mr-4 border border-gray-200 dark:border-gray-700" style={[{ width: 80, height: 120, justifyContent: 'center', alignItems: 'center' }, style]}>
+        <View className="bg-gray-50 dark:bg-gray-900 rounded-lg mr-4 border border-gray-200 dark:border-gray-700 p-2" style={[{ width: 80, height: 120, justifyContent: 'center', alignItems: 'center' }, style]}>
           <View style={{ alignItems: 'center', justifyContent: 'center', flex: 1 }} className="w-full h-full">
             <FileUp size={28} color="#3b82f6" />
             <View style={{ height: 16 }} />
