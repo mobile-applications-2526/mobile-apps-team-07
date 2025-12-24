@@ -4,6 +4,7 @@
  * Barrel exports for vessel-specific components.
  */
 
-export { VesselTopBar } from './VesselTopBar';
-export { VesselCard } from './VesselCard';
+export * from './VesselCard';
+export * from './VesselTopBar';
+export * from './DocumentUpload';
 export { EmptyVesselList } from './EmptyVesselList';

@@ -7,6 +7,7 @@
 export { useAnimatedModal } from './useAnimatedModal';
 export { useToast } from './useToast';
 export { useHaptics } from './useHaptics';
+export { useVesselDocuments } from './useVesselDocuments';
 
 // Re-export context hooks
 export { useVessels } from '@/context/VesselContext';
