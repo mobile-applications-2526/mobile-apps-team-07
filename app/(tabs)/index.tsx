@@ -1,10 +1,11 @@
-import React, { useState, useCallback } from 'react';
+import React, { useState, useCallback, useEffect } from 'react';
 import { FlatList, TouchableOpacity, View, ActivityIndicator } from 'react-native';
 import { Plus } from 'lucide-react-native';
 import { ThemedText, ThemedView, OverlayToast } from '@/components/common';
 import { VesselCard, EmptyVesselList } from '@/components/vessel';
 import { DeleteVesselModal } from '@/components/ui/delete-vessel-modal';
 import { AddVesselModal } from '@/components/ui/add-vessel-modal';
+import EditVesselModal from '@/components/ui/edit-vessel-modal';
 import { CreateVesselInput, Vessel, VesselStatus, VesselWithStatus } from '@/types';
 import { useVessels, useHaptics } from '@/hooks';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
@@ -23,6 +24,8 @@ export default function Overview() {
     isInitialized,
     deleteVessel, 
     createVessel, 
+    updateVessel,
+    isOfflineData,
     getAllImos
   } = useVessels();
 
@@ -48,9 +51,39 @@ export default function Overview() {
   // Add vessel modal state
   const [addModalVisible, setAddModalVisible] = useState(false);
   const [isCreating, setIsCreating] = useState(false);
+  // Edit vessel modal state
+  const [editModalVisible, setEditModalVisible] = useState(false);
+  const [vesselToEdit, setVesselToEdit] = useState<Vessel | null>(null);
+  const [isSaving, setIsSaving] = useState(false);
   
   // Toast state
   const [toastMessage, setToastMessage] = useState<string | null>(null);
+
+  // Show offline toast if context indicates cached data was used on startup
+  // Only notify the user once per offline period. When we reconnect, notify once and allow future offline notifications.
+  const [offlineNotified, setOfflineNotified] = useState(false);
+  const prevIsOfflineRef = React.useRef<boolean | null>(null);
+
+  useEffect(() => {
+    const prev = prevIsOfflineRef.current;
+
+    if (isOfflineData) {
+      if (!offlineNotified) {
+        setToastMessage('Offline: showing cached data');
+        setOfflineNotified(true);
+      }
+    } else {
+      // We just transitioned from offline -> online
+      if (prev) {
+        setToastMessage('Reconnected to server');
+        // reset notified state so future offline periods will notify again
+        setOfflineNotified(false);
+      }
+    }
+
+    prevIsOfflineRef.current = isOfflineData;
+    // We intentionally omit toastMessage and offlineNotified from deps to avoid re-running during toast lifecycle
+  }, [isOfflineData]);
 
   const hasActiveVoyage = useCallback((vesselId: number): boolean => {
       const vesselWithStatus = vesselsWithStatus.find(v => v.vessel.id === vesselId);
@@ -119,6 +152,50 @@ export default function Overview() {
     await haptics.lightImpact();
     setAddModalVisible(true);
   }, [haptics]);
+
+  // Edit handlers
+  const handleEditPress = useCallback(async (vessel: Vessel) => {
+    await haptics.lightImpact();
+    setVesselToEdit(vessel);
+    setEditModalVisible(true);
+  }, [haptics]);
+
+  const handleCancelEdit = useCallback(() => {
+    setEditModalVisible(false);
+    setVesselToEdit(null);
+  }, []);
+
+  const handleSaveEdit = useCallback(async (payload: { vesselName: string; imoNumber: string; vesselType: string; vesselSubtype: string; vesselPictureUrl: string | null; }) => {
+    if (!vesselToEdit) return;
+    setIsSaving(true);
+    try {
+      // Build updated vessel object (preserve other fields)
+      const updated: Vessel = {
+        ...vesselToEdit,
+        vesselName: payload.vesselName,
+        imoNumber: payload.imoNumber,
+        vesselType: payload.vesselType as any,
+        vesselSubtype: payload.vesselSubtype,
+        vesselPictureUrl: payload.vesselPictureUrl,
+      };
+
+      const result = await updateVessel(updated);
+
+      // After updating (optimistic update already applied), refresh vessels with status from backend
+      // to ensure authoritative data (and any derived status) is pulled in.
+      await refreshVesselsWithStatus();
+
+      setEditModalVisible(false);
+      setVesselToEdit(null);
+      setToastMessage('Vessel updated');
+      await haptics.successNotification();
+    } catch (err) {
+      console.error('Failed to update vessel', err);
+      await haptics.errorNotification();
+    } finally {
+      setIsSaving(false);
+    }
+  }, [vesselToEdit, updateVessel, refreshVesselsWithStatus, haptics]);
 
   const handleCancelAdd = useCallback(() => {
     setAddModalVisible(false);
@@ -196,7 +273,8 @@ export default function Overview() {
               vessel={item.vessel} 
               voyage={item.activeVoyage} 
               status={item.latestStatus}
-              onDeletePress={handleDeletePress} />
+        onDeletePress={handleDeletePress}
+        onEditPress={handleEditPress} />
           }
           contentContainerStyle={{ 
             padding: 12, 
@@ -235,6 +313,15 @@ export default function Overview() {
         onCancel={handleCancelAdd}
         onCreate={handleCreateVessel}
         isCreating={isCreating}
+      />
+      
+      {/* Edit Vessel Modal */}
+      <EditVesselModal
+        visible={editModalVisible}
+        vessel={vesselToEdit}
+        onCancel={handleCancelEdit}
+        onSave={handleSaveEdit}
+        isSaving={isSaving}
       />
       
     </ThemedView>

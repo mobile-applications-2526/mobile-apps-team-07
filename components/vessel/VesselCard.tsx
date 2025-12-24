@@ -18,9 +18,10 @@ interface VesselCardProps {
   voyage: Voyage | null;
   status: VesselStatus | null;
   onDeletePress: (vessel: Vessel) => void;
+  onEditPress?: (vessel: Vessel) => void;
 }
 
-export function VesselCard({ vessel, voyage, status, onDeletePress }: VesselCardProps) {
+export function VesselCard({ vessel, voyage, status, onDeletePress, onEditPress }: VesselCardProps) {
   const router = useRouter();
   const { lightImpact, mediumImpact } = useHaptics();
   
@@ -153,6 +154,7 @@ export function VesselCard({ vessel, voyage, status, onDeletePress }: VesselCard
             className="p-1.5 mt-1" 
             activeOpacity={0.6} 
             hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
+            onPress={async () => { if (onEditPress) { await mediumImpact(); onEditPress(vessel); } }}
           >
             <Pencil size={16} color="#9ca3af" />
           </TouchableOpacity>

@@ -21,6 +21,8 @@ interface VesselContextType {
   isLoading: boolean;
   isInitialized: boolean;
   error: string | null;
+  // Whether data being shown is from cache because network fetch failed on startup
+  isOfflineData: boolean;
 
   // Actions
   refreshVessels: () => Promise<void>;
@@ -70,6 +72,7 @@ export function VesselProvider({ children }: VesselProviderProps) {
   const [isLoading, setIsLoading] = useState(true);
   const [isInitialized, setIsInitialized] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [isOfflineData, setIsOfflineData] = useState(false);
 
   // Initialize database and load vessels
   useEffect(() => {
@@ -81,11 +84,22 @@ export function VesselProvider({ children }: VesselProviderProps) {
       setIsLoading(true);
       setError(null);
 
-      // Load vessels
-      const loadedVesselsWithStatus = await vesselService.getAllVesselsWithStatus();
-      setVessels(loadedVesselsWithStatus.map(v => v.vessel));
-      setVesselsWithStatus(loadedVesselsWithStatus);
-      setIsInitialized(true);
+      // Prefer a fresh network fetch on startup. If it succeeds use that data; if it fails fall back to cache and mark offline.
+      try {
+        const fresh = await vesselService.fetchVesselsWithStatusNetwork();
+        setVessels(fresh.map(v => v.vessel));
+        setVesselsWithStatus(fresh);
+        setIsOfflineData(false);
+        setIsInitialized(true);
+      } catch (networkErr) {
+        // Network failed — try to load cached data and flag offline
+        console.warn('Network fetch failed during initialization, falling back to cache:', networkErr);
+        const cached = await vesselService.getAllVesselsWithStatus();
+        setVessels(cached.map(v => v.vessel));
+        setVesselsWithStatus(cached);
+        setIsOfflineData(true);
+        setIsInitialized(true);
+      }
     } catch (err) {
       console.error('Failed to initialize:', err);
       setError(err instanceof Error ? err.message : 'Failed to initialize');
@@ -113,8 +127,19 @@ export function VesselProvider({ children }: VesselProviderProps) {
   const refreshVesselsWithStatus = useCallback(async () => {
     try {
       setIsLoading(true);
-      const loadedVesselsWithStatus = await vesselService.getAllVesselsWithStatus();
-      setVesselsWithStatus(loadedVesselsWithStatus);
+      // Prefer network refresh; fall back to cache if network fails
+      try {
+        const fresh = await vesselService.fetchVesselsWithStatusNetwork();
+        setVesselsWithStatus(fresh);
+        setVessels(fresh.map(v => v.vessel));
+        setIsOfflineData(false);
+      } catch (networkErr) {
+        console.warn('Network refresh failed, using cached data:', networkErr);
+        const cached = await vesselService.getAllVesselsWithStatus();
+        setVesselsWithStatus(cached);
+        setVessels(cached.map(v => v.vessel));
+        setIsOfflineData(true);
+      }
       setError(null);
     } catch (err) {
       console.error('Failed to refresh vessels with Status:', err);
@@ -154,13 +179,25 @@ export function VesselProvider({ children }: VesselProviderProps) {
 
   // Update existing vessel
   const updateVessel = useCallback(async (input: Vessel): Promise<Vessel | null> => {
-    const updatedVessel = await vesselService.updateVessel(input);
-    
-    if (updatedVessel) {
-      setVessels(prev => prev.map(v => v.id === input.id ? updatedVessel : v));
+    // Optimistic update: apply change locally immediately so UI reflects the edit
+    setVessels(prev => prev.map(v => v.id === input.id ? input : v));
+    setVesselsWithStatus(prev => prev.map(vws => vws.vessel.id === input.id ? { ...vws, vessel: input } : vws));
+
+    try {
+      const updatedVessel = await vesselService.updateVessel(input);
+      if (updatedVessel) {
+        // Replace with authoritative response
+        setVessels(prev => prev.map(v => v.id === input.id ? updatedVessel : v));
+        setVesselsWithStatus(prev => prev.map(vws => vws.vessel.id === input.id ? { ...vws, vessel: updatedVessel } : vws));
+        return updatedVessel;
+      }
+      // If backend not implemented yet, keep optimistic result
+      return input;
+    } catch (err) {
+      console.error('Failed to update vessel in service:', err);
+      // On error, keep optimistic change (could also revert) and return null to signal failure
+      return null;
     }
-    
-    return updatedVessel;
   }, []);
 
   // Delete vessel
@@ -197,6 +234,7 @@ export function VesselProvider({ children }: VesselProviderProps) {
     isLoading,
     isInitialized,
     error,
+    isOfflineData,
     refreshVessels,
     refreshVesselsWithStatus,
     getVessel,

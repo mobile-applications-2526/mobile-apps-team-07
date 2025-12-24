@@ -81,6 +81,21 @@ async function fetchAndCacheAllVesselsWithStatus(): Promise<VesselWithStatus[]> 
 }
 
 /**
+ * Network-only fetch for vessels with status. Does not return cached data.
+ * Throws on network error / non-ok response.
+ */
+export async function fetchVesselsWithStatusNetwork(): Promise<VesselWithStatus[]> {
+  const response = await fetch(`${API_URL}/api/vessels/with-status`);
+  if (!response.ok) throw new Error(`Failed to fetch vessels with status: ${response.status}`);
+  const vesselsWithStatus = await response.json();
+
+  // Update cache with fresh data
+  await db.setCacheValue(db.CACHE_KEYS.ALL_VESSELS_WITH_STATUS, vesselsWithStatus);
+
+  return vesselsWithStatus;
+}
+
+/**
  * Get a vessel by ID (cache-first strategy)
  */
 export async function getVesselById(id: number): Promise<Vessel | null> {
@@ -187,14 +202,35 @@ export async function createVessel(input: CreateVesselInput): Promise<Vessel> {
  * Update an existing vessel
  */
 export async function updateVessel(vessel: Vessel): Promise<Vessel | null> {
-  // TODO: Implement update logic when backend endpoint is ready
-  // For now, invalidate caches
-  await db.deleteCacheValue(db.CACHE_KEYS.VESSEL_BY_ID(vessel.id));
-  await db.deleteCacheValue(db.CACHE_KEYS.VESSEL_WITH_STATUS_BY_ID(vessel.id));
-  await db.deleteCacheValue(db.CACHE_KEYS.ALL_VESSELS);
-  await db.deleteCacheValue(db.CACHE_KEYS.ALL_VESSELS_WITH_STATUS);
-  
-  return null;
+  // Send full vessel object to backend for update
+  try {
+    const response = await fetch(`${API_URL}/api/vessels/${vessel.id}`, {
+      method: 'PUT',
+      headers: {
+        'content-type': 'application/json',
+      },
+      body: JSON.stringify(vessel),
+    });
+
+    if (!response.ok) {
+      // Return null to signal failure to caller
+      console.error('Failed to update vessel, status:', response.status);
+      return null;
+    }
+
+    const updatedVessel: Vessel = await response.json();
+
+    // Update caches for this vessel and invalidate aggregates so they'll be refetched
+    await db.setCacheValue(db.CACHE_KEYS.VESSEL_BY_ID(vessel.id), updatedVessel);
+    await db.deleteCacheValue(db.CACHE_KEYS.VESSEL_WITH_STATUS_BY_ID(vessel.id));
+    await db.deleteCacheValue(db.CACHE_KEYS.ALL_VESSELS);
+    await db.deleteCacheValue(db.CACHE_KEYS.ALL_VESSELS_WITH_STATUS);
+
+    return updatedVessel;
+  } catch (err) {
+    console.error('Error updating vessel:', err);
+    return null;
+  }
 }
 
 /**
