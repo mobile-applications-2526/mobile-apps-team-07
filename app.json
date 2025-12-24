@@ -40,6 +40,13 @@
     ],
     "experiments": {
       "typedRoutes": true
-    }
+    },
+    "extra": {
+      "router": {},
+      "eas": {
+        "projectId": "cbd4ac4f-d537-47c3-99e3-36087e7a1b42"
+      }
+    },
+    "owner": "adept_nitwit"
   }
 }
