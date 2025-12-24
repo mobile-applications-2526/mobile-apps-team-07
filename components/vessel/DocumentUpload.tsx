@@ -79,7 +79,7 @@ export const DocumentUpload: React.FC<Props> = ({
           <View className="w-16 h-16 bg-gray-200 dark:bg-gray-800 rounded-full items-center justify-center mb-3">
             <FileUp size={28} color="#6b7280" />
           </View>
-          <ThemedText className="text-base font-medium mb-1">Drag & drop or tap to upload</ThemedText>
+          <ThemedText className="text-base font-medium mb-1">Tap to upload</ThemedText>
           <ThemedText className="text-sm text-gray-400">PDF only, max 25MB</ThemedText>
         </TouchableOpacity>
       )}

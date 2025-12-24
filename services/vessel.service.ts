@@ -7,8 +7,8 @@
  */
 
 import { Vessel, CreateVesselInput, Document, VesselWithStatus } from '@/types';
-import { API_URL } from '.';
 import * as db from '@/lib/database';
+import { API_URL } from './config';
 
 // ============================================
 // VESSEL CRUD OPERATIONS

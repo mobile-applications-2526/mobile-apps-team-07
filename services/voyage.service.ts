@@ -7,7 +7,7 @@
  */
 
 import { Voyage } from "@/types";
-import { API_URL } from ".";
+import { API_URL } from "./config";
 import * as db from '@/lib/database';
 
 /**

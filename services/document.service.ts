@@ -1,25 +1,25 @@
 import { Platform } from 'react-native';
-import * as FileSystem from 'expo-file-system';
-import { API_URL } from '.';
+import * as DocumentPicker from 'expo-document-picker';
 import { DocumentTypeCategory } from '@/types';
-
-// Use legacy API for expo-file-system which provides uploadAsync
-const LegacyFileSystem: any = FileSystem;
+import { API_URL } from './config';
 
 export const uploadDocument = async (
   vesselId: string,
   uri: string,
   type: DocumentTypeCategory,
   fileName: string,
-  onProgress: (progress: number) => void
+  onProgress?: (progress: number) => void
 ): Promise<any> => {
   const uploadUrl = `${API_URL}/api/vessels/${vesselId}/documents/upload`;
 
   try {
-    const uploadResult = await LegacyFileSystem.uploadAsync(uploadUrl, uri, {
+    // Dynamic import of expo-file-system/legacy to avoid module resolution issues
+    const FileSystem = await import('expo-file-system/legacy');
+
+    const uploadResult = await FileSystem.uploadAsync(uploadUrl, uri, {
       fieldName: 'file',
       httpMethod: 'POST',
-      uploadType: LegacyFileSystem.FileSystemUploadType.MULTIPART,
+      uploadType: FileSystem.FileSystemUploadType.MULTIPART,
       parameters: {
         documentType: type as string,
         filename: fileName,
