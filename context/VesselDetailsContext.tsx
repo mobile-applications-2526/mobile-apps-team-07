@@ -9,7 +9,8 @@ export interface VesselDetailsContextType{
     activeVoyage: Voyage | null,
     activeCharterParty: CharterBase | null,
     vesselVoyages: Voyage[],
-    hasQ88: boolean,
+  hasQ88: boolean,
+  hasFormC: boolean,
     isLoading: boolean,
     isInitialized: boolean,
     error: string | null,
@@ -45,6 +46,7 @@ export function VesselDetailsProvider ({ children }: VesselDetailsProviderProps)
   const [activeCharterParty, setActiveCharterParty] = useState<CharterBase | null>(null);
   const [vesselVoyages, setVesselVoyages] = useState<Voyage[]>([]);
   const [hasQ88, setHasQ88] = useState<boolean>(false);
+  const [hasFormC, setHasFormC] = useState<boolean>(false);
   const [isLoading, setIsLoading] = useState(true);
   const [isInitialized, setIsInitialized] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -91,10 +93,12 @@ export function VesselDetailsProvider ({ children }: VesselDetailsProviderProps)
         if (!isMounted) return;
         setVesselVoyages(loadedVoyages);
 
-        const documents = await vesselService.getVesselDocuments(id);
-        const loadHasQ88 = documents.some(d => d.documentType === 'Q88');
-        if (!isMounted) return;
-        setHasQ88(loadHasQ88);
+  const documents = await vesselService.getVesselDocuments(id);
+  const loadHasQ88 = documents.some(d => d.documentType === 'Q88');
+  const loadHasFormC = documents.some(d => d.documentType === 'FormC');
+  if (!isMounted) return;
+  setHasQ88(loadHasQ88);
+  setHasFormC(loadHasFormC);
 
         setIsInitialized(true);
       } catch (err) {
@@ -155,6 +159,7 @@ export function VesselDetailsProvider ({ children }: VesselDetailsProviderProps)
     vesselStatus,
     vesselVoyages,
     hasQ88,
+    hasFormC,
     isLoading,
     isInitialized,
     error,

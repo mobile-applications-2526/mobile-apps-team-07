@@ -26,21 +26,18 @@ export default function VesselSpecs() {
     loadDocuments();
   }, [loadDocuments]);
 
-  const isGasCarrier = vessel?.vesselType === 'Gas Carrier';
+  // Robust detection of gas carrier: accept different field names and casing
+  const vesselTypeRaw = (
+    (vessel as any)?.vesselType ?? (vessel as any)?.type ?? (vessel as any)?.vessel_type ?? ''
+  ).toString().trim().toLowerCase();
+  const isGasCarrier = vesselTypeRaw.includes('gas') && vesselTypeRaw.includes('carrier');
 
   return (
     <ThemedView className="flex-1 bg-gray-100 dark:bg-[#000]">
       <VesselTopBar vesselName={vessel?.vesselName ?? ''} />
 
       <ScrollView contentContainerStyle={{ padding: 16 }} className="flex-1">
-        {/* Unlock banner for newly created vessels / missing docs */}
-        {!hasQ88 && vessel && (
-          <View className="bg-yellow-50 dark:bg-yellow-900/20 rounded-xl p-4 mb-4 border border-yellow-200 dark:border-yellow-800">
-            <ThemedText className="text-sm text-yellow-800 dark:text-yellow-200">
-              {isGasCarrier ? 'Upload Q88 and Form C to unlock vessel features' : 'Upload Q88 to unlock vessel features'}
-            </ThemedText>
-          </View>
-        )}
+        {/* Specification page: no global unlock banner (banner shown in layout on other pages) */}
 
         {/* Upload Progress Indicator */}
         {uploadState.uploading && (
@@ -69,14 +66,17 @@ export default function VesselSpecs() {
             onDownload={onDownload}
           />
 
-          <DocumentUpload
-            type="FormC"
-            title="Form C"
-            doc={findDoc('FormC')}
-            onUpload={pickAndUpload}
-            onReplace={onReplace}
-            onDownload={onDownload}
-          />
+          {/* Only show Form C for Gas Carrier vessels */}
+          {isGasCarrier && (
+            <DocumentUpload
+              type="FormC"
+              title="Form C"
+              doc={findDoc('FormC')}
+              onUpload={pickAndUpload}
+              onReplace={onReplace}
+              onDownload={onDownload}
+            />
+          )}
 
           <DocumentUpload
             type="CharterParty"

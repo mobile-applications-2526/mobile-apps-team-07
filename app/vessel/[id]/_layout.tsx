@@ -136,8 +136,12 @@ export function VesselLayoutContent() {
   const {
     vessel,
     hasQ88,
+    hasFormC,
     isLoading
   } = useVesselDetails();
+
+  const isGasCarrier = vessel?.vesselType === 'Gas Carrier';
+
 
   const getCurrentTab = () => {
     if (pathname.includes('/voyages')) return 'voyages';
@@ -147,6 +151,19 @@ export function VesselLayoutContent() {
   };
   
   const currentTab = getCurrentTab();
+  const missingDocs = !hasQ88 || (isGasCarrier && !hasFormC);
+
+  // If this is a newly created vessel (missing docs) and user landed on the dynamic index route,
+  // redirect to specs so they can upload required documents first.
+  React.useEffect(() => {
+    if (!id) return;
+    const basePath = `/vessel/${id}`;
+    const isOnBase = pathname === basePath || pathname === `${basePath}/` || pathname === `${basePath}?`;
+    if (isOnBase && missingDocs) {
+      // replace so back button doesn't go back to index
+      router.replace(`${basePath}/specs` as any);
+    }
+  }, [id, pathname, missingDocs]);
 
   const handleTabPress = (tab: TabItem) => {
     if (tab.route === 'home') {
@@ -174,9 +191,17 @@ export function VesselLayoutContent() {
       </ThemedView>
     );
   }
-
   return (
     <ThemedView className="flex-1">
+      {/* Unlock banner shown on all vessel pages except Specs when required */}
+      {missingDocs && currentTab !== 'specs' && (
+        <View className="bg-yellow-50 dark:bg-yellow-900/20 rounded-xl p-4 mx-4 my-3 border border-yellow-200 dark:border-yellow-800">
+          <ThemedText className="text-sm text-yellow-800 dark:text-yellow-200">
+            {isGasCarrier ? 'Upload Q88 and Form C to unlock vessel features' : 'Upload Q88 to unlock vessel features'}
+          </ThemedText>
+        </View>
+      )}
+
       <Slot />
 
       <View 
@@ -192,7 +217,8 @@ export function VesselLayoutContent() {
             // For now, Home is just a navigation action button.
             const isCenterActive = tab.route === 'home' ? false : isActive; 
             
-            const isLocked = tab.requiresQ88 && !hasQ88 && tab.route !== 'specs';
+            // Lock all tabs except specs and Home until required documents uploaded
+            const isLocked = missingDocs && !tab.isCenter && tab.route !== 'specs';
             
             return (
               <TabBarItem
