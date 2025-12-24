@@ -140,7 +140,11 @@ export function VesselLayoutContent() {
     isLoading
   } = useVesselDetails();
 
-  const isGasCarrier = vessel?.vesselType === 'Gas Carrier';
+  // Robust detection of gas carrier: accept different field names and casing
+  const vesselTypeRaw = (
+    (vessel as any)?.vesselType ?? (vessel as any)?.type ?? (vessel as any)?.vessel_type ?? ''
+  ).toString().trim().toLowerCase();
+  const isGasCarrier = vesselTypeRaw.includes('gas') && vesselTypeRaw.includes('carrier');
 
 
   const getCurrentTab = () => {
@@ -151,7 +155,8 @@ export function VesselLayoutContent() {
   };
   
   const currentTab = getCurrentTab();
-  const missingDocs = !hasQ88 || (isGasCarrier && !hasFormC);
+  // For gas carriers we require BOTH Q88 and Form C. For other vessels only Q88 is required.
+  const missingDocs = isGasCarrier ? !(hasQ88 && hasFormC) : !hasQ88;
 
   // If this is a newly created vessel (missing docs) and user landed on the dynamic index route,
   // redirect to specs so they can upload required documents first.

@@ -36,7 +36,7 @@ export default function VesselSpecs() {
     <ThemedView className="flex-1 bg-gray-100 dark:bg-[#000]">
       <VesselTopBar vesselName={vessel?.vesselName ?? ''} />
 
-      <ScrollView contentContainerStyle={{ padding: 16 }} className="flex-1">
+  <ScrollView contentContainerStyle={{ padding: 16 }} className="flex-1" showsVerticalScrollIndicator={false}>
         {/* Specification page: no global unlock banner (banner shown in layout on other pages) */}
 
         {/* Upload Progress Indicator */}

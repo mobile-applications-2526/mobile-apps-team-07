@@ -1,4 +1,5 @@
 import { noonReportService, vesselService, voyageService } from "@/services";
+import { on, off } from '@/lib/events';
 import { CharterBase, Document, DocumentTypeCategory, NoonReport, Vessel, VesselStatus, Voyage } from "@/types";
 import { useLocalSearchParams } from "expo-router";
 import { createContext, ReactNode, useCallback, useContext, useEffect, useState } from "react";
@@ -117,6 +118,30 @@ export function VesselDetailsProvider ({ children }: VesselDetailsProviderProps)
 
     return () => {
       isMounted = false;
+    };
+  }, [id]);
+
+  // Listen for document updates so we can refresh the 'hasQ88' / 'hasFormC' flags
+  useEffect(() => {
+    const handler = async (payload: any) => {
+      try {
+        if (!payload || typeof payload.vesselId === 'undefined') return;
+        if (Number(payload.vesselId) !== id) return;
+
+        // Recompute documents -> hasQ88 / hasFormC
+        const docs = await vesselService.getVesselDocuments(id);
+        const loadHasQ88 = docs.some(d => d.documentType === 'Q88');
+        const loadHasFormC = docs.some(d => d.documentType === 'FormC');
+        setHasQ88(loadHasQ88);
+        setHasFormC(loadHasFormC);
+      } catch (err) {
+        console.warn('Failed to refresh documents after upload event', err);
+      }
+    };
+
+    const unsub = on('documents:updated', handler);
+    return () => {
+      try { unsub(); } catch (e) { off('documents:updated', handler); }
     };
   }, [id]);
 
