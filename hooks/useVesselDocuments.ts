@@ -1,5 +1,7 @@
 import { useState, useCallback } from 'react';
 import { Alert, Linking } from 'react-native';
+import { API_URL } from '@/services/config';
+import * as db from '@/lib/database';
 import { Document as DocType, DocumentTypeCategory } from '@/types';
 import { useVesselDetails } from '@/context/VesselDetailsContext';
 import { documentService } from '@/services';
@@ -37,8 +39,11 @@ export const useVesselDocuments = () => {
   const onDownload = async (doc: DocType) => {
     if (!doc || !doc.fileUrl) return;
     try {
-      await Linking.openURL(doc.fileUrl);
+      const url = doc.fileUrl.startsWith('http') ? doc.fileUrl : `${API_URL}${doc.fileUrl}`;
+      console.log('Opening document URL:', url);
+      await Linking.openURL(url);
     } catch (err) {
+      console.error('Failed to open document URL', err, { doc });
       Alert.alert('Download failed', 'Unable to open document URL');
     }
   };
@@ -87,9 +92,19 @@ export const useVesselDocuments = () => {
       setUploadState({ uploading: true, progress: 0, error: null });
 
       try {
-        await documentService.uploadDocument(vessel.id, uri, type, name, (progress) => {
+        const uploadResp = await documentService.uploadDocument(String(vessel.id), uri, type, name, (progress) => {
           setUploadState((prevState) => ({ ...prevState, progress }));
         });
+        console.log('Upload response:', uploadResp);
+
+        // Invalidate documents cache so loadDocuments fetches fresh data
+        try {
+          if (vessel && typeof vessel.id === 'number') {
+            await db.deleteCacheValue(db.CACHE_KEYS.DOCUMENTS_BY_VESSEL(vessel.id));
+          }
+        } catch (cacheErr) {
+          console.warn('Failed to delete documents cache:', cacheErr);
+        }
 
         await loadDocuments();
         setUploadState({ uploading: false, progress: 1, error: null });
