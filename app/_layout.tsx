@@ -8,6 +8,8 @@ import { StatusBar } from 'expo-status-bar';
 import { useColorScheme } from 'nativewind';
 import { SafeAreaProvider } from 'react-native-safe-area-context';
 import { VesselProvider } from '@/context/VesselContext';
+import { databaseService } from '@/services';
+import { useEffect } from 'react';
 import 'react-native-reanimated';
 
 export {
@@ -21,6 +23,13 @@ export const unstable_settings = {
 
 export default function RootLayout() {
   const { colorScheme } = useColorScheme();
+
+  // Initialize database on app startup
+  useEffect(() => {
+    databaseService.initializeDatabase().catch(err => {
+      console.error('Failed to initialize database:', err);
+    });
+  }, []);
 
   return (
     <SafeAreaProvider>
