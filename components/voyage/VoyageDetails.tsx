@@ -1,0 +1,418 @@
+/**
+ * VoyageDetails Component
+ * 
+ * Card component displaying vessel information in a list.
+ */
+import React from 'react';
+import { TouchableOpacity, View, ScrollView } from 'react-native';
+import { ChevronLeft, ChevronRight, Plus, MapPin, Anchor, Clock, FileText, Upload } from 'lucide-react-native';
+import { ThemedText } from '@/components/common';
+import { CharterParty, VesselStatus, Voyage, VoyagePort } from '@/types';
+import { Cargo } from '@/types/cargo';
+import { DocumentUpload } from '../vessel';
+import { useVesselDocuments } from '@/hooks';
+
+interface VoyageDetailsProps {
+  voyage: Voyage;
+  status: VesselStatus | null;
+  noonReports: VesselStatus[];
+  cargoes: Cargo[];
+  ports: VoyagePort[];
+  charterParty: CharterParty | null;
+  onCycleVoyage: (direction: 'next' | 'previous') => void;
+  onAdd: () => void;
+  isFirstVoyage?: boolean;
+  isLastVoyage?: boolean;
+  hasNoVoyages?: boolean;
+  onCreateFirstVoyage?: () => void;
+}
+
+export function VoyageDetails({ 
+  voyage,
+  status, 
+  noonReports,
+  cargoes,
+  ports,
+  charterParty,
+  onCycleVoyage,
+  onAdd,
+  isFirstVoyage = false,
+  isLastVoyage = false,
+  hasNoVoyages = false,
+  onCreateFirstVoyage,
+}: VoyageDetailsProps) {
+
+  const {
+    findDoc,
+    onDownload,
+    pickAndUpload,
+    onReplace,
+  } = useVesselDocuments();
+
+  const [activeTab, setActiveTab] = React.useState<'reports' | 'cargo'>('reports');
+  const [showAllPorts, setShowAllPorts] = React.useState(false);
+
+  // Format dates
+  const formatDate = (date: Date) => {
+    return new Date(date).toLocaleDateString('en-GB', {
+      day: '2-digit',
+      month: 'short',
+      year: 'numeric'
+    });
+  };
+
+  // Get status color based on voyage status
+  const getStatusColor = (status: string) => {
+    const normalizedStatus = status.toLowerCase();
+    if (normalizedStatus.includes('progress') || normalizedStatus.includes('laden') || normalizedStatus.includes('loading')) {
+      return 'bg-green-500';
+    } else if (normalizedStatus.includes('complete')) {
+      return 'bg-gray-500';
+    } else if (normalizedStatus.includes('pending') || normalizedStatus.includes('ballast')) {
+      return 'bg-blue-500';
+    }
+    return 'bg-blue-500';
+  };
+
+  const formatETA = (distanceToGoNm: number, averageSpeedKnots: number, nextPort?: string): string => {
+    const hours = distanceToGoNm / averageSpeedKnots;
+    const etaDate = new Date();
+    etaDate.setHours(etaDate.getHours() + hours);
+    
+    const monthAbbr = etaDate.toLocaleString('en-US', { month: 'short' });
+    const day = etaDate.getDate();
+    const timeStr = etaDate.toLocaleTimeString('en-US', { 
+      hour: '2-digit', 
+      minute: '2-digit', 
+      hour12: false 
+    });
+    
+    const portText = nextPort ? ` to ${nextPort}` : '';
+    return `${monthAbbr} ${day}, ${timeStr} UTC${portText}`;
+  };
+
+  // Get load and discharge ports
+  const loadPorts = ports.filter(p => p.portType === 'Load');
+  const dischargePorts = ports.filter(p => p.portType === 'Discharge');
+  
+  const visibleLoadPorts = showAllPorts ? loadPorts : loadPorts.slice(0, 2);
+  const visibleDischargePorts = showAllPorts ? dischargePorts : dischargePorts.slice(0, 2);
+  const hasMorePorts = loadPorts.length + dischargePorts.length > 4;
+
+  // Get next port for ETA
+  const nextPort = dischargePorts.length > 0 ? dischargePorts[0].portName : null;
+
+  // Empty state for no voyages
+  if (hasNoVoyages) {
+    return (
+      <View className="flex-1 bg-gray-50 dark:bg-black items-center justify-center p-8">
+        <Anchor size={64} color="#9ca3af" />
+        <ThemedText className="text-2xl font-bold mt-4 mb-2">No Voyages Yet</ThemedText>
+        <ThemedText className="text-gray-600 dark:text-gray-400 text-center mb-6">
+          Create your first voyage to start tracking
+        </ThemedText>
+        <TouchableOpacity
+          onPress={onCreateFirstVoyage}
+          className="px-6 py-3 bg-blue-600 rounded-xl"
+        >
+          <ThemedText className="text-white font-semibold">Create First Voyage</ThemedText>
+        </TouchableOpacity>
+      </View>
+    );
+  }
+
+  return (
+    <ScrollView className="flex-1 bg-gray-50 dark:bg-black">
+      <View className="p-4">
+        {/* Header */}
+        <View className="flex-row items-center justify-between mb-4">
+          <View className="flex-row items-center gap-3">
+            <TouchableOpacity
+              onPress={() => onCycleVoyage('previous')}
+              className={`p-2 rounded-full ${isFirstVoyage ? 'opacity-30' : 'active:bg-gray-200 dark:active:bg-gray-800'}`}
+              disabled={isFirstVoyage}
+            >
+              <ChevronLeft size={24} color="#000" className="dark:color-white" />
+            </TouchableOpacity>
+            <ThemedText className="text-3xl font-bold">
+              {voyage.voyageNumber}
+            </ThemedText>
+            <TouchableOpacity
+              onPress={() => onCycleVoyage('next')}
+              className={`p-2 rounded-full ${isLastVoyage ? 'opacity-30' : 'active:bg-gray-200 dark:active:bg-gray-800'}`}
+              disabled={isLastVoyage}
+            >
+              <ChevronRight size={24} color="#000" className="dark:color-white" />
+            </TouchableOpacity>
+          </View>
+          {onAdd && (
+            <TouchableOpacity
+              onPress={onAdd}
+              className="p-2 bg-blue-600 rounded-full"
+            >
+              <Plus size={24} color="#fff" />
+            </TouchableOpacity>
+          )}
+        </View>
+
+        {/* Status Badge */}
+        <View className="mb-4">
+          <View className={`self-start px-4 py-2 rounded-full ${getStatusColor(voyage.voyageStatus)}`}>
+            <ThemedText className="text-sm font-medium text-white">
+              {voyage.voyageStatus}
+            </ThemedText>
+          </View>
+        </View>
+
+        {/* Route Visualization */}
+        <View className="bg-white dark:bg-[#1c1c1e] rounded-2xl p-6 mb-4">
+          <View className="flex-row items-center justify-between">
+            {/* Load Ports */}
+            {visibleLoadPorts.map((port, index) => (
+              <React.Fragment key={`load-${index}`}>
+                <View className="flex-1 items-center">
+                  <View className={`w-12 h-12 ${index === 0 ? 'bg-blue-600' : 'bg-white dark:bg-[#1c1c1e] border-4 border-blue-600'} rounded-full items-center justify-center mb-2 z-10`}>
+                    {index === 0 && <Anchor size={24} color="#fff" />}
+                  </View>
+                  <ThemedText className="text-sm font-semibold text-center">
+                    {port.portName}
+                  </ThemedText>
+                </View>
+                {(index < visibleLoadPorts.length - 1 || visibleDischargePorts.length > 0) && (
+                  <View className="flex-1 h-0.5 bg-blue-600 -mx-4" />
+                )}
+              </React.Fragment>
+            ))}
+
+            {/* Discharge Ports */}
+            {visibleDischargePorts.map((port, index) => (
+              <React.Fragment key={`discharge-${index}`}>
+                <View className="flex-1 items-center">
+                  <View className="w-12 h-12 bg-white dark:bg-[#1c1c1e] border-4 border-blue-600 rounded-full mb-2 z-10" />
+                  <ThemedText className="text-sm font-semibold text-center">
+                    {port.portName}
+                  </ThemedText>
+                </View>
+                {index < visibleDischargePorts.length - 1 && (
+                  <View className="flex-1 h-0.5 bg-blue-600 -mx-4" />
+                )}
+              </React.Fragment>
+            ))}
+          </View>
+
+          {/* Show all ports link */}
+          {hasMorePorts && (
+            <TouchableOpacity 
+              onPress={() => setShowAllPorts(!showAllPorts)}
+              className="mt-4"
+            >
+              <ThemedText className="text-blue-600 text-center text-sm font-medium">
+                {showAllPorts ? 'Show less' : `Show all ports (${loadPorts.length + dischargePorts.length})`}
+              </ThemedText>
+            </TouchableOpacity>
+          )}
+        </View>
+
+        {/* Voyage Info */}
+        <View className="bg-white dark:bg-[#1c1c1e] rounded-2xl p-6 mb-4">
+          <ThemedText className="text-xl font-bold mb-4">Voyage Info</ThemedText>
+          <View className="gap-2">
+            {voyage.voyageStartDate && voyage.voyageEndDate && (
+              <ThemedText className="text-gray-800 dark:text-gray-200">
+                <ThemedText className="font-semibold">Laycan: </ThemedText>
+                {formatDate(voyage.voyageStartDate)} - {formatDate(voyage.voyageEndDate)}
+              </ThemedText>
+            )}
+
+            {charterParty ? (
+              <>
+                <ThemedText className="text-gray-800 dark:text-gray-200">
+                  <ThemedText className="font-semibold">Charter Party: </ThemedText>
+                  {charterParty.chartererName}
+                </ThemedText>
+                {charterParty.isVC && (
+                  <View className="my-2">
+                    <View className="self-start px-3 py-1.5 bg-blue-600 rounded-full">
+                      <ThemedText className="text-sm font-medium text-white">
+                        Charter Type: VC
+                      </ThemedText>
+                    </View>
+                  </View>
+                )}
+              </>
+            ) : (
+              <ThemedText className="text-gray-800 dark:text-gray-200">
+                <ThemedText className="font-semibold">Charter Party: </ThemedText>
+                No Charter Party linked
+              </ThemedText>
+            )}
+
+            {status && (
+              <View className="flex-row items-center gap-2 mt-2">
+                <ThemedText className="text-gray-800 dark:text-gray-200">
+                  <ThemedText className="font-semibold">Current Position: </ThemedText>
+                  {status.latitude}°N, {status.longitude}°E
+                </ThemedText>
+                <MapPin size={18} color="#6b7280" />
+              </View>
+            )}
+
+            {status && (
+              <View className="flex-row items-center gap-2">
+                <ThemedText className="text-gray-800 dark:text-gray-200">
+                  <ThemedText className="font-semibold">ETA: </ThemedText>
+                  {formatETA(status.distanceToGoNm, status.averageSpeedKnots, nextPort || undefined)}
+                </ThemedText>
+                <Clock size={18} color="#6b7280" />
+              </View>
+            )}
+          </View>
+        </View>
+
+        {/* Cargo Summary */}
+        {cargoes.length > 0 && (
+          <View className="bg-white dark:bg-[#1c1c1e] rounded-2xl p-6 mb-4">
+            <ThemedText className="text-xl font-bold mb-4">Cargo Summary</ThemedText>
+            {cargoes.map((cargo, index) => (
+              <View key={index} className="gap-2 mb-3">
+                {cargo.cargoType && (
+                  <ThemedText className="text-gray-800 dark:text-gray-200">
+                    <ThemedText className="font-semibold">Cargo: </ThemedText>
+                    {cargo.cargoType}
+                  </ThemedText>
+                )}
+                
+                {cargo.shipQuantityMt && (
+                  <ThemedText className="text-gray-800 dark:text-gray-200">
+                    <ThemedText className="font-semibold">Quantity: </ThemedText>
+                    {cargo.shipQuantityMt.toLocaleString()} MT
+                  </ThemedText>
+                )}
+
+                {cargo.requiredTempC && (
+                  <ThemedText className="text-gray-800 dark:text-gray-200">
+                    <ThemedText className="font-semibold">Required Temp: </ThemedText>
+                    {cargo.requiredTempC}°C 🌡️
+                  </ThemedText>
+                )}
+              </View>
+            ))}
+          </View>
+        )}
+
+        {/* Tabs */}
+        <View className="flex-row gap-2 mb-4">
+          <TouchableOpacity
+            onPress={() => setActiveTab('reports')}
+            className={`flex-1 py-3 rounded-xl ${
+              activeTab === 'reports' 
+                ? 'bg-blue-600' 
+                : 'bg-white dark:bg-[#1c1c1e]'
+            }`}
+          >
+            <ThemedText
+              className={`text-center font-semibold ${
+                activeTab === 'reports' ? 'text-white' : 'text-gray-600 dark:text-gray-400'
+              }`}
+            >
+              Noon Reports
+            </ThemedText>
+          </TouchableOpacity>
+          <TouchableOpacity
+            onPress={() => setActiveTab('cargo')}
+            className={`flex-1 py-3 rounded-xl ${
+              activeTab === 'cargo' 
+                ? 'bg-blue-600' 
+                : 'bg-white dark:bg-[#1c1c1e]'
+            }`}
+          >
+            <ThemedText
+              className={`text-center font-semibold ${
+                activeTab === 'cargo' ? 'text-white' : 'text-gray-600 dark:text-gray-400'
+              }`}
+            >
+              Cargo
+            </ThemedText>
+          </TouchableOpacity>
+        </View>
+
+        {/* Noon Reports Tab */}
+        {activeTab === 'reports' && (
+          <>
+            {noonReports.length > 0 ? (
+              <View>
+               {noonReports.map((report, index) => (
+                  <View
+                    key={index}
+                    className="bg-white dark:bg-[#1c1c1e] rounded-2xl p-6 mb-4"
+                  >
+                    <ThemedText className="text-lg font-bold mb-3">
+                      {formatDate(new Date(report.reportDateTime))}
+                    </ThemedText>
+                    <View className="gap-1 mb-4">
+                      <ThemedText className="text-gray-800 dark:text-gray-200">
+                        <ThemedText className="font-semibold">Position: </ThemedText>
+                        {report.latitude}°N, {report.longitude}°E
+                      </ThemedText>
+                      <ThemedText className="text-gray-800 dark:text-gray-200">
+                        <ThemedText className="font-semibold">Speed: </ThemedText>
+                        {report.averageSpeedKnots} kts
+                      </ThemedText>
+                      <ThemedText className="text-gray-800 dark:text-gray-200">
+                        <ThemedText className="font-semibold">Fuel: </ThemedText>
+                        {report.fuelRob} MT/day
+                      </ThemedText>
+                    </View>
+                    <TouchableOpacity className="flex-row items-center gap-2">
+                      <FileText size={20} color="#6b7280" />
+                      <ThemedText className="text-gray-600 dark:text-gray-400">
+                        View Report
+                      </ThemedText>
+                    </TouchableOpacity>
+                  </View>
+                ))}
+              </View>
+            ) : (
+              <View className="bg-white dark:bg-[#1c1c1e] rounded-2xl p-8 mb-4 items-center">
+                <FileText size={48} color="#9ca3af" />
+                <ThemedText className="text-center text-gray-500 dark:text-gray-400 mt-3">
+                  No noon reports submitted for this voyage
+                </ThemedText>
+              </View>
+            )}
+          </>
+        )}
+
+        {/* Cargo Tab Content */}
+        {activeTab === 'cargo' && (
+            <View className="bg-white dark:bg-[#1c1c1e] rounded-2xl p-8 mb-4 items-center">
+              <ThemedText className="text-center text-gray-500 dark:text-gray-400">
+                Cargo Details here
+              </ThemedText>
+            </View>
+        )}
+
+        {/* Remarks */}
+        {voyage.remarks && (
+          <View className="bg-white dark:bg-[#1c1c1e] rounded-2xl p-6 mb-4">
+            <ThemedText className="text-xl font-bold mb-3">Remarks</ThemedText>
+            <ThemedText className="text-gray-800 dark:text-gray-200">
+              {voyage.remarks}
+            </ThemedText>
+          </View>
+        )}
+
+        {/* Document Upload Section */}
+        <DocumentUpload
+          type="CharterParty"
+          title="Charter Party"
+          optional
+          doc={findDoc('CharterParty')}
+          onUpload={pickAndUpload}
+          onReplace={onReplace}
+          onDownload={onDownload}
+        />
+      </View>
+    </ScrollView>
+  );
+}

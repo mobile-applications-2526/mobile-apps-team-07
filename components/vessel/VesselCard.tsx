@@ -33,8 +33,8 @@ export function VesselCard({ vessel, voyage, status, onDeletePress, onEditPress 
 
   const hasActiveVoyage = voyage != null;
 
-  const formatETA = (distanceNm: number, speedKnots: number): string => {
-    const hours = distanceNm / speedKnots;
+  const formatETA = (distanceToGoNm: number, averageSpeedKnots: number): string => {
+    const hours = distanceToGoNm / averageSpeedKnots;
     const etaDate = new Date();
     etaDate.setHours(etaDate.getHours() + hours);
     

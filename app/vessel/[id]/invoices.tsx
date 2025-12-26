@@ -47,7 +47,19 @@ function TypeBadge({ type }: { type: string }) {
   return <ThemedText className="px-0.5 py-0.5 rounded-full bg-blue-50 text-blue-700 border border-blue-100 text-xs font-medium uppercase">{type}</ThemedText>;
 }
 
-function InvoiceCard({ invoice, onDownload, onEdit, onDelete, processing }: { invoice: Invoice; onDownload: (i: Invoice) => void; onEdit: (i: Invoice) => void; onDelete: (i: Invoice) => void; processing?: boolean }) {
+function InvoiceCard({
+  invoice, 
+  onDownload, 
+  onEdit, 
+  onDelete, 
+  processing
+}:{
+  invoice:Invoice; 
+  onDownload:(i:Invoice)=>void; 
+  onEdit:(i:Invoice)=>void; 
+  onDelete:(i:Invoice)=>void; 
+  processing?:boolean
+}){
   // small helper for status color accent
   const statusColor = invoice.status === 'Paid' ? '#10b981' : invoice.status === 'Overdue' ? '#ef4444' : '#f59e0b';
 

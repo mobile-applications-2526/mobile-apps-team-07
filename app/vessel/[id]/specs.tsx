@@ -10,10 +10,9 @@ import { VesselTopBar, DocumentUpload } from '@/components/vessel';
 import { useVesselDetails, useVesselDocuments } from '@/hooks';
 
 export default function VesselSpecs() {
-  const { vessel, hasQ88 } = useVesselDetails();
+  const { vessel } = useVesselDetails();
 
   const {
-    documents,
     uploadState,
     loadDocuments,
     findDoc,

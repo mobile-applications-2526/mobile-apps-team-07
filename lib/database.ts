@@ -159,6 +159,7 @@ export const CACHE_KEYS = {
   
   // Voyage caches
   VOYAGES_BY_VESSEL: (vesselId: number) => `voyages:vessel:${vesselId}`,
+  VOYAGE_DETAILS_BY_ID: (id: number) => `voyages:details:${id}`,
   VOYAGE_BY_ID: (id: number) => `voyages:${id}`,
   
   // Document caches
@@ -166,6 +167,7 @@ export const CACHE_KEYS = {
   
   // Noon report caches
   LATEST_NOON_REPORT: (vesselId: number) => `noon_reports:vessel:${vesselId}:latest`,
+  VOYAGE_NOON_REPORTS: (voyageId: number) => `noon_reports:voyage:${voyageId}`,
   
   // Metadata
   LAST_SYNC: 'metadata:last_sync',

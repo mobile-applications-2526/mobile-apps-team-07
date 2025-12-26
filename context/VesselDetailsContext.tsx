@@ -1,26 +1,26 @@
 import { noonReportService, vesselService, voyageService } from "@/services";
 import { on, off } from '@/lib/events';
-import { CharterBase, Document, DocumentTypeCategory, NoonReport, Vessel, VesselStatus, Voyage } from "@/types";
+import { CharterParty, Document, DocumentTypeCategory, NoonReport, Vessel, VesselStatus, Voyage } from "@/types";
 import { useLocalSearchParams } from "expo-router";
 import { createContext, ReactNode, useCallback, useContext, useEffect, useState } from "react";
 
 export interface VesselDetailsContextType{
-    vessel: Vessel | null,
-    vesselStatus: VesselStatus | null,
-    activeVoyage: Voyage | null,
-    activeCharterParty: CharterBase | null,
-    vesselVoyages: Voyage[],
+  vessel: Vessel | null,
+  vesselStatus: VesselStatus | null,
+  activeVoyage: Voyage | null,
+  activeCharterParty: CharterParty | null,
+  vesselVoyages: Voyage[],
   hasQ88: boolean,
   hasFormC: boolean,
-    isLoading: boolean,
-    isInitialized: boolean,
-    error: string | null,
+  isLoading: boolean,
+  isInitialized: boolean,
+  error: string | null,
 
-    refreshVessel: () => Promise<void>,
-    refreshVesselVoyages: () => Promise<void>,
-    getLatestNoonReport: (id: number) => Promise<NoonReport | null>
-    vesselHasDocument: (id: number, document: DocumentTypeCategory) => Promise<boolean>,
-    getVesselDocuments: (id: number) => Promise<Document[]>
+  refreshVessel: () => Promise<void>,
+  refreshVesselVoyages: () => Promise<void>,
+  getLatestNoonReport: (id: number) => Promise<NoonReport | null>
+  vesselHasDocument: (id: number, document: DocumentTypeCategory) => Promise<boolean>,
+  getVesselDocuments: (id: number) => Promise<Document[]>
 }
 
 export const VesselDetailContext = createContext<VesselDetailsContextType | null>(null);
@@ -44,7 +44,7 @@ export function VesselDetailsProvider ({ children }: VesselDetailsProviderProps)
   const [vessel, setVessel] = useState<Vessel | null>(null);
   const [vesselStatus, setVesselStatus] = useState<VesselStatus | null>(null);
   const [activeVoyage, setActiveVoyage] = useState<Voyage | null>(null);
-  const [activeCharterParty, setActiveCharterParty] = useState<CharterBase | null>(null);
+  const [activeCharterParty, setActiveCharterParty] = useState<CharterParty | null>(null);
   const [vesselVoyages, setVesselVoyages] = useState<Voyage[]>([]);
   const [hasQ88, setHasQ88] = useState<boolean>(false);
   const [hasFormC, setHasFormC] = useState<boolean>(false);
@@ -65,56 +65,56 @@ export function VesselDetailsProvider ({ children }: VesselDetailsProviderProps)
     return await noonReportService.getLatestNoonReportByVesselId(vesselId);
   }, [])
 
-  useEffect(() => {
-    let isMounted = true;
-
-    const initializeData = async () => {
+  const initializeData = async (isMounted: boolean) => {
       if (!id || isNaN(id)) {
-        setIsLoading(false);
-        return;
+          setIsLoading(false);
+          return;
       }
 
       try {
-        setIsLoading(true);
-        setError(null);
+          setIsLoading(true);
+          setError(null);
 
-        const vesselWithStatus = await vesselService.getVesselByIdWithStatus(id);
-        if(!vesselWithStatus) {
-          throw new Error('Cannot find vessel with id ' + id);
-        }
+          const vesselWithStatus = await vesselService.getVesselByIdWithStatus(id);
+          if(!vesselWithStatus) {
+              throw new Error('Cannot find vessel with id ' + id);
+          }
 
-        if (!isMounted) return;
+          if (!isMounted) return;
 
-        setVessel(vesselWithStatus.vessel);
-        setVesselStatus(vesselWithStatus.latestStatus);
-        setActiveVoyage(vesselWithStatus.activeVoyage);
-        setActiveCharterParty(vesselWithStatus.activeCharter);
+          setVessel(vesselWithStatus.vessel);
+          setVesselStatus(vesselWithStatus.latestStatus);
+          setActiveVoyage(vesselWithStatus.activeVoyage);
+          setActiveCharterParty(vesselWithStatus.activeCharter);
 
-        const loadedVoyages = await voyageService.getVoyagesByVesselId(id);
-        if (!isMounted) return;
-        setVesselVoyages(loadedVoyages);
+          const loadedVoyages = await voyageService.getVoyagesByVesselId(id);
+          if (!isMounted) return;
+          setVesselVoyages(loadedVoyages);
 
-  const documents = await vesselService.getVesselDocuments(id);
-  const loadHasQ88 = documents.some(d => d.documentType === 'Q88');
-  const loadHasFormC = documents.some(d => d.documentType === 'FormC');
-  if (!isMounted) return;
-  setHasQ88(loadHasQ88);
-  setHasFormC(loadHasFormC);
+          const documents = await vesselService.getVesselDocuments(id);
+          const loadHasQ88 = documents.some(d => d.documentType === 'Q88');
+          const loadHasFormC = documents.some(d => d.documentType === 'FormC');
+          if (!isMounted) return;
+          setHasQ88(loadHasQ88);
+          setHasFormC(loadHasFormC);
 
-        setIsInitialized(true);
+          setIsInitialized(true);
       } catch (err) {
-        console.error('Failed to initialize:', err);
-        if (isMounted) {
-          setError(err instanceof Error ? err.message : 'Failed to initialize');
-        }
+          console.error('Failed to initialize:', err);
+          if (isMounted) {
+              setError(err instanceof Error ? err.message : 'Failed to initialize');
+          }
       } finally {
-        if (isMounted) {
-          setIsLoading(false);
-        }
+          if (isMounted) {
+              setIsLoading(false);
+          }
       }
-    };
+  };
 
-    initializeData();
+  useEffect(() => {
+    let isMounted = true;
+
+    initializeData(isMounted);
 
     return () => {
       isMounted = false;

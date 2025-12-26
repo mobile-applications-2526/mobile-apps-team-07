@@ -1,5 +1,5 @@
-import React, { useState } from 'react';
-import { View, TouchableOpacity, Platform, ActivityIndicator } from 'react-native';
+import React from 'react';
+import { View, TouchableOpacity, ActivityIndicator } from 'react-native';
 import { Slot, useLocalSearchParams, useRouter, usePathname } from 'expo-router';
 import { Ship, Route, FileText, Receipt, Home, Lock } from 'lucide-react-native';
 import { ThemedText, ThemedView } from '@/components/common';
@@ -223,7 +223,8 @@ export function VesselLayoutContent() {
             const isCenterActive = tab.route === 'home' ? false : isActive; 
             
             // Lock all tabs except specs and Home until required documents uploaded
-            const isLocked = missingDocs && !tab.isCenter && tab.route !== 'specs';
+            // const isLocked = missingDocs && !tab.isCenter && tab.route !== 'specs';
+            const isLocked = false;
             
             return (
               <TabBarItem

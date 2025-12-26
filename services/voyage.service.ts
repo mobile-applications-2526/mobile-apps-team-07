@@ -6,7 +6,7 @@
  * Implements cache-first strategy: load from cache immediately, then fetch from backend and update cache.
  */
 
-import { Voyage } from "@/types";
+import { Voyage, VoyageWithDetails } from "@/types";
 import { API_URL } from "./config";
 import * as db from '@/lib/database';
 
@@ -39,6 +39,26 @@ export async function getVoyageById(id: number): Promise<Voyage | null> {
 }
 
 /**
+ * Get voyage by ID (cache-first strategy)
+ */
+export async function getVoyageDetailsById(id: number): Promise<VoyageWithDetails | null> {
+  // Try to get from cache first
+  const cached = await db.getCacheValue<VoyageWithDetails>(db.CACHE_KEYS.VOYAGE_DETAILS_BY_ID(id));
+  
+  // Return cached data immediately if available
+  if (cached) {
+    // Fetch fresh data in background and update cache
+    fetchAndCacheVoyageById(id).catch(err => 
+      console.error('Background fetch failed:', err)
+    );
+    return cached;
+  }
+  
+  // No cache, fetch from backend
+  return await fetchAndCacheVoyageDetailsById(id);
+}
+
+/**
  * Fetch voyage by ID from backend and update cache
  */
 async function fetchAndCacheVoyageById(id: number): Promise<Voyage | null> {
@@ -49,6 +69,21 @@ async function fetchAndCacheVoyageById(id: number): Promise<Voyage | null> {
   
   // Cache the result
   await db.setCacheValue(db.CACHE_KEYS.VOYAGE_BY_ID(id), voyage);
+  
+  return voyage;
+}
+
+/**
+ * Fetch voyage by ID from backend and update cache
+ */
+async function fetchAndCacheVoyageDetailsById(id: number): Promise<VoyageWithDetails | null> {
+  const response = await fetch(`${API_URL}/api/voyages/${id}/details`);
+  if (!response.ok) return null;
+  
+  const voyage = await response.json();
+  
+  // Cache the result
+  await db.setCacheValue(db.CACHE_KEYS.VOYAGE_DETAILS_BY_ID(id), voyage);
   
   return voyage;
 }

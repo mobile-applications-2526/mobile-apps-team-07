@@ -5,4 +5,4 @@
  * Separated to avoid circular dependencies.
  */
 
-export const API_URL = 'http://192.168.1.55:8080';
+export const API_URL = process.env.EXPO_PUBLIC_API_URL;
