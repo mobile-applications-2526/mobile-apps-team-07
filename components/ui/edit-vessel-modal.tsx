@@ -1,15 +1,8 @@
-import React, { useState, useEffect } from 'react';
-import {
-  View,
-  TouchableOpacity,
-  TextInput,
-  ActivityIndicator,
-  StyleSheet,
-  Pressable,
-} from 'react-native';
+import React from 'react';
+import { View, TextInput, Pressable, StyleSheet } from 'react-native';
 import { BottomSheetModal, BottomSheetBackdrop, BottomSheetScrollView } from '@gorhom/bottom-sheet';
-import { Camera, ChevronDown, Check, ChevronUp } from 'lucide-react-native';
 import { ThemedText } from '@/components/common';
+import { Camera } from 'lucide-react-native';
 import { useColorScheme } from 'nativewind';
 import { Vessel } from '@/types';
 
@@ -28,94 +21,74 @@ interface EditVesselModalProps {
   visible: boolean;
   vessel: Vessel | null;
   onCancel: () => void;
-  onSave: (updated: { vesselName: string; imoNumber: string; vesselType: string; vesselSubtype: string; vesselPictureUrl: string | null; }) => void;
+  onSave: (vesselId: number, updates: Partial<Vessel>) => void;
   isSaving?: boolean;
 }
 
-export function EditVesselModal({ visible, vessel, onCancel, onSave, isSaving = false }: EditVesselModalProps) {
+export default function EditVesselModal({
+  visible,
+  vessel,
+  onCancel,
+  onSave,
+  isSaving = false,
+}: EditVesselModalProps) {
   const { colorScheme } = useColorScheme();
   const isDark = colorScheme === 'dark';
   const bottomSheetRef = React.useRef<BottomSheetModal>(null);
-  const snapPoints = React.useMemo(() => ['60%', '90%'], []);
+  const snapPoints = React.useMemo(() => ['60%', '100%'], []);
 
-  // Form state
-  const [vesselName, setVesselName] = useState('');
-  const [imoNumber, setImoNumber] = useState('');
-  const [vesselType, setVesselType] = useState<VesselType | ''>('');
-  const [vesselSubtype, setVesselSubtype] = useState('');
-  const [vesselPictureUrl, setVesselPictureUrl] = useState<string | null>(null);
-
-  // Dropdown state
-  const [typeDropdownOpen, setTypeDropdownOpen] = useState(false);
-  const [subtypeDropdownOpen, setSubtypeDropdownOpen] = useState(false);
-
-  // Validation state
-  const [imoError, setImoError] = useState<string | null>(null);
-  const [touched, setTouched] = useState({ vesselName: false, imoNumber: false, type: false, vesselSubtype: false });
+  // Form State
+  const [vesselName, setVesselName] = React.useState('');
+  const [vesselType, setVesselType] = React.useState<VesselType>('Gas Carrier');
+  const [vesselSubtype, setVesselSubtype] = React.useState('LPG');
+  const [vesselPictureUrl, setVesselPictureUrl] = React.useState('');
 
   React.useEffect(() => {
-    if (visible) {
+    if (visible && vessel) {
       bottomSheetRef.current?.present();
-      if (vessel) {
-        setVesselName(vessel.vesselName || '');
-        setImoNumber(vessel.imoNumber || '');
-        setVesselType((vessel.vesselType as VesselType) || '');
-        setVesselSubtype(vessel.vesselSubtype || '');
-        setVesselPictureUrl(vessel.vesselPictureUrl || null);
-      }
+      // Populate form with vessel data
+      setVesselName(vessel.vesselName || '');
+
+      // Normalize vessel type to ensure it's one of our valid types
+      const normalizedType = VESSEL_TYPES.includes(vessel.vesselType as VesselType)
+        ? (vessel.vesselType as VesselType)
+        : 'Gas Carrier';
+      setVesselType(normalizedType);
+
+      const normalizedSubtype = vessel.vesselSubtype || SUBTYPES[normalizedType][0];
+      setVesselSubtype(normalizedSubtype);
+
+      setVesselPictureUrl(vessel.vesselPictureUrl || '');
     } else {
       bottomSheetRef.current?.dismiss();
     }
   }, [visible, vessel]);
 
+  // Update subtype when type changes
   React.useEffect(() => {
-    if (!visible) {
-      const timer = setTimeout(() => {
-        setTouched({ vesselName: false, imoNumber: false, type: false, vesselSubtype: false });
-        setTypeDropdownOpen(false);
-        setSubtypeDropdownOpen(false);
-        setImoError(null);
-      }, 300);
-      return () => clearTimeout(timer);
+    const validSubtypes = SUBTYPES[vesselType];
+    if (!validSubtypes.includes(vesselSubtype)) {
+      setVesselSubtype(validSubtypes[0]);
     }
-  }, [visible]);
+  }, [vesselType, vesselSubtype]);
 
-  const validateImo = (value: string): string | null => {
-    if (!value) return null;
-    if (!/^\d{7}$/.test(value)) return 'IMO must be 7 digits';
-    return null;
-  };
+  // Validation
+  const isFormValid = React.useMemo(() => {
+    return vesselName.trim().length > 0;
+  }, [vesselName]);
 
-  const handleImoChange = (value: string) => {
-    const cleaned = value.replace(/\D/g, '').slice(0, 7);
-    setImoNumber(cleaned);
-    if (touched.imoNumber) setImoError(validateImo(cleaned));
-  };
-
-  const handleImoBlur = () => {
-    setTouched(prev => ({ ...prev, imoNumber: true }));
-    setImoError(validateImo(imoNumber));
-  };
-
-  const handleTypeSelect = (type: VesselType) => {
-    setVesselType(type);
-    setTypeDropdownOpen(false);
-    setSubtypeDropdownOpen(true);
-    setTouched(prev => ({ ...prev, type: true }));
-  };
-
-  const handleSubtypeSelect = (sub: string) => {
-    setVesselSubtype(sub);
-    setSubtypeDropdownOpen(false);
-    setTouched(prev => ({ ...prev, vesselSubtype: true }));
-  };
-
-  const isFormValid = vesselName.trim().length > 0 && imoNumber.length === 7 && !imoError && vesselType !== '';
-
-  const handleSave = () => {
+  const handleSubmit = () => {
     if (!isFormValid || isSaving || !vessel) return;
-    onSave({ vesselName: vesselName.trim(), imoNumber, vesselType: vesselType as string, vesselSubtype, vesselPictureUrl });
+
+    onSave(vessel.id, {
+      vesselName: vesselName.trim(),
+      vesselType,
+      vesselSubtype,
+      vesselPictureUrl,
+    });
   };
+
+  if (!vessel) return null;
 
   return (
     <BottomSheetModal
@@ -123,7 +96,7 @@ export function EditVesselModal({ visible, vessel, onCancel, onSave, isSaving = 
       index={0}
       snapPoints={snapPoints}
       enablePanDownToClose={true}
-      backdropComponent={(props) => (<BottomSheetBackdrop {...props} disappearsOnIndex={-1} appearsOnIndex={0} />)}
+      backdropComponent={(props) => <BottomSheetBackdrop {...props} disappearsOnIndex={-1} appearsOnIndex={0} />}
       backgroundStyle={{ backgroundColor: isDark ? '#151718' : '#F2F2F7' }}
       handleIndicatorStyle={{ backgroundColor: isDark ? '#404040' : '#e5e7eb' }}
       onDismiss={onCancel}
@@ -132,112 +105,105 @@ export function EditVesselModal({ visible, vessel, onCancel, onSave, isSaving = 
         <ThemedText style={styles.headerTitle}>Edit Vessel</ThemedText>
       </View>
 
-      <BottomSheetScrollView contentContainerStyle={{ padding: 16, paddingBottom: 40 }} showsVerticalScrollIndicator={false}>
-        <TouchableOpacity
-          style={[styles.imageButton, isDark && styles.imageButtonDark]}
+      <BottomSheetScrollView contentContainerStyle={styles.content}>
+        {/* Photo Upload */}
+        <Pressable
           onPress={() => console.log('Image picker')}
+          style={[styles.imageButton, isDark && styles.imageButtonDark]}
         >
           <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8, opacity: 0.7 }}>
             <Camera size={18} color="#3b82f6" />
-            <ThemedText style={{ fontSize: 14, color: '#3b82f6' }}>Update Photo</ThemedText>
+            <ThemedText style={{ fontSize: 14, color: '#3b82f6' }}>
+              Change Photo
+            </ThemedText>
           </View>
-        </TouchableOpacity>
+        </Pressable>
 
-        <View>
+        {/* Vessel Name */}
+        <View style={styles.fieldContainer}>
           <ThemedText style={styles.label}>Vessel Name</ThemedText>
           <TextInput
-            style={[styles.iosInput, isDark && styles.iosInputDark]}
-            placeholder="e.g. MT Her Majesty"
-            placeholderTextColor={isDark ? '#5c5c5e' : '#aeaeb2'}
+            style={[styles.input, isDark && styles.inputDark]}
             value={vesselName}
             onChangeText={setVesselName}
-            autoCapitalize="words"
-          />
-        </View>
-
-        <View style={{ marginTop: 20 }}>
-          <ThemedText style={styles.label}>IMO Number</ThemedText>
-          <TextInput
-            style={[styles.iosInput, isDark && styles.iosInputDark, imoError && { borderWidth: 1, borderColor: '#ef4444' }]}
-            placeholder="7-digit number"
+            placeholder="e.g. MT Her Majesty"
             placeholderTextColor={isDark ? '#5c5c5e' : '#aeaeb2'}
-            value={imoNumber}
-            onChangeText={handleImoChange}
-            onBlur={handleImoBlur}
-            keyboardType="numeric"
-            maxLength={7}
           />
-          {imoError && touched.imoNumber && <ThemedText style={{ fontSize: 12, color: '#ef4444', marginTop: 4 }}>{imoError}</ThemedText>}
         </View>
 
-        <View style={{ marginTop: 20 }}>
-          <ThemedText style={styles.label}>Classification</ThemedText>
+        {/* IMO Number (Read-only) */}
+        <View style={styles.fieldContainer}>
+          <ThemedText style={styles.label}>IMO Number</ThemedText>
+          <View style={[styles.input, isDark && styles.inputDark, styles.inputDisabled]}>
+            <ThemedText style={{ opacity: 0.6 }}>{vessel.imoNumber}</ThemedText>
+          </View>
+          <ThemedText style={styles.hint}>IMO number cannot be changed</ThemedText>
+        </View>
 
-          <Pressable
-            onPress={() => { setTypeDropdownOpen(!typeDropdownOpen); setSubtypeDropdownOpen(false); }}
-            style={[styles.iosInput, isDark && styles.iosInputDark, { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' }]}
-          >
-            <ThemedText style={{ fontSize: 17, color: vesselType ? (isDark ? '#FFF' : '#000') : (isDark ? '#5c5c5e' : '#aeaeb2') }}>
-              {vesselType || 'Select Type'}
-            </ThemedText>
-            {typeDropdownOpen ? <ChevronUp size={18} color={isDark ? '#999' : '#666'} /> : <ChevronDown size={18} color={isDark ? '#999' : '#666'} />}
-          </Pressable>
-
-          {typeDropdownOpen && (
-            <View style={[styles.dropdownList, isDark && styles.dropdownListDark]}>
-              {VESSEL_TYPES.map((type, index) => (
-                <Pressable
-                  key={type}
-                  style={[styles.dropdownItem, index !== VESSEL_TYPES.length - 1 && { borderBottomWidth: 1, borderBottomColor: isDark ? '#2C2C2E' : '#e5e7eb' }]}
-                  onPress={() => handleTypeSelect(type)}
-                >
-                  <ThemedText style={{ fontSize: 15 }}>{type}</ThemedText>
-                  {vesselType === type && <Check size={16} color="#3b82f6" />}
-                </Pressable>
-              ))}
-            </View>
-          )}
-
-          {vesselType && (
-            <View style={{ marginTop: 12 }}>
+        {/* Vessel Type */}
+        <View style={styles.fieldContainer}>
+          <ThemedText style={styles.label}>Vessel Type</ThemedText>
+          <View style={[styles.segmentedControl, isDark && styles.segmentedControlDark]}>
+            {VESSEL_TYPES.map((type) => (
               <Pressable
-                onPress={() => { setSubtypeDropdownOpen(!subtypeDropdownOpen); setTypeDropdownOpen(false); }}
-                style={[styles.iosInput, isDark && styles.iosInputDark, { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' }]}
+                key={type}
+                onPress={() => setVesselType(type)}
+                style={[
+                  styles.segment,
+                  vesselType === type && styles.segmentActive,
+                  vesselType === type && !isDark && styles.segmentActiveLight,
+                ]}
               >
-                <ThemedText style={{ fontSize: 17, color: vesselSubtype ? (isDark ? '#FFF' : '#000') : (isDark ? '#5c5c5e' : '#aeaeb2') }}>
-                  {vesselSubtype || 'Select Subtype'}
+                <ThemedText style={[
+                  styles.segmentText,
+                  vesselType === type && styles.segmentTextActive,
+                  vesselType === type && !isDark && { color: '#000' }
+                ]}>
+                  {type}
                 </ThemedText>
-                {subtypeDropdownOpen ? <ChevronUp size={18} color={isDark ? '#999' : '#666'} /> : <ChevronDown size={18} color={isDark ? '#999' : '#666'} />}
               </Pressable>
-
-              {subtypeDropdownOpen && (
-                <View style={[styles.dropdownList, isDark && styles.dropdownListDark]}>
-                  {SUBTYPES[vesselType].map((sub, index) => (
-                    <Pressable
-                      key={sub}
-                      style={[styles.dropdownItem, index !== SUBTYPES[vesselType].length - 1 && { borderBottomWidth: 1, borderBottomColor: isDark ? '#2C2C2E' : '#e5e7eb' }]}
-                      onPress={() => handleSubtypeSelect(sub)}
-                    >
-                      <ThemedText style={{ fontSize: 15 }}>{sub}</ThemedText>
-                      {vesselSubtype === sub && <Check size={16} color="#3b82f6" />}
-                    </Pressable>
-                  ))}
-                </View>
-              )}
-            </View>
-          )}
+            ))}
+          </View>
         </View>
 
+        {/* Vessel Subtype */}
+        <View style={styles.fieldContainer}>
+          <ThemedText style={styles.label}>Subtype</ThemedText>
+          <View style={[styles.segmentedControl, isDark && styles.segmentedControlDark]}>
+            {(SUBTYPES[vesselType] || SUBTYPES['Gas Carrier']).map((subtype) => (
+              <Pressable
+                key={subtype}
+                onPress={() => setVesselSubtype(subtype)}
+                style={[
+                  styles.segment,
+                  vesselSubtype === subtype && styles.segmentActive,
+                  vesselSubtype === subtype && !isDark && styles.segmentActiveLight,
+                ]}
+              >
+                <ThemedText style={[
+                  styles.segmentText,
+                  vesselSubtype === subtype && styles.segmentTextActive,
+                  vesselSubtype === subtype && !isDark && { color: '#000' }
+                ]}>
+                  {subtype}
+                </ThemedText>
+              </Pressable>
+            ))}
+          </View>
+        </View>
+
+        {/* Submit Button */}
         <Pressable
-          onPress={handleSave}
+          onPress={handleSubmit}
           disabled={!isFormValid || isSaving}
-          style={[styles.iosSaveButton, (!isFormValid || isSaving) && { opacity: 0.7 }]}
+          style={[
+            styles.submitButton,
+            (!isFormValid || isSaving) && styles.submitButtonDisabled,
+          ]}
         >
-          {isSaving ? (
-            <ActivityIndicator color="#000" />
-          ) : (
-            <ThemedText style={styles.iosSaveButtonText}>Save</ThemedText>
-          )}
+          <ThemedText style={styles.submitButtonText}>
+            {isSaving ? 'Saving...' : 'Save Changes'}
+          </ThemedText>
         </Pressable>
       </BottomSheetScrollView>
     </BottomSheetModal>
@@ -260,6 +226,9 @@ const styles = StyleSheet.create({
     textAlign: 'center',
     flex: 1,
   },
+  content: {
+    padding: 16,
+  },
   imageButton: {
     height: 80,
     borderWidth: 1,
@@ -269,51 +238,77 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     marginBottom: 20,
     borderRadius: 10,
+    backgroundColor: '#f9fafb',
   },
   imageButtonDark: {
     borderColor: '#4b5563',
+    backgroundColor: '#1f2937',
+  },
+  fieldContainer: {
+    marginBottom: 16,
   },
   label: {
     fontSize: 13,
     fontWeight: '500',
     marginBottom: 6,
     color: '#666',
-    marginLeft: 4,
   },
-  iosInput: {
+  input: {
     backgroundColor: '#F2F2F7',
     borderRadius: 10,
     padding: 12,
     fontSize: 17,
     color: '#000',
   },
-  iosInputDark: {
+  inputDark: {
     backgroundColor: '#1C1C1E',
     color: '#FFF',
   },
-  dropdownList: {
+  inputDisabled: {
+    opacity: 0.6,
+    justifyContent: 'center',
+  },
+  hint: {
+    fontSize: 12,
+    color: '#999',
+    marginTop: 4,
+  },
+  segmentedControl: {
+    flexDirection: 'row',
     backgroundColor: '#F2F2F7',
     borderRadius: 10,
-    marginTop: 8,
-    overflow: 'hidden',
+    padding: 2,
+    gap: 4,
   },
-  dropdownListDark: {
+  segmentedControlDark: {
     backgroundColor: '#1C1C1E',
   },
-  dropdownItem: {
-    paddingVertical: 12,
+  segment: {
+    flex: 1,
+    paddingVertical: 8,
     paddingHorizontal: 12,
-    flexDirection: 'row',
-    justifyContent: 'space-between',
+    borderRadius: 8,
     alignItems: 'center',
   },
-  iosSaveButton: {
+  segmentActive: {
+    backgroundColor: '#3C3C3E',
+  },
+  segmentActiveLight: {
+    backgroundColor: '#fff',
+  },
+  segmentText: {
+    fontSize: 13,
+    fontWeight: '500',
+  },
+  segmentTextActive: {
+    fontWeight: '600',
+  },
+  submitButton: {
     backgroundColor: '#fff',
     borderRadius: 30,
     paddingVertical: 12,
     width: '100%',
     alignItems: 'center',
-    justifyContent: 'center',
     marginTop: 32,
     marginBottom: 20,
     borderColor: '#fff',
@@ -323,11 +318,12 @@ const styles = StyleSheet.create({
     shadowRadius: 8,
     elevation: 4,
   },
-  iosSaveButtonText: {
+  submitButtonDisabled: {
+    opacity: 0.5,
+  },
+  submitButtonText: {
     color: '#000',
     fontSize: 16,
     fontWeight: '700',
   },
 });
-
-export default EditVesselModal;

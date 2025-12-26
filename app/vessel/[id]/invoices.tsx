@@ -502,7 +502,15 @@ export default function VesselInvoices() {
         handleIndicatorStyle={{ backgroundColor: isDark ? '#404040' : '#e5e7eb' }}
         onDismiss={() => setEditingInvoice(null)}
       >
-        <BottomSheetScrollView contentContainerStyle={{ padding: 16, paddingBottom: 40 }} showsVerticalScrollIndicator={false}>
+        <View style={styles.header}>
+          <ThemedText style={styles.headerTitle}>Edit Invoice</ThemedText>
+        </View>
+
+        <BottomSheetScrollView
+          style={{ flex: 1 }}
+          contentContainerStyle={{ padding: 16, paddingBottom: 40 }}
+          showsVerticalScrollIndicator={false}
+        >
           <ThemedText className="text-xs text-gray-500 ml-1 mb-1 font-medium">Invoice Number</ThemedText>
           <TextInput
             style={[styles.iosInput, isDark && styles.iosInputDark]}
@@ -770,5 +778,20 @@ const styles = StyleSheet.create({
     color: '#000',
     fontSize: 16,
     fontWeight: '700',
-  }
+  },
+  header: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    paddingHorizontal: 16,
+    paddingVertical: 12,
+    borderBottomWidth: 1,
+    borderBottomColor: 'rgba(0,0,0,0.05)',
+  },
+  headerTitle: {
+    fontSize: 18,
+    fontWeight: '600',
+    textAlign: 'center',
+    flex: 1,
+  },
 });
