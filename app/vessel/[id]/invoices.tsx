@@ -4,11 +4,12 @@ import { View, FlatList, Pressable, Alert, Image, Linking, TextInput, StyleSheet
 import DateTimePicker from '@react-native-community/datetimepicker';
 import { Picker } from '@react-native-picker/picker';
 import { BottomSheetModal, BottomSheetBackdrop, BottomSheetScrollView } from '@gorhom/bottom-sheet';
-import { Receipt, Download, Pencil, Trash2, PlusCircle, FileText } from 'lucide-react-native';
+import { Receipt, Download, Pencil, Trash2, PlusCircle, FileText, Calendar } from 'lucide-react-native';
 import { ThemedText, ThemedView } from '@/components/common';
 import { VesselTopBar } from '@/components/vessel';
 import { useVesselDetails } from '@/hooks';
 import { invoiceService } from '@/services';
+import TCInvoiceFormSheet from '@/components/vessel/TCInvoiceFormSheet';
 
 type Invoice = {
   id: string;
@@ -118,6 +119,8 @@ export default function VesselInvoices() {
   });
   const [showDatePickerFor, setShowDatePickerFor] = React.useState<null | 'date' | 'dueDate'>(null);
   const [tempDate, setTempDate] = React.useState<Date | null>(null);
+
+  const [showCreateTC, setShowCreateTC] = React.useState(false);
 
   const bottomSheetRef = React.useRef<BottomSheetModal>(null);
   const snapPoints = React.useMemo(() => ['60%', '90%'], []);
@@ -416,9 +419,11 @@ export default function VesselInvoices() {
           onChange={onDateChange}
         />
       ) : null}
+
+
       <Pressable
         accessibilityLabel="Create invoice"
-        onPress={() => Alert.alert('Create invoice', 'Open invoice creation (stub)')}
+        onPress={() => setShowCreateTC(true)}
         style={{
           position: 'absolute',
           right: 16,
@@ -439,6 +444,17 @@ export default function VesselInvoices() {
         <PlusCircle size={28} color="#fff" />
       </Pressable>
 
+      <TCInvoiceFormSheet
+        visible={showCreateTC}
+        onClose={() => setShowCreateTC(false)}
+        onSuccess={(newInv) => {
+          setInvoicesState(prev => [newInv, ...prev]);
+          setShowCreateTC(false);
+          Alert.alert('Success', 'Invoice created successfully.');
+        }}
+        vesselId={String(vessel?.id || '')}
+      />
+
       {/* Edit Invoice Bottom Sheet Modal */}
       <BottomSheetModal
         ref={bottomSheetRef}
@@ -446,7 +462,7 @@ export default function VesselInvoices() {
         snapPoints={snapPoints}
         enablePanDownToClose={true}
         backdropComponent={(props) => (<BottomSheetBackdrop {...props} disappearsOnIndex={-1} appearsOnIndex={0} />)}
-        backgroundStyle={{ backgroundColor: isDark ? '#151718' : '#fff', borderRadius: 48 }}
+        backgroundStyle={{ backgroundColor: isDark ? '#151718' : '#F2F2F7' }}
         handleIndicatorStyle={{ backgroundColor: isDark ? '#404040' : '#e5e7eb' }}
         onDismiss={() => setEditingInvoice(null)}
       >
@@ -478,20 +494,29 @@ export default function VesselInvoices() {
             })}
           </View>
 
-          <View style={{ flexDirection: 'row', gap: 12, marginTop: 20 }}>
+          <View style={{ marginTop: 20 }}>
             {/* Invoice Date */}
-            <View style={{ flex: 1 }}>
+            <View>
               <ThemedText className="text-xs text-gray-500 ml-1 mb-1 font-medium">Invoice Date</ThemedText>
               <Pressable
                 onPress={() => setShowDatePickerFor(showDatePickerFor === 'date' ? null : 'date')}
-                style={[styles.iosInput, isDark && styles.iosInputDark, { justifyContent: 'center', marginTop: 0 }]}
+                style={[styles.iosInput, isDark && styles.iosInputDark, { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginTop: 0 }]}
               >
                 <ThemedText style={{ color: isDark ? '#FFF' : '#000', fontSize: 16 }}>
                   {formState.date ? new Date(formState.date).toLocaleDateString(undefined, { dateStyle: 'medium' }) : 'Select Date'}
                 </ThemedText>
+                <Calendar size={18} color={isDark ? '#999' : '#666'} />
               </Pressable>
               {showDatePickerFor === 'date' && (
-                <View style={{ alignItems: 'center', marginVertical: 8 }}>
+                <View style={{
+                  marginTop: 8,
+                  backgroundColor: isDark ? '#2C2C2E' : '#f2f2f7',
+                  borderRadius: 12,
+                  paddingVertical: 8,
+                  overflow: 'hidden',
+                  alignItems: 'center',
+                  width: '100%'
+                }}>
                   <DateTimePicker
                     value={formState.date ? new Date(formState.date) : new Date()}
                     mode="date"
@@ -500,25 +525,37 @@ export default function VesselInvoices() {
                       if (d) setFormState(s => ({ ...s, date: d.toISOString() }));
                     }}
                     themeVariant={isDark ? 'dark' : 'light'}
-                    style={{ width: '100%' }}
+                    style={{
+                      maxWidth: '100%',
+                      alignSelf: 'center'
+                    }}
                   />
                 </View>
               )}
             </View>
 
             {/* Due Date */}
-            <View style={{ flex: 1 }}>
+            <View style={{ marginTop: 20 }}>
               <ThemedText className="text-xs text-gray-500 ml-1 mb-1 font-medium">Due Date</ThemedText>
               <Pressable
                 onPress={() => setShowDatePickerFor(showDatePickerFor === 'dueDate' ? null : 'dueDate')}
-                style={[styles.iosInput, isDark && styles.iosInputDark, { justifyContent: 'center', marginTop: 0 }]}
+                style={[styles.iosInput, isDark && styles.iosInputDark, { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginTop: 0 }]}
               >
                 <ThemedText style={{ color: isDark ? '#FFF' : '#000', fontSize: 16 }}>
                   {formState.dueDate ? new Date(formState.dueDate).toLocaleDateString(undefined, { dateStyle: 'medium' }) : 'Select Due Date'}
                 </ThemedText>
+                <Calendar size={18} color={isDark ? '#999' : '#666'} />
               </Pressable>
               {showDatePickerFor === 'dueDate' && (
-                <View style={{ alignItems: 'center', marginVertical: 8 }}>
+                <View style={{
+                  marginTop: 8,
+                  backgroundColor: isDark ? '#2C2C2E' : '#f2f2f7',
+                  borderRadius: 12,
+                  paddingVertical: 8,
+                  overflow: 'hidden',
+                  alignItems: 'center',
+                  width: '100%'
+                }}>
                   <DateTimePicker
                     value={formState.dueDate ? new Date(formState.dueDate) : new Date()}
                     mode="date"
@@ -527,7 +564,10 @@ export default function VesselInvoices() {
                       if (d) setFormState(s => ({ ...s, dueDate: d.toISOString() }));
                     }}
                     themeVariant={isDark ? 'dark' : 'light'}
-                    style={{ width: '100%' }}
+                    style={{
+                      maxWidth: '100%',
+                      alignSelf: 'center'
+                    }}
                   />
                 </View>
               )}
@@ -574,7 +614,7 @@ export default function VesselInvoices() {
 
         </BottomSheetScrollView>
       </BottomSheetModal>
-    </ThemedView>
+    </ThemedView >
   );
 }
 
@@ -666,36 +706,33 @@ const styles = StyleSheet.create({
   },
   iosSegmentedText: {
     fontSize: 13,
-    fontWeight: '400',
-    color: '#000',
+    fontWeight: '500',
   },
   iosSegmentedTextDark: {
-    color: '#FFF',
+    // Left empty or removed if ThemedText handles it, but keeping it empty to clear previous overrides if needed or just removing it from usage
   },
   iosSegmentedTextActive: {
     fontWeight: '600',
   },
   iosSaveButton: {
     backgroundColor: '#fff',
-    borderWidth: 1,
-    borderColor: '#e5e7eb',
     borderRadius: 30,
-    paddingVertical: 10,
-    paddingHorizontal: 20,
+    paddingVertical: 12,
+    width: '100%',
     alignItems: 'center',
     justifyContent: 'center',
     marginTop: 32,
     marginBottom: 20,
-    alignSelf: 'flex-start',
+    borderColor: '#fff',
     shadowColor: '#000',
-    shadowOffset: { width: 0, height: 1 },
-    shadowOpacity: 0.1,
-    shadowRadius: 2,
-    elevation: 2,
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.3,
+    shadowRadius: 8,
+    elevation: 4,
   },
   iosSaveButtonText: {
     color: '#000',
     fontSize: 16,
-    fontWeight: '600',
+    fontWeight: '700',
   }
 });

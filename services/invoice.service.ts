@@ -57,4 +57,20 @@ export async function updateInvoice(id: number, payload: any) {
   return await response.json();
 }
 
-export default { getInvoicesByVessel, getInvoiceById, updateInvoiceStatus, deleteInvoice, updateInvoice };
+/**
+ * Create a new TC invoice
+ */
+export async function createTCInvoice(payload: any) {
+  const response = await fetch(`${API_URL}/api/invoices/tc`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(payload)
+  });
+  if (!response.ok) {
+    const errText = await response.text().catch(() => response.statusText);
+    throw new Error(`Failed to create TC invoice: ${response.status} - ${errText}`);
+  }
+  return await response.json();
+}
+
+export default { getInvoicesByVessel, getInvoiceById, updateInvoiceStatus, deleteInvoice, updateInvoice, createTCInvoice };
