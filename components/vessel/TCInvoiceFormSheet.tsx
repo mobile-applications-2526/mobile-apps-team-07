@@ -1,5 +1,5 @@
 import React, { useMemo } from 'react';
-import { View, TextInput, Pressable, StyleSheet, ScrollView, Alert, Platform } from 'react-native';
+import { View, TextInput, Pressable, StyleSheet, ScrollView, Alert, Platform, ActionSheetIOS } from 'react-native';
 import DateTimePicker from '@react-native-community/datetimepicker';
 import { BottomSheetModal, BottomSheetBackdrop, BottomSheetScrollView } from '@gorhom/bottom-sheet';
 import { ThemedText } from '@/components/common/ThemedText';
@@ -143,6 +143,34 @@ export default function TCInvoiceFormSheet({ visible, onClose, onSuccess, vessel
 
     const handleRemoveCharge = (id: string) => {
         setAdditionalCharges(prev => prev.filter(c => c.id !== id));
+    };
+
+    const showCurrencySelection = () => {
+        const options = ['USD', 'AED', 'EUR'];
+        if (Platform.OS === 'ios') {
+            ActionSheetIOS.showActionSheetWithOptions(
+                {
+                    options: [...options, 'Cancel'],
+                    cancelButtonIndex: options.length,
+                    title: 'Select Currency',
+                },
+                (buttonIndex) => {
+                    if (buttonIndex < options.length) {
+                        setCurrency(options[buttonIndex]);
+                    }
+                }
+            );
+        } else {
+            Alert.alert(
+                'Select Currency',
+                'Choose a currency',
+                options.map(opt => ({
+                    text: opt,
+                    onPress: () => setCurrency(opt),
+                })).concat([{ text: 'Cancel', style: 'cancel' }]),
+                { cancelable: true }
+            );
+        }
     };
 
     const updateCharge = (id: string, field: 'title' | 'amount', value: string) => {
@@ -325,17 +353,13 @@ export default function TCInvoiceFormSheet({ visible, onClose, onSuccess, vessel
 
                     <View style={styles.fieldContainer}>
                         <ThemedText style={styles.label}>Currency</ThemedText>
-                        <View style={[styles.segmentedControl, isDark && styles.segmentedControlDark]}>
-                            {['USD', 'AED', 'EUR'].map(c => (
-                                <Pressable
-                                    key={c}
-                                    onPress={() => setCurrency(c)}
-                                    style={[styles.segment, currency === c && styles.segmentActive, isDark && currency === c && styles.segmentActiveDark]}
-                                >
-                                    <ThemedText style={[styles.segmentText, currency === c && styles.segmentTextActive]}>{c}</ThemedText>
-                                </Pressable>
-                            ))}
-                        </View>
+                        <Pressable
+                            onPress={showCurrencySelection}
+                            style={[styles.input, isDark && styles.inputDark, { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' }]}
+                        >
+                            <ThemedText style={{ fontSize: 17, color: isDark ? '#FFF' : '#000' }}>{currency}</ThemedText>
+                            <ThemedText style={{ color: '#007AFF', fontSize: 17 }}>Edit</ThemedText>
+                        </Pressable>
                     </View>
                 </View>
 
