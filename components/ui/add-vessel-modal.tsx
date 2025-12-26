@@ -1,21 +1,17 @@
-import React, { useState, useEffect } from 'react';
-import { 
-  Modal, 
-  View, 
-  TouchableOpacity, 
-  TextInput, 
-  ScrollView, 
-  KeyboardAvoidingView, 
-  Platform,
+import React, { useState, useEffect, useRef, useMemo } from 'react';
+import {
+  View,
+  TouchableOpacity,
+  TextInput,
   ActivityIndicator,
-  TouchableWithoutFeedback,
-  Keyboard,
   StyleSheet,
+  Pressable,
+  Keyboard,
 } from 'react-native';
+import { BottomSheetModal, BottomSheetBackdrop, BottomSheetScrollView } from '@gorhom/bottom-sheet';
 import { Camera, ChevronDown, Check, ChevronUp } from 'lucide-react-native';
 import { ThemedText } from '@/components/common';
 import { useColorScheme } from 'nativewind';
-import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { CreateVesselInput } from '@/types';
 
 // Vessel type options
@@ -46,7 +42,8 @@ export function AddVesselModal({
 }: AddVesselModalProps) {
   const { colorScheme } = useColorScheme();
   const isDark = colorScheme === 'dark';
-  const insets = useSafeAreaInsets();
+  const bottomSheetRef = useRef<BottomSheetModal>(null);
+  const snapPoints = useMemo(() => ['60%', '90%'], []);
 
   // Form state
   const [vesselName, setVesselName] = useState('');
@@ -54,11 +51,11 @@ export function AddVesselModal({
   const [vesselType, setVesselType] = useState<VesselType | ''>('');
   const [vesselSubtype, setVesselSubtype] = useState('');
   const [vesselPictureUrl, setVesselPictureUrl] = useState<string | null>(null);
-  
+
   // Dropdown state
   const [typeDropdownOpen, setTypeDropdownOpen] = useState(false);
   const [subtypeDropdownOpen, setSubtypeDropdownOpen] = useState(false);
-  
+
   // Validation state
   const [imoError, setImoError] = useState<string | null>(null);
   const [touched, setTouched] = useState({
@@ -68,9 +65,13 @@ export function AddVesselModal({
     vesselSubtype: false,
   });
 
-  // Reset form logic when modal closes
+  // Handle visibility changes
   useEffect(() => {
-    if (!visible) {
+    if (visible) {
+      bottomSheetRef.current?.present();
+    } else {
+      bottomSheetRef.current?.dismiss();
+      // Reset form logic when modal closes
       const timer = setTimeout(() => {
         setVesselName('');
         setImoNumber('');
@@ -130,7 +131,7 @@ export function AddVesselModal({
     setTouched(prev => ({ ...prev, vesselSubtype: true }));
   };
 
-  const isFormValid = 
+  const isFormValid =
     vesselName.trim().length > 0 &&
     imoNumber.length === 7 &&
     !imoError &&
@@ -148,282 +149,291 @@ export function AddVesselModal({
     });
   };
 
-  const placeholderColor = isDark ? '#6b7280' : '#9ca3af';
-
   return (
-    <Modal
-      visible={visible}
-      transparent
-      animationType="slide"
-      onRequestClose={onCancel}
+    <BottomSheetModal
+      ref={bottomSheetRef}
+      index={0}
+      snapPoints={snapPoints}
+      enablePanDownToClose={true}
+      backdropComponent={(props) => (<BottomSheetBackdrop {...props} disappearsOnIndex={-1} appearsOnIndex={0} />)}
+      backgroundStyle={{ backgroundColor: isDark ? '#151718' : '#F2F2F7' }}
+      handleIndicatorStyle={{ backgroundColor: isDark ? '#404040' : '#e5e7eb' }}
+      onDismiss={onCancel}
     >
-      <TouchableWithoutFeedback onPress={Keyboard.dismiss}>
-        <KeyboardAvoidingView 
-          behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
-          className="flex-1"
+      <View style={styles.header}>
+        <ThemedText style={styles.headerTitle}>Add New Vessel</ThemedText>
+      </View>
+
+      <BottomSheetScrollView contentContainerStyle={{ padding: 16, paddingBottom: 40 }} showsVerticalScrollIndicator={false}>
+        {/* Photo Upload */}
+        <TouchableOpacity
+          style={[styles.imageButton, isDark && styles.imageButtonDark]}
+          onPress={() => console.log('Image picker')}
         >
-          {/* Backdrop */}
-          <View className="flex-1 justify-end bg-black/50">
-            <TouchableOpacity 
-              className="absolute inset-0"
-              activeOpacity={1}
-              onPress={onCancel}
-            />
-            
-            {/* Modal Content */}
-            <View 
-              className="bg-white dark:bg-[#1c1c1e] rounded-t-3xl overflow-hidden w-full"
-              style={{ 
-                minHeight: '80%',
-                maxHeight: '90%',
-              }}
-            >
-              {/* Header */}
-              <View className="px-6 py-4 border-b border-gray-200 dark:border-gray-700 bg-white dark:bg-[#1c1c1e]">
-                <ThemedText type="subtitle" className="text-lg font-bold text-center">
-                  Add New Vessel
-                </ThemedText>
-              </View>
-
-              {/* Scrollable Form Body */}
-              <ScrollView 
-                className="flex-1 px-6 pt-5 bg-white dark:bg-[#1c1c1e]"
-                contentContainerStyle={{ paddingBottom: 40 }}
-                showsVerticalScrollIndicator={true}
-                keyboardShouldPersistTaps="handled"
-              >
-                {/* Photo Upload */}
-                <TouchableOpacity
-                  className="h-20 border border-dashed border-gray-300 dark:border-gray-600 items-center justify-center mb-5 active:opacity-70"
-                  onPress={() => console.log('Image picker')}
-                >
-                  <View className="flex-row items-center gap-2 opacity-70">
-                    <Camera size={18} color="#3b82f6" />
-                    <ThemedText className="text-sm text-blue-500">
-                      Upload Photo
-                    </ThemedText>
-                  </View>
-                </TouchableOpacity>
-
-                {/* Form Fields */}
-                <View className="gap-4">
-                  {/* Name Input */}
-                  <View>
-                    <ThemedText className="text-sm text-gray-600 dark:text-gray-400 mb-1">
-                      Vessel Name
-                    </ThemedText>
-                    <TextInput
-                      style={[
-                        styles.input,
-                        { color: isDark ? '#fff' : '#111', borderColor: isDark ? '#4b5563' : '#d1d5db' }
-                      ]}
-                      placeholder="e.g. MT Her Majesty"
-                      placeholderTextColor={placeholderColor}
-                      value={vesselName}
-                      onChangeText={setVesselName}
-                      autoCapitalize="words"
-                    />
-                  </View>
-
-                  {/* IMO Input */}
-                  <View>
-                    <ThemedText className="text-sm text-gray-600 dark:text-gray-400 mb-1">
-                      IMO Number
-                    </ThemedText>
-                    <TextInput
-                      style={[
-                        styles.input,
-                        { 
-                          color: isDark ? '#fff' : '#111', 
-                          borderColor: imoError ? '#ef4444' : (isDark ? '#4b5563' : '#d1d5db')
-                        }
-                      ]}
-                      placeholder="7-digit number"
-                      placeholderTextColor={placeholderColor}
-                      value={imoNumber}
-                      onChangeText={handleImoChange}
-                      onBlur={handleImoBlur}
-                      keyboardType="numeric"
-                      maxLength={7}
-                    />
-                    {imoError && touched.imoNumber && (
-                      <ThemedText className="text-xs text-red-500 mt-1">
-                        {imoError}
-                      </ThemedText>
-                    )}
-                  </View>
-
-                  {/* Classification Dropdowns */}
-                  <View>
-                    <ThemedText className="text-sm text-gray-600 dark:text-gray-400 mb-1">
-                      Classification
-                    </ThemedText>
-                    
-                    {/* Main Type */}
-                    <TouchableOpacity
-                      onPress={() => {
-                        setTypeDropdownOpen(!typeDropdownOpen);
-                        setSubtypeDropdownOpen(false);
-                        Keyboard.dismiss();
-                      }}
-                      style={[
-                        styles.dropdown,
-                        { borderColor: isDark ? '#4b5563' : '#d1d5db' }
-                      ]}
-                    >
-                      <ThemedText className={`text-base ${vesselType ? 'text-gray-900 dark:text-white' : 'text-gray-400'}`}>
-                        {vesselType || 'Select Type'}
-                      </ThemedText>
-                      {typeDropdownOpen ? (
-                        <ChevronUp size={18} color={placeholderColor} />
-                      ) : (
-                        <ChevronDown size={18} color={placeholderColor} />
-                      )}
-                    </TouchableOpacity>
-
-                    {/* Type List */}
-                    {typeDropdownOpen && (
-                      <View 
-                        style={[styles.dropdownList, { borderColor: isDark ? '#4b5563' : '#d1d5db' }]}
-                        className="bg-white dark:bg-gray-800"
-                      >
-                        {VESSEL_TYPES.map((type, index) => (
-                          <TouchableOpacity
-                            key={type}
-                            style={[
-                              styles.dropdownItem,
-                              index !== VESSEL_TYPES.length - 1 && { 
-                                borderBottomWidth: 1, 
-                                borderBottomColor: isDark ? '#4b5563' : '#e5e7eb' 
-                              }
-                            ]}
-                            onPress={() => handleTypeSelect(type)}
-                          >
-                            <ThemedText className="text-sm">{type}</ThemedText>
-                            {vesselType === type && <Check size={16} color="#3b82f6" />}
-                          </TouchableOpacity>
-                        ))}
-                      </View>
-                    )}
-
-                    {/* Subtype Selector */}
-                    {vesselType && (
-                      <View className="mt-2">
-                        <TouchableOpacity
-                          onPress={() => {
-                            setSubtypeDropdownOpen(!subtypeDropdownOpen);
-                            setTypeDropdownOpen(false);
-                            Keyboard.dismiss();
-                          }}
-                          style={[
-                            styles.dropdown,
-                            { borderColor: isDark ? '#4b5563' : '#d1d5db' }
-                          ]}
-                        >
-                          <ThemedText className={`text-base ${vesselSubtype ? 'text-gray-900 dark:text-white' : 'text-gray-400'}`}>
-                            {vesselSubtype || 'Select Subtype'}
-                          </ThemedText>
-                          {subtypeDropdownOpen ? (
-                            <ChevronUp size={18} color={placeholderColor} />
-                          ) : (
-                            <ChevronDown size={18} color={placeholderColor} />
-                          )}
-                        </TouchableOpacity>
-
-                        {/* Subtype List */}
-                        {subtypeDropdownOpen && (
-                          <View 
-                            style={[styles.dropdownList, { borderColor: isDark ? '#4b5563' : '#d1d5db' }]}
-                            className="bg-white dark:bg-gray-800"
-                          >
-                            {SUBTYPES[vesselType].map((sub, index) => (
-                              <TouchableOpacity
-                                key={sub}
-                                style={[
-                                  styles.dropdownItem,
-                                  index !== SUBTYPES[vesselType].length - 1 && { 
-                                    borderBottomWidth: 1, 
-                                    borderBottomColor: isDark ? '#4b5563' : '#e5e7eb' 
-                                  }
-                                ]}
-                                onPress={() => handleSubtypeSelect(sub)}
-                              >
-                                <ThemedText className="text-sm">{sub}</ThemedText>
-                                {vesselSubtype === sub && <Check size={16} color="#3b82f6" />}
-                              </TouchableOpacity>
-                            ))}
-                          </View>
-                        )}
-                      </View>
-                    )}
-                  </View>
-                </View>
-              </ScrollView>
-
-              {/* Footer Button */}
-              <View 
-                className="px-6 pt-3 bg-white dark:bg-[#1c1c1e] border-t border-gray-200 dark:border-gray-700"
-                style={{ paddingBottom: Math.max(insets.bottom, 20) }}
-              >
-                <TouchableOpacity
-                  onPress={handleCreate}
-                  disabled={!isFormValid || isCreating}
-                  className={`h-12 rounded-xl flex-row items-center justify-center gap-2 ${
-                    isFormValid && !isCreating 
-                      ? 'bg-blue-600 active:bg-blue-700' 
-                      : 'bg-gray-200 dark:bg-gray-800'
-                  }`}
-                >
-                  {isCreating ? (
-                    <ActivityIndicator color="#fff" />
-                  ) : (
-                    <ThemedText 
-                      className={`font-semibold text-base ${
-                        isFormValid ? 'text-white' : 'text-gray-400 dark:text-gray-500'
-                      }`}
-                    >
-                      Create Vessel
-                    </ThemedText>
-                  )}
-                </TouchableOpacity>
-              </View>
-            </View>
+          <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8, opacity: 0.7 }}>
+            <Camera size={18} color="#3b82f6" />
+            <ThemedText style={{ fontSize: 14, color: '#3b82f6' }}>
+              Upload Photo
+            </ThemedText>
           </View>
-        </KeyboardAvoidingView>
-      </TouchableWithoutFeedback>
-    </Modal>
+        </TouchableOpacity>
+
+        {/* Form Fields */}
+        <View style={{ gap: 20 }}>
+          {/* Name Input */}
+          <View>
+            <ThemedText style={styles.label}>
+              Vessel Name
+            </ThemedText>
+            <TextInput
+              style={[
+                styles.iosInput,
+                isDark && styles.iosInputDark
+              ]}
+              placeholder="e.g. MT Her Majesty"
+              placeholderTextColor={isDark ? '#5c5c5e' : '#aeaeb2'}
+              value={vesselName}
+              onChangeText={setVesselName}
+              autoCapitalize="words"
+            />
+          </View>
+
+          {/* IMO Input */}
+          <View>
+            <ThemedText style={styles.label}>
+              IMO Number
+            </ThemedText>
+            <TextInput
+              style={[
+                styles.iosInput,
+                isDark && styles.iosInputDark,
+                (imoError && touched.imoNumber) ? { borderWidth: 1, borderColor: '#ef4444' } : {}
+              ]}
+              placeholder="7-digit number"
+              placeholderTextColor={isDark ? '#5c5c5e' : '#aeaeb2'}
+              value={imoNumber}
+              onChangeText={handleImoChange}
+              onBlur={handleImoBlur}
+              keyboardType="numeric"
+              maxLength={7}
+            />
+            {imoError && touched.imoNumber && (
+              <ThemedText style={{ fontSize: 12, color: '#ef4444', marginTop: 4 }}>
+                {imoError}
+              </ThemedText>
+            )}
+          </View>
+
+          {/* Classification Dropdowns */}
+          <View>
+            <ThemedText style={styles.label}>
+              Classification
+            </ThemedText>
+
+            {/* Main Type */}
+            <Pressable
+              onPress={() => {
+                setTypeDropdownOpen(!typeDropdownOpen);
+                setSubtypeDropdownOpen(false);
+                Keyboard.dismiss();
+              }}
+              style={[
+                styles.iosInput,
+                isDark && styles.iosInputDark,
+                { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' }
+              ]}
+            >
+              <ThemedText style={{ fontSize: 17, color: vesselType ? (isDark ? '#FFF' : '#000') : (isDark ? '#5c5c5e' : '#aeaeb2') }}>
+                {vesselType || 'Select Type'}
+              </ThemedText>
+              {typeDropdownOpen ? (
+                <ChevronUp size={18} color={isDark ? '#999' : '#666'} />
+              ) : (
+                <ChevronDown size={18} color={isDark ? '#999' : '#666'} />
+              )}
+            </Pressable>
+
+            {/* Type List */}
+            {typeDropdownOpen && (
+              <View
+                style={[styles.dropdownList, isDark && styles.dropdownListDark]}
+              >
+                {VESSEL_TYPES.map((type, index) => (
+                  <Pressable
+                    key={type}
+                    style={[
+                      styles.dropdownItem,
+                      index !== VESSEL_TYPES.length - 1 && {
+                        borderBottomWidth: 1,
+                        borderBottomColor: isDark ? '#2C2C2E' : '#e5e7eb'
+                      }
+                    ]}
+                    onPress={() => handleTypeSelect(type)}
+                  >
+                    <ThemedText style={{ fontSize: 15 }}>{type}</ThemedText>
+                    {vesselType === type && <Check size={16} color="#3b82f6" />}
+                  </Pressable>
+                ))}
+              </View>
+            )}
+
+            {/* Subtype Selector */}
+            {vesselType && (
+              <View style={{ marginTop: 12 }}>
+                <Pressable
+                  onPress={() => {
+                    setSubtypeDropdownOpen(!subtypeDropdownOpen);
+                    setTypeDropdownOpen(false);
+                    Keyboard.dismiss();
+                  }}
+                  style={[
+                    styles.iosInput,
+                    isDark && styles.iosInputDark,
+                    { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' }
+                  ]}
+                >
+                  <ThemedText style={{ fontSize: 17, color: vesselSubtype ? (isDark ? '#FFF' : '#000') : (isDark ? '#5c5c5e' : '#aeaeb2') }}>
+                    {vesselSubtype || 'Select Subtype'}
+                  </ThemedText>
+                  {subtypeDropdownOpen ? (
+                    <ChevronUp size={18} color={isDark ? '#999' : '#666'} />
+                  ) : (
+                    <ChevronDown size={18} color={isDark ? '#999' : '#666'} />
+                  )}
+                </Pressable>
+
+                {/* Subtype List */}
+                {subtypeDropdownOpen && (
+                  <View
+                    style={[styles.dropdownList, isDark && styles.dropdownListDark]}
+                  >
+                    {SUBTYPES[vesselType].map((sub, index) => (
+                      <Pressable
+                        key={sub}
+                        style={[
+                          styles.dropdownItem,
+                          index !== SUBTYPES[vesselType].length - 1 && {
+                            borderBottomWidth: 1,
+                            borderBottomColor: isDark ? '#2C2C2E' : '#e5e7eb'
+                          }
+                        ]}
+                        onPress={() => handleSubtypeSelect(sub)}
+                      >
+                        <ThemedText style={{ fontSize: 15 }}>{sub}</ThemedText>
+                        {vesselSubtype === sub && <Check size={16} color="#3b82f6" />}
+                      </Pressable>
+                    ))}
+                  </View>
+                )}
+              </View>
+            )}
+          </View>
+        </View>
+
+        {/* Create Button */}
+        <Pressable
+          onPress={handleCreate}
+          disabled={!isFormValid || isCreating}
+          style={[
+            styles.iosSaveButton,
+            (!isFormValid || isCreating) && { opacity: 0.7 }
+          ]}
+        >
+          {isCreating ? (
+            <ActivityIndicator color="#000" />
+          ) : (
+            <ThemedText style={styles.iosSaveButtonText}>
+              Create Vessel
+            </ThemedText>
+          )}
+        </Pressable>
+      </BottomSheetScrollView>
+    </BottomSheetModal>
   );
 }
 
 const styles = StyleSheet.create({
-  input: {
-    height: 40,
-    paddingHorizontal: 8,
-    fontSize: 15,
-    borderWidth: 1,
-    borderRadius: 4,
-  },
-  dropdown: {
-    height: 40,
-    paddingHorizontal: 8,
-    borderWidth: 1,
-    borderRadius: 4,
+  header: {
     flexDirection: 'row',
     alignItems: 'center',
-    justifyContent: 'space-between',
+    justifyContent: 'center',
+    paddingHorizontal: 16,
+    paddingVertical: 12,
+    borderBottomWidth: 1,
+    borderBottomColor: 'rgba(0,0,0,0.05)',
+  },
+  headerTitle: {
+    fontSize: 18,
+    fontWeight: '600',
+    textAlign: 'center',
+  },
+  imageButton: {
+    height: 80,
+    borderWidth: 1,
+    borderStyle: 'dashed',
+    borderColor: '#d1d5db',
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginBottom: 20,
+    borderRadius: 10,
+  },
+  imageButtonDark: {
+    borderColor: '#4b5563',
+  },
+  label: {
+    fontSize: 13,
+    fontWeight: '500',
+    marginBottom: 6,
+    color: '#666',
+    marginLeft: 4,
+  },
+  iosInput: {
+    backgroundColor: '#F2F2F7',
+    borderRadius: 10,
+    padding: 12,
+    fontSize: 17,
+    color: '#000',
+  },
+  iosInputDark: {
+    backgroundColor: '#1C1C1E',
+    color: '#FFF',
   },
   dropdownList: {
-    borderWidth: 1,
-    borderRadius: 4,
-    marginTop: 4,
+    backgroundColor: '#F2F2F7',
+    borderRadius: 10,
+    marginTop: 8,
     overflow: 'hidden',
   },
+  dropdownListDark: {
+    backgroundColor: '#1C1C1E',
+  },
   dropdownItem: {
-    paddingVertical: 10,
-    paddingHorizontal: 8,
+    paddingVertical: 12,
+    paddingHorizontal: 12,
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
+  },
+  iosSaveButton: {
+    backgroundColor: '#fff',
+    borderRadius: 30,
+    paddingVertical: 12,
+    width: '100%',
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginTop: 32,
+    marginBottom: 20,
+    borderColor: '#fff',
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.3,
+    shadowRadius: 8,
+    elevation: 4,
+  },
+  iosSaveButtonText: {
+    color: '#000',
+    fontSize: 16,
+    fontWeight: '700',
   },
 });
 

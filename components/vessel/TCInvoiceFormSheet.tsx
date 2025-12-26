@@ -307,7 +307,7 @@ export default function TCInvoiceFormSheet({ visible, onClose, onSuccess, vessel
             <BottomSheetScrollView contentContainerStyle={styles.content}>
 
                 {/* Basic Info Group */}
-                <View style={[styles.section, isDark && styles.sectionDark]}>
+                <View>
                     <View style={styles.fieldContainer}>
                         <ThemedText style={styles.label}>Invoice Number</ThemedText>
                         <TextInput
@@ -339,9 +339,8 @@ export default function TCInvoiceFormSheet({ visible, onClose, onSuccess, vessel
                     </View>
                 </View>
 
-                {/* Hire Period Group */}
                 <ThemedText style={styles.sectionHeader}>Period & Rate</ThemedText>
-                <View style={[styles.section, isDark && styles.sectionDark]}>
+                <View>
                     {/* Stacked Period Dates */}
                     <View>
                         {renderDateInput('Period From', periodFrom, 'from')}
@@ -380,9 +379,8 @@ export default function TCInvoiceFormSheet({ visible, onClose, onSuccess, vessel
                     </View>
                 </View>
 
-                {/* Deductions Group */}
                 <ThemedText style={styles.sectionHeader}>Deductions</ThemedText>
-                <View style={[styles.section, isDark && styles.sectionDark]}>
+                <View>
                     <ThemedText style={styles.label}>Off-Hire Duration</ThemedText>
                     <View style={styles.row}>
                         <TextInput style={[styles.input, isDark && styles.inputDark, { flex: 1, marginRight: 4 }]} value={offHireDays} onChangeText={setOffHireDays} placeholder="Days" keyboardType="numeric" />
@@ -419,9 +417,8 @@ export default function TCInvoiceFormSheet({ visible, onClose, onSuccess, vessel
                     </View>
                 </View>
 
-                {/* Additional Charges Group */}
                 <ThemedText style={styles.sectionHeader}>Additional Charges</ThemedText>
-                <View style={[styles.section, isDark && styles.sectionDark]}>
+                <View>
                     {additionalCharges.map((charge, index) => (
                         <View key={charge.id} style={{ marginBottom: 12 }}>
                             <View style={[styles.row, { alignItems: 'center' }]}>
@@ -451,9 +448,8 @@ export default function TCInvoiceFormSheet({ visible, onClose, onSuccess, vessel
                     </Pressable>
                 </View>
 
-                {/* Remarks */}
                 <ThemedText style={styles.sectionHeader}>Remarks</ThemedText>
-                <View style={[styles.section, isDark && styles.sectionDark, { marginBottom: 32 }]}>
+                <View style={{ marginBottom: 16 }}>
                     <TextInput
                         style={[styles.input, isDark && styles.inputDark, { height: 80, textAlignVertical: 'top' }]}
                         value={remarks}
@@ -465,7 +461,7 @@ export default function TCInvoiceFormSheet({ visible, onClose, onSuccess, vessel
 
                 {/* Totals Section */}
                 <View style={{ marginTop: 24, marginBottom: 48, alignItems: 'center', paddingHorizontal: 16 }}>
-                    <ThemedText style={{ fontSize: 16, color: '#666', marginBottom: 4 }}>Total Invoice Amount</ThemedText>
+                    <ThemedText style={{ fontSize: 16, color: '#666' }}>Total Invoice Amount</ThemedText>
                     <View style={{ paddingVertical: 16, width: '100%', alignItems: 'center' }}>
                         <ThemedText style={{ fontSize: 24, fontWeight: '800', textAlign: 'center' }}>
                             {currency} {totalAmount.toLocaleString('en-US', { minimumFractionDigits: 2 })}
@@ -540,15 +536,14 @@ const styles = StyleSheet.create({
         color: '#666',
     },
     input: {
-        backgroundColor: '#F2F2F7',
-        borderRadius: 8,
-        paddingHorizontal: 12,
-        paddingVertical: 10,
-        fontSize: 16,
+        backgroundColor: '#F2F2F7', // systemGray6
+        borderRadius: 10,
+        padding: 12,
+        fontSize: 17,
         color: '#000',
     },
     inputDark: {
-        backgroundColor: '#2C2C2E',
+        backgroundColor: '#1C1C1E', // systemGray6 Dark
         color: '#FFF',
     },
     dateInput: {
