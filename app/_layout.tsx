@@ -11,6 +11,8 @@ import { SafeAreaProvider } from 'react-native-safe-area-context';
 import { GestureHandlerRootView } from 'react-native-gesture-handler';
 import { VesselProvider } from '@/context/VesselContext';
 import { databaseService } from '@/services';
+import { ToastProvider } from '@/context/ToastContext';
+import { NetworkStatusProvider } from '@/context/NetworkStatusContext';
 import { useEffect } from 'react';
 import 'react-native-reanimated';
 
@@ -37,17 +39,21 @@ export default function RootLayout() {
     <SafeAreaProvider>
       <GestureHandlerRootView style={{ flex: 1 }}>
         <BottomSheetModalProvider>
-          <VesselProvider>
-            <ThemeProvider value={NAV_THEME[colorScheme ?? 'light']}>
-              <StatusBar style={colorScheme === 'dark' ? 'light' : 'dark'} />
-              <Stack>
-                <Stack.Screen name="(tabs)" options={{ headerShown: false }} />
-                <Stack.Screen name="vessel/[id]" options={{ headerShown: false, animation: 'slide_from_right' }} />
-                <Stack.Screen name="modal" options={{ presentation: 'modal', title: 'Modal' }} />
-              </Stack>
-              <PortalHost />
-            </ThemeProvider>
-          </VesselProvider>
+          <ToastProvider>
+            <NetworkStatusProvider>
+              <VesselProvider>
+                <ThemeProvider value={NAV_THEME[colorScheme ?? 'light']}>
+                  <StatusBar style={colorScheme === 'dark' ? 'light' : 'dark'} />
+                  <Stack>
+                    <Stack.Screen name="(tabs)" options={{ headerShown: false }} />
+                    <Stack.Screen name="vessel/[id]" options={{ headerShown: false, animation: 'slide_from_right' }} />
+                    <Stack.Screen name="modal" options={{ presentation: 'modal', title: 'Modal' }} />
+                  </Stack>
+                  <PortalHost />
+                </ThemeProvider>
+              </VesselProvider>
+            </NetworkStatusProvider>
+          </ToastProvider>
         </BottomSheetModalProvider>
       </GestureHandlerRootView>
     </SafeAreaProvider>

@@ -13,9 +13,30 @@ export function useInvoices(vesselId: number | undefined) {
         if (!vesselId) return;
         try {
             setIsLoading(true);
-            const raw = await invoiceService.getInvoicesByVessel(vesselId);
-            const mapped = (raw || []).map(mapBackendInvoice);
-            setInvoices(mapped);
+
+            // Network First
+            try {
+                const raw = await invoiceService.fetchInvoicesByVesselNetwork(vesselId);
+                const mapped = (raw || []).map(mapBackendInvoice);
+                setInvoices(mapped);
+            } catch (networkErr) {
+                console.warn('Network failed for invoices, falling back to cache');
+                // Cache Fallback
+                const cachedRaw = await invoiceService.getInvoicesByVessel(vesselId);
+                // Note: getInvoicesByVessel logic is "check cache, if present return it (and bg update), else fetch network".
+                // Since we already failed network, getInvoicesByVessel might retry generic fetch or return cache.
+                // However, my implementation of getInvoicesByVessel was: "if cache, return cache (trigger bg), else fetch network".
+                // If we are offline, fetch network inside getInvoicesByVessel will fail too.
+                // So checking getInvoicesByVessel is safe: if it has cache it returns it. If not it fails.
+
+                // EXCEPT: I need to be careful not to trigger double network requests if I just failed.
+                // But getInvoicesByVessel does not take an "onlyCache" param. 
+                // However, standard "get...()" usually implies "get best available".
+
+                // Let's rely on getInvoicesByVessel() correctly returning cache if present.
+                const mapped = (cachedRaw || []).map(mapBackendInvoice);
+                setInvoices(mapped);
+            }
         } catch (err) {
             console.error('Failed to load invoices:', err);
         } finally {

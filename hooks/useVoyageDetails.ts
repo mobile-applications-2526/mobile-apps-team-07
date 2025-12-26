@@ -2,7 +2,7 @@ import { voyageService } from "@/services";
 import { VoyageWithDetails } from "@/types";
 import { useEffect, useState } from "react";
 
-export function useVoyageDetails(voyageId: number): VoyageWithDetails | null{
+export function useVoyageDetails(voyageId: number): VoyageWithDetails | null {
   const [voyageData, setVoyageData] = useState<VoyageWithDetails | null>(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<Error | null>(null);
@@ -13,15 +13,28 @@ export function useVoyageDetails(voyageId: number): VoyageWithDetails | null{
     setLoading(true);
     setError(null);
 
-    voyageService.getVoyageDetailsById(voyageId)
-    .then(data => {
-      setVoyageData(data);
-      setLoading(false);
-    })
-    .catch(err => {
-      setError(err);
-      setLoading(false);
-    });
+    // Network First
+    voyageService.fetchVoyageDetailsByIdNetwork(voyageId)
+      .then(data => {
+        if (data) setVoyageData(data);
+      })
+      .catch(networkErr => {
+        console.warn('Network failed for voyage details, falling back to cache', networkErr);
+        // Cache Fallback
+        voyageService.getVoyageDetailsById(voyageId)
+          .then(cachedVal => {
+            if (cachedVal) setVoyageData(cachedVal);
+            // If no cache, we might want to set error, but for now we failed silently on cache load in original too?
+            // Original: .catch(err => setError(err))
+            else setError(networkErr instanceof Error ? networkErr : new Error('Network failed and no cache'));
+          })
+          .catch(cacheErr => {
+            setError(networkErr instanceof Error ? networkErr : new Error('Network failed and no cache'));
+          });
+      })
+      .finally(() => {
+        setLoading(false);
+      });
   }, [voyageId]);
 
   return voyageData;

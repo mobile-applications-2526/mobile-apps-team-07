@@ -1,4 +1,5 @@
 import { API_URL } from './config';
+import * as db from '@/lib/database';
 
 export type RawInvoice = any;
 
@@ -6,11 +7,26 @@ export type RawInvoice = any;
  * Fetch invoices for a vessel
  */
 export async function getInvoicesByVessel(vesselId: number): Promise<RawInvoice[]> {
+  const cached = await db.getCacheValue<RawInvoice[]>(db.CACHE_KEYS.INVOICES_BY_VESSEL(vesselId));
+  if (cached) {
+    // background update
+    fetchInvoicesByVesselNetwork(vesselId).catch(err => console.error("Background invoice fetch failed", err));
+    return cached;
+  }
+  return await fetchInvoicesByVesselNetwork(vesselId);
+}
+
+/**
+ * Network-only fetch for invoices.
+ */
+export async function fetchInvoicesByVesselNetwork(vesselId: number): Promise<RawInvoice[]> {
   const response = await fetch(`${API_URL}/api/vessels/${vesselId}/invoices`);
   if (!response.ok) {
     throw new Error(`Failed to fetch invoices for vessel ${vesselId}: ${response.status}`);
   }
-  return await response.json();
+  const data = await response.json();
+  await db.setCacheValue(db.CACHE_KEYS.INVOICES_BY_VESSEL(vesselId), data);
+  return data;
 }
 
 /**

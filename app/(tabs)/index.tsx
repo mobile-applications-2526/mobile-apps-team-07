@@ -1,7 +1,7 @@
 import React, { useState, useCallback, useEffect } from 'react';
 import { FlatList, TouchableOpacity, View } from 'react-native';
 import { Plus } from 'lucide-react-native';
-import { ThemedText, ThemedView, OverlayToast, Loader } from '@/components/common';
+import { ThemedText, ThemedView, Loader } from '@/components/common';
 import { VesselCard, EmptyVesselList } from '@/components/vessel';
 import { DeleteVesselModal } from '@/components/ui/DeleteVesselModal';
 import { AddVesselModal } from '@/components/ui/AddVesselModal';
@@ -71,13 +71,7 @@ export default function Overview() {
           ListEmptyComponent={<EmptyVesselList />}
         />
 
-        {/* Toast Overlay */}
-        {state.toastMessage && (
-          <OverlayToast
-            message={state.toastMessage}
-            onAnimationComplete={actions.handleToastAnimationComplete}
-          />
-        )}
+
       </View>
 
       {/* Delete Confirmation Modal */}

@@ -20,16 +20,16 @@ import { API_URL } from './config';
 export async function getAllVessels(): Promise<Vessel[]> {
   // Try to get from cache first
   const cached = await db.getCacheValue<Vessel[]>(db.CACHE_KEYS.ALL_VESSELS);
-  
+
   // Return cached data immediately if available
   if (cached) {
     // Fetch fresh data in background and update cache
-    fetchAndCacheAllVessels().catch(err => 
+    fetchAndCacheAllVessels().catch(err =>
       console.error('Background fetch failed:', err)
     );
     return cached;
   }
-  
+
   // No cache, fetch from backend
   return await fetchAndCacheAllVessels();
 }
@@ -40,10 +40,10 @@ export async function getAllVessels(): Promise<Vessel[]> {
 async function fetchAndCacheAllVessels(): Promise<Vessel[]> {
   const response = await fetch(`${API_URL}/api/vessels`);
   const vessels = await response.json();
-  
+
   // Cache the result
   await db.setCacheValue(db.CACHE_KEYS.ALL_VESSELS, vessels);
-  
+
   return vessels;
 }
 
@@ -53,16 +53,16 @@ async function fetchAndCacheAllVessels(): Promise<Vessel[]> {
 export async function getAllVesselsWithStatus(): Promise<VesselWithStatus[]> {
   // Try to get from cache first
   const cached = await db.getCacheValue<VesselWithStatus[]>(db.CACHE_KEYS.ALL_VESSELS_WITH_STATUS);
-  
+
   // Return cached data immediately if available
   if (cached) {
     // Fetch fresh data in background and update cache
-    fetchAndCacheAllVesselsWithStatus().catch(err => 
+    fetchAndCacheAllVesselsWithStatus().catch(err =>
       console.error('Background fetch failed:', err)
     );
     return cached;
   }
-  
+
   // No cache, fetch from backend
   return await fetchAndCacheAllVesselsWithStatus();
 }
@@ -73,10 +73,10 @@ export async function getAllVesselsWithStatus(): Promise<VesselWithStatus[]> {
 async function fetchAndCacheAllVesselsWithStatus(): Promise<VesselWithStatus[]> {
   const response = await fetch(`${API_URL}/api/vessels/with-status`);
   const vesselsWithStatus = await response.json();
-  
+
   // Cache the result
   await db.setCacheValue(db.CACHE_KEYS.ALL_VESSELS_WITH_STATUS, vesselsWithStatus);
-  
+
   return vesselsWithStatus;
 }
 
@@ -101,16 +101,16 @@ export async function fetchVesselsWithStatusNetwork(): Promise<VesselWithStatus[
 export async function getVesselById(id: number): Promise<Vessel | null> {
   // Try to get from cache first
   const cached = await db.getCacheValue<Vessel>(db.CACHE_KEYS.VESSEL_BY_ID(id));
-  
+
   // Return cached data immediately if available
   if (cached) {
     // Fetch fresh data in background and update cache
-    fetchAndCacheVesselById(id).catch(err => 
+    fetchAndCacheVesselById(id).catch(err =>
       console.error('Background fetch failed:', err)
     );
     return cached;
   }
-  
+
   // No cache, fetch from backend
   return await fetchAndCacheVesselById(id);
 }
@@ -121,12 +121,12 @@ export async function getVesselById(id: number): Promise<Vessel | null> {
 async function fetchAndCacheVesselById(id: number): Promise<Vessel | null> {
   const response = await fetch(`${API_URL}/api/vessels/${id}`);
   if (!response.ok) return null;
-  
+
   const vessel = await response.json();
-  
+
   // Cache the result
   await db.setCacheValue(db.CACHE_KEYS.VESSEL_BY_ID(id), vessel);
-  
+
   return vessel;
 }
 
@@ -136,16 +136,16 @@ async function fetchAndCacheVesselById(id: number): Promise<Vessel | null> {
 export async function getVesselByIdWithStatus(id: number): Promise<VesselWithStatus | null> {
   // Try to get from cache first
   const cached = await db.getCacheValue<VesselWithStatus>(db.CACHE_KEYS.VESSEL_WITH_STATUS_BY_ID(id));
-  
+
   // Return cached data immediately if available
   if (cached) {
     // Fetch fresh data in background and update cache
-    fetchAndCacheVesselWithStatusById(id).catch(err => 
+    fetchAndCacheVesselWithStatusById(id).catch(err =>
       console.error('Background fetch failed:', err)
     );
     return cached;
   }
-  
+
   // No cache, fetch from backend
   return await fetchAndCacheVesselWithStatusById(id);
 }
@@ -156,12 +156,28 @@ export async function getVesselByIdWithStatus(id: number): Promise<VesselWithSta
 async function fetchAndCacheVesselWithStatusById(id: number): Promise<VesselWithStatus | null> {
   const response = await fetch(`${API_URL}/api/vessels/${id}/with-status`);
   if (!response.ok) return null;
-  
+
   const vessel = await response.json();
-  
+
   // Cache the result
   await db.setCacheValue(db.CACHE_KEYS.VESSEL_WITH_STATUS_BY_ID(id), vessel);
-  
+
+  return vessel;
+}
+
+/**
+ * Network-only fetch for a vessel with status by ID. Does not return cached data.
+ * Throws on network error / non-ok response.
+ */
+export async function fetchVesselByIdWithStatusNetwork(id: number): Promise<VesselWithStatus | null> {
+  const response = await fetch(`${API_URL}/api/vessels/${id}/with-status`);
+  if (!response.ok) throw new Error(`Failed to fetch vessel with status: ${response.status}`);
+
+  const vessel = await response.json();
+
+  // Update cache with fresh data
+  await db.setCacheValue(db.CACHE_KEYS.VESSEL_WITH_STATUS_BY_ID(id), vessel);
+
   return vessel;
 }
 
@@ -178,9 +194,9 @@ export async function getVesselByImo(imoNumber: string): Promise<Response> {
  */
 export async function createVessel(input: CreateVesselInput): Promise<Vessel> {
   // Validate IMO doesn't exist
-  if (await imoExists(input.imoNumber)) 
+  if (await imoExists(input.imoNumber))
     throw new Error(`Vessel with IMO ${input.imoNumber} already exists`);
-  
+
   const response = await fetch(`${API_URL}/api/vessels`, {
     method: 'POST',
     headers: {
@@ -188,13 +204,13 @@ export async function createVessel(input: CreateVesselInput): Promise<Vessel> {
     },
     body: JSON.stringify(input)
   });
-  
+
   const newVessel = await response.json();
-  
+
   // Invalidate relevant caches
   await db.deleteCacheValue(db.CACHE_KEYS.ALL_VESSELS);
   await db.deleteCacheValue(db.CACHE_KEYS.ALL_VESSELS_WITH_STATUS);
-  
+
   return newVessel;
 }
 
@@ -240,7 +256,7 @@ export async function deleteVessel(id: number): Promise<boolean> {
   const response = await fetch(`${API_URL}/api/vessels/${id}`, {
     method: "DELETE"
   });
-  
+
   if (response.status === 204) {
     // Invalidate relevant caches
     await db.deleteCacheValue(db.CACHE_KEYS.VESSEL_BY_ID(id));
@@ -249,10 +265,10 @@ export async function deleteVessel(id: number): Promise<boolean> {
     await db.deleteCacheValue(db.CACHE_KEYS.ALL_VESSELS_WITH_STATUS);
     await db.deleteCacheValue(db.CACHE_KEYS.VOYAGES_BY_VESSEL(id));
     await db.deleteCacheValue(db.CACHE_KEYS.DOCUMENTS_BY_VESSEL(id));
-    
+
     return true;
   }
-  
+
   return false;
 }
 
@@ -262,16 +278,16 @@ export async function deleteVessel(id: number): Promise<boolean> {
 export async function getVesselDocuments(id: number): Promise<Document[]> {
   // Try to get from cache first
   const cached = await db.getCacheValue<Document[]>(db.CACHE_KEYS.DOCUMENTS_BY_VESSEL(id));
-  
+
   // Return cached data immediately if available
   if (cached) {
     // Fetch fresh data in background and update cache
-    fetchAndCacheVesselDocuments(id).catch(err => 
+    fetchAndCacheVesselDocuments(id).catch(err =>
       console.error('Background fetch failed:', err)
     );
     return cached;
   }
-  
+
   // No cache, fetch from backend
   return await fetchAndCacheVesselDocuments(id);
 }
@@ -282,10 +298,26 @@ export async function getVesselDocuments(id: number): Promise<Document[]> {
 async function fetchAndCacheVesselDocuments(id: number): Promise<Document[]> {
   const response = await fetch(`${API_URL}/api/vessels/${id}/documents`);
   const documents = await response.json();
-  
+
   // Cache the result
   await db.setCacheValue(db.CACHE_KEYS.DOCUMENTS_BY_VESSEL(id), documents);
-  
+
+  return documents;
+}
+
+/**
+ * Network-only fetch for vessel documents. Does not return cached data.
+ * Throws on network error / non-ok response.
+ */
+export async function fetchVesselDocumentsNetwork(id: number): Promise<Document[]> {
+  const response = await fetch(`${API_URL}/api/vessels/${id}/documents`);
+  if (!response.ok) throw new Error(`Failed to fetch documents: ${response.status}`);
+
+  const documents = await response.json();
+
+  // Cache the result
+  await db.setCacheValue(db.CACHE_KEYS.DOCUMENTS_BY_VESSEL(id), documents);
+
   return documents;
 }
 

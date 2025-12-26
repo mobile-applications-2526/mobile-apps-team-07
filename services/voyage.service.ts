@@ -24,16 +24,16 @@ export async function getAllVoyages(): Promise<Voyage[]> {
 export async function getVoyageById(id: number): Promise<Voyage | null> {
   // Try to get from cache first
   const cached = await db.getCacheValue<Voyage>(db.CACHE_KEYS.VOYAGE_BY_ID(id));
-  
+
   // Return cached data immediately if available
   if (cached) {
     // Fetch fresh data in background and update cache
-    fetchAndCacheVoyageById(id).catch(err => 
+    fetchAndCacheVoyageById(id).catch(err =>
       console.error('Background fetch failed:', err)
     );
     return cached;
   }
-  
+
   // No cache, fetch from backend
   return await fetchAndCacheVoyageById(id);
 }
@@ -44,16 +44,16 @@ export async function getVoyageById(id: number): Promise<Voyage | null> {
 export async function getVoyageDetailsById(id: number): Promise<VoyageWithDetails | null> {
   // Try to get from cache first
   const cached = await db.getCacheValue<VoyageWithDetails>(db.CACHE_KEYS.VOYAGE_DETAILS_BY_ID(id));
-  
+
   // Return cached data immediately if available
   if (cached) {
     // Fetch fresh data in background and update cache
-    fetchAndCacheVoyageById(id).catch(err => 
+    fetchAndCacheVoyageById(id).catch(err =>
       console.error('Background fetch failed:', err)
     );
     return cached;
   }
-  
+
   // No cache, fetch from backend
   return await fetchAndCacheVoyageDetailsById(id);
 }
@@ -64,12 +64,12 @@ export async function getVoyageDetailsById(id: number): Promise<VoyageWithDetail
 async function fetchAndCacheVoyageById(id: number): Promise<Voyage | null> {
   const response = await fetch(`${API_URL}/api/voyages/${id}`);
   if (!response.ok) return null;
-  
+
   const voyage = await response.json();
-  
+
   // Cache the result
   await db.setCacheValue(db.CACHE_KEYS.VOYAGE_BY_ID(id), voyage);
-  
+
   return voyage;
 }
 
@@ -79,12 +79,12 @@ async function fetchAndCacheVoyageById(id: number): Promise<Voyage | null> {
 async function fetchAndCacheVoyageDetailsById(id: number): Promise<VoyageWithDetails | null> {
   const response = await fetch(`${API_URL}/api/voyages/${id}/details`);
   if (!response.ok) return null;
-  
+
   const voyage = await response.json();
-  
+
   // Cache the result
   await db.setCacheValue(db.CACHE_KEYS.VOYAGE_DETAILS_BY_ID(id), voyage);
-  
+
   return voyage;
 }
 
@@ -94,16 +94,16 @@ async function fetchAndCacheVoyageDetailsById(id: number): Promise<VoyageWithDet
 export async function getVoyagesByVesselId(vesselId: number): Promise<Voyage[]> {
   // Try to get from cache first
   const cached = await db.getCacheValue<Voyage[]>(db.CACHE_KEYS.VOYAGES_BY_VESSEL(vesselId));
-  
+
   // Return cached data immediately if available
   if (cached) {
     // Fetch fresh data in background and update cache
-    fetchAndCacheVoyagesByVesselId(vesselId).catch(err => 
+    fetchAndCacheVoyagesByVesselId(vesselId).catch(err =>
       console.error('Background fetch failed:', err)
     );
     return cached;
   }
-  
+
   // No cache, fetch from backend
   return await fetchAndCacheVoyagesByVesselId(vesselId);
 }
@@ -114,9 +114,41 @@ export async function getVoyagesByVesselId(vesselId: number): Promise<Voyage[]> 
 async function fetchAndCacheVoyagesByVesselId(vesselId: number): Promise<Voyage[]> {
   const response = await fetch(`${API_URL}/api/vessels/${vesselId}/voyages`);
   const voyages = await response.json();
-  
+
   // Cache the result
   await db.setCacheValue(db.CACHE_KEYS.VOYAGES_BY_VESSEL(vesselId), voyages);
-  
+
   return voyages;
+}
+
+/**
+ * Network-only fetch for voyages by vessel ID. Does not return cached data.
+ * Throws on network error / non-ok response.
+ */
+export async function fetchVoyagesByVesselIdNetwork(vesselId: number): Promise<Voyage[]> {
+  const response = await fetch(`${API_URL}/api/vessels/${vesselId}/voyages`);
+  if (!response.ok) throw new Error(`Failed to fetch voyages: ${response.status}`);
+
+  const voyages = await response.json();
+
+  // Cache the result
+  await db.setCacheValue(db.CACHE_KEYS.VOYAGES_BY_VESSEL(vesselId), voyages);
+
+  return voyages;
+}
+
+/**
+ * Network-only fetch for voyage details by ID. Does not return cached data.
+ * Throws on network error / non-ok response.
+ */
+export async function fetchVoyageDetailsByIdNetwork(id: number): Promise<VoyageWithDetails | null> {
+  const response = await fetch(`${API_URL}/api/voyages/${id}/details`);
+  if (!response.ok) throw new Error(`Failed to fetch voyage details: ${response.status}`);
+
+  const voyage_details = await response.json();
+
+  // Cache the result
+  await db.setCacheValue(db.CACHE_KEYS.VOYAGE_DETAILS_BY_ID(id), voyage_details);
+
+  return voyage_details;
 }

@@ -58,7 +58,7 @@ export async function resetDatabase(): Promise<void> {
   if (!db) {
     db = await SQLite.openDatabaseAsync('safarban.db');
   }
-  
+
   await db.execAsync(`DROP TABLE IF EXISTS cache;`);
   await initializeDatabase();
   console.log('Database cache reset complete');
@@ -74,7 +74,7 @@ export async function resetDatabase(): Promise<void> {
 export async function setCacheValue<T>(key: string, value: T, expiresInMinutes?: number): Promise<void> {
   const database = await getDatabase();
   const now = new Date().toISOString();
-  const expiresAt = expiresInMinutes 
+  const expiresAt = expiresInMinutes
     ? new Date(Date.now() + expiresInMinutes * 60 * 1000).toISOString()
     : null;
 
@@ -156,19 +156,20 @@ export const CACHE_KEYS = {
   ALL_VESSELS_WITH_STATUS: 'vessels:all_with_status',
   VESSEL_BY_ID: (id: number) => `vessels:${id}`,
   VESSEL_WITH_STATUS_BY_ID: (id: number) => `vessels:${id}:with_status`,
-  
+
   // Voyage caches
   VOYAGES_BY_VESSEL: (vesselId: number) => `voyages:vessel:${vesselId}`,
   VOYAGE_DETAILS_BY_ID: (id: number) => `voyages:details:${id}`,
   VOYAGE_BY_ID: (id: number) => `voyages:${id}`,
-  
+
   // Document caches
   DOCUMENTS_BY_VESSEL: (vesselId: number) => `documents:vessel:${vesselId}`,
-  
+  INVOICES_BY_VESSEL: (vesselId: number) => `invoices:vessel:${vesselId}`,
+
   // Noon report caches
   LATEST_NOON_REPORT: (vesselId: number) => `noon_reports:vessel:${vesselId}:latest`,
   VOYAGE_NOON_REPORTS: (voyageId: number) => `noon_reports:voyage:${voyageId}`,
-  
+
   // Metadata
   LAST_SYNC: 'metadata:last_sync',
 };

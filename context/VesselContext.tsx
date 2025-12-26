@@ -9,6 +9,7 @@ import React, { createContext, useContext, useEffect, useCallback, useState, Rea
 import { Vessel, VesselWithStatus, CreateVesselInput, Document, DocumentTypeCategory } from '@/types';
 import { vesselService } from '@/services';
 import { DOCUMENT_TYPES } from '@/constants';
+import { useNetworkStatus } from './NetworkStatusContext';
 
 // ============================================
 // TYPES
@@ -26,13 +27,13 @@ interface VesselContextType {
 
   // Actions
   refreshVessels: () => Promise<void>;
-  refreshVesselsWithStatus: () => Promise<void> 
+  refreshVesselsWithStatus: () => Promise<void>
   getVessel: (id: number) => Promise<Vessel | null>;
-  getVesselWithStatus: (id: number) => Promise<VesselWithStatus | null> 
+  getVesselWithStatus: (id: number) => Promise<VesselWithStatus | null>
   createVessel: (input: CreateVesselInput) => Promise<Vessel>;
   updateVessel: (input: Vessel) => Promise<Vessel | null>;
   deleteVessel: (id: number) => Promise<boolean>;
-  
+
   // Utilities
   imoExists: (imo: string) => Promise<boolean>;
   getAllImos: () => string[];
@@ -73,6 +74,14 @@ export function VesselProvider({ children }: VesselProviderProps) {
   const [isInitialized, setIsInitialized] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [isOfflineData, setIsOfflineData] = useState(false);
+  const { setIsOffline } = useNetworkStatus();
+
+  // Sync offline state to global NetworkStatus
+  useEffect(() => {
+    if (isInitialized && !isLoading) {
+      setIsOffline(isOfflineData);
+    }
+  }, [isOfflineData, setIsOffline, isInitialized, isLoading]);
 
   // Initialize database and load vessels
   useEffect(() => {
@@ -161,7 +170,7 @@ export function VesselProvider({ children }: VesselProviderProps) {
   }, []);
 
   // Get single vessel by ID
-  const getVesselWithStatus = useCallback(async (id: number): Promise<VesselWithStatus| null> => {
+  const getVesselWithStatus = useCallback(async (id: number): Promise<VesselWithStatus | null> => {
     try {
       return await vesselService.getVesselByIdWithStatus(id);
     } catch (err) {
@@ -203,7 +212,7 @@ export function VesselProvider({ children }: VesselProviderProps) {
   // Delete vessel
   const deleteVessel = useCallback(async (id: number): Promise<boolean> => {
     const success = await vesselService.deleteVessel(id);
-    
+
     if (success) {
       setVesselsWithStatus(prev => prev.filter(v => v.vessel.id !== id));
       setVessels(prev => prev.filter(v => v.id !== id));

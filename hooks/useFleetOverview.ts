@@ -3,6 +3,7 @@ import { useFocusEffect, useRouter } from 'expo-router';
 import { Vessel, CreateVesselInput } from '@/types';
 import { useVessels } from '@/context/VesselContext';
 import { useHaptics } from './useHaptics';
+import { useToast } from './useToast';
 
 export function useFleetOverview() {
     const router = useRouter();
@@ -27,7 +28,7 @@ export function useFleetOverview() {
 
             const pollInterval = setInterval(() => {
                 refreshVesselsWithStatus();
-            }, 30000);
+            }, 15000);
 
             return () => { clearInterval(pollInterval); };
         }, [refreshVesselsWithStatus])
@@ -50,26 +51,8 @@ export function useFleetOverview() {
     const [isSaving, setIsSaving] = useState(false);
 
     // --- TOAST STATE ---
-    const [toastMessage, setToastMessage] = useState<string | null>(null);
-    const [offlineNotified, setOfflineNotified] = useState(false);
-    const prevIsOfflineRef = useRef<boolean | null>(null);
-
-    // Offline toast logic
-    useEffect(() => {
-        const prev = prevIsOfflineRef.current;
-        if (isOfflineData) {
-            if (!offlineNotified) {
-                setToastMessage('Offline: showing cached data');
-                setOfflineNotified(true);
-            }
-        } else {
-            if (prev) {
-                setToastMessage('Reconnected to server');
-                setOfflineNotified(false);
-            }
-        }
-        prevIsOfflineRef.current = isOfflineData;
-    }, [isOfflineData, offlineNotified]);
+    // Removed local toast state in favor of global toast via NetworkStatusContext
+    const { showToast } = useToast();
 
     // Helpers
     const hasActiveVoyage = useCallback((vesselId: number): boolean => {
@@ -107,7 +90,7 @@ export function useFleetOverview() {
             setVesselToDelete(null);
             setVesselHasActiveVoyage(false);
             refreshVesselsWithStatus();
-            setToastMessage('Vessel deleted');
+            showToast('Vessel deleted');
             await haptics.successNotification();
         } catch (error) {
             setDeleteError(true);
@@ -115,7 +98,7 @@ export function useFleetOverview() {
         } finally {
             setIsDeleting(false);
         }
-    }, [vesselToDelete, deleteVessel, haptics, refreshVesselsWithStatus]);
+    }, [vesselToDelete, deleteVessel, haptics, refreshVesselsWithStatus, showToast]);
 
     // Add
     const handleAddPress = useCallback(async () => {
@@ -167,7 +150,7 @@ export function useFleetOverview() {
             await refreshVesselsWithStatus();
             setEditModalVisible(false);
             setVesselToEdit(null);
-            setToastMessage('Vessel updated');
+            showToast('Vessel updated');
             await haptics.successNotification();
         } catch (err) {
             console.error('Failed to update vessel', err);
@@ -175,10 +158,10 @@ export function useFleetOverview() {
         } finally {
             setIsSaving(false);
         }
-    }, [vesselToEdit, updateVessel, refreshVesselsWithStatus, haptics]);
+    }, [vesselToEdit, updateVessel, refreshVesselsWithStatus, haptics, showToast]);
 
     const handleToastAnimationComplete = useCallback(() => {
-        setToastMessage(null);
+        // No-op or remove if not needed by UI anymore (global toast handles its own animation)
     }, []);
 
     return {
@@ -198,7 +181,7 @@ export function useFleetOverview() {
             vesselToEdit,
             isSaving,
             // Misc
-            toastMessage,
+            toastMessage: null, // Force null or remove property if type allows
             existingImos: getAllImos(),
         },
         actions: {
