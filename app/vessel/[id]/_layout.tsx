@@ -120,19 +120,12 @@ function CustomTabBar({ state, descriptors, navigation }: BottomTabBarProps) {
 
   const {
     vessel,
-    hasQ88,
-    hasFormC,
-    isLoading
+    isLoading,
+    isLocked: missingDocs
   } = useVesselDetails();
 
-  // Robust detection of gas carrier
-  const vesselTypeRaw = (
-    (vessel as any)?.vesselType ?? (vessel as any)?.type ?? (vessel as any)?.vessel_type ?? ''
-  ).toString().trim().toLowerCase();
-  const isGasCarrier = vesselTypeRaw.includes('gas') && vesselTypeRaw.includes('carrier');
 
-  // For gas carriers we require BOTH Q88 and Form C. For other vessels only Q88 is required.
-  const missingDocs = isGasCarrier ? !(hasQ88 && hasFormC) : !hasQ88;
+
 
   // Screen Redirect Logic
   // Only redirect to specs if documents are missing and we are trying to view a locked tab (like index/Overview)

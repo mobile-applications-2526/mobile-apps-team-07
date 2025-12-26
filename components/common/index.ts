@@ -10,3 +10,4 @@ export * from './OverlayToast';
 export * from './Card';
 export * from './DataSection';
 export * from './Loader';
+export * from './DataRow';

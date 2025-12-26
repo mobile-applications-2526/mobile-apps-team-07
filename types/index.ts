@@ -10,3 +10,4 @@ export * from './charter';
 export * from './Document';
 export * from './Port';
 export * from './common';
+export * from './invoice';

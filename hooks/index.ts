@@ -10,7 +10,10 @@ export { useToast } from './useToast';
 export { useHaptics } from './useHaptics';
 export { useVesselDocuments } from './useVesselDocuments';
 export { useVoyageDetails } from './useVoyageDetails';
+export { useVesselDetails } from '@/context/VesselDetailsContext';
+export * from './useFleetOverview';
+export * from './useInvoices';
 
 // Re-export context hooks
 export { useVessels } from '@/context/VesselContext';
-export { useVesselDetails } from '@/context/VesselDetailsContext';
+// export { useVesselDetails } from '@/context/VesselDetailsContext'; // Removed duplicate

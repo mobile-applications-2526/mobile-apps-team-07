@@ -7,22 +7,11 @@ import { BottomSheetModal, BottomSheetBackdrop, BottomSheetScrollView } from '@g
 import { Receipt, Download, Pencil, Trash2, PlusCircle, FileText, Calendar, Lock } from 'lucide-react-native';
 import { ThemedText, ThemedView, Card, Loader } from '@/components/common';
 import { VesselTopBar } from '@/components/vessel';
-import { useVesselDetails } from '@/hooks';
-import { invoiceService } from '@/services';
+import { useVesselDetails, useInvoices } from '@/hooks';
 import TCInvoiceFormSheet from '@/components/vessel/TCInvoiceFormSheet';
+import { Invoice } from '@/types';
+import { mapBackendInvoice } from '@/lib/mappers';
 
-type Invoice = {
-  id: string;
-  number: string;
-  type: 'TC Hire' | 'VC Freight' | string;
-  date: string; // ISO string
-  dueDate?: string; // optional ISO
-  amount: number;
-  currency: string;
-  status: 'Paid' | 'Pending' | 'Overdue';
-  pdfUrl?: string | null;
-  pdfReady?: boolean;
-};
 
 function formatCurrency(amount: number, currency = 'USD') {
   try {
@@ -114,10 +103,20 @@ export default function VesselInvoices() {
   const { colorScheme } = useColorScheme();
   const isDark = colorScheme === 'dark';
 
-  // Load invoices from backend because the vessel object does not include them by default
-  const [invoicesState, setInvoicesState] = React.useState<Invoice[]>([]);
-  const [isLoadingInvoices, setIsLoadingInvoices] = React.useState(false);
-  const [processingMap, setProcessingMap] = React.useState<Record<string, boolean>>({});
+  // Load invoices using hook
+  const {
+    invoices,
+    isLoading: isLoadingInvoices,
+    processingMap,
+    actions: {
+      create: createInvoice,
+      update: updateInvoice,
+      updateLocal: updateInvoiceLocal,
+      delete: deleteInvoice,
+      changeStatus,
+      downloadPdf
+    }
+  } = useInvoices(vessel?.id);
 
   const [editingInvoice, setEditingInvoice] = React.useState<Invoice | null>(null);
   const [formState, setFormState] = React.useState({
@@ -161,51 +160,6 @@ export default function VesselInvoices() {
     );
   }
 
-  function setProcessing(id: string, value: boolean) {
-    setProcessingMap(prev => ({ ...prev, [id]: value }));
-  }
-
-  // --- Effects and Memo (Moved before Return) ---
-  // Shared mapper
-  const mapBackendInvoice = React.useCallback((i: any): Invoice => {
-    let t = i.invoiceType ?? i.invoice_type ?? i.type ?? 'TC Hire';
-    if (t === 'Hire') t = 'TC Hire';
-    if (t === 'Freight') t = 'VC Freight';
-
-    return {
-      id: String(i.invoiceId ?? i.id ?? i.invoice_id ?? i.id),
-      number: i.invoiceNumber ?? i.invoice_number ?? i.number ?? 'UNKNOWN',
-      type: t,
-      date: i.invoiceDate ?? i.invoice_date ?? i.date ?? new Date().toISOString(),
-      dueDate: i.periodTo ?? i.dueDate ?? i.due_date,
-      amount: Number(i.totalAmount ?? i.total_amount ?? i.amount ?? 0),
-      currency: i.currency ?? 'USD',
-      status: i.paymentStatus ?? i.payment_status ?? i.status ?? 'Pending',
-      pdfUrl: i.fileUrl ?? i.pdfUrl ?? null,
-      pdfReady: !!(i.pdfReady ?? i.pdf_ready ?? i.fileUrl)
-    };
-  }, []);
-
-  React.useEffect(() => {
-    let mounted = true;
-    async function load() {
-      if (!vessel?.id) return;
-      try {
-        setIsLoadingInvoices(true);
-        const raw = await invoiceService.getInvoicesByVessel(vessel.id);
-        if (!mounted) return;
-        const mapped = (raw || []).map(mapBackendInvoice);
-        setInvoicesState(mapped);
-      } catch (err) {
-        console.error('Failed to load invoices:', err);
-      } finally {
-        if (mounted) setIsLoadingInvoices(false);
-      }
-    }
-    load();
-    return () => { mounted = false };
-  }, [vessel, mapBackendInvoice]);
-
   React.useEffect(() => {
     if (!editingInvoice) return;
     setFormState({
@@ -219,8 +173,8 @@ export default function VesselInvoices() {
     });
   }, [editingInvoice]);
 
-  // Sort newest first
-  const sorted = useMemo(() => [...invoicesState].sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime()), [invoicesState]);
+  // Sort newest first - already sorted by hook
+  const sorted = invoices;
   // ----------------------------------------------
 
   function onOpenDatePicker(field: 'date' | 'dueDate') {
@@ -244,49 +198,27 @@ export default function VesselInvoices() {
 
   async function saveEdit() {
     if (!editingInvoice) return;
-    const payload = {
-      invoiceNumber: formState.number,
-      invoiceType: formState.type,
-      invoiceDate: formState.date || undefined,
-      dueDate: formState.dueDate || undefined,
-      totalAmount: Number(formState.amount) || 0,
-      currency: formState.currency || 'USD',
-      paymentStatus: formState.status || 'Pending'
-    };
 
     const proceed = async () => {
-      try {
-        setProcessing(editingInvoice.id, true);
+      // Map frontend types back to backend types
+      let backendType = formState.type;
+      if (formState.type === 'TC Hire') backendType = 'Hire';
+      if (formState.type === 'VC Freight') backendType = 'Freight';
 
-        // Map frontend types back to backend types
-        let backendType = formState.type;
-        if (formState.type === 'TC Hire') backendType = 'Hire';
-        if (formState.type === 'VC Freight') backendType = 'Freight';
+      const payload = {
+        invoiceNumber: formState.number,
+        invoiceType: backendType,
+        invoiceDate: formState.date || undefined,
+        dueDate: formState.dueDate || undefined,
+        totalAmount: Number(formState.amount) || 0,
+        currency: formState.currency || 'USD',
+        paymentStatus: formState.status || 'Pending'
+      };
 
-        const payload = {
-          invoiceNumber: formState.number,
-          invoiceType: backendType,
-          invoiceDate: formState.date || undefined,
-          dueDate: formState.dueDate || undefined,
-          totalAmount: Number(formState.amount) || 0,
-          currency: formState.currency || 'USD',
-          paymentStatus: formState.status || 'Pending'
-        };
-
-        const updated = await invoiceService.updateInvoice(Number(editingInvoice.id), payload);
-
-        // Fetch the fresh invoice to ensure we have the correct state (especially PDF URL/ready status)
-        const fresh = await invoiceService.getInvoiceById(Number(editingInvoice.id));
-        const newDetails = mapBackendInvoice(fresh || updated); // Fallback to updated if get fails/returns null for some reason
-
-        setInvoicesState(prev => prev.map(i => i.id === editingInvoice.id ? newDetails : i));
+      const success = await updateInvoice(editingInvoice, payload);
+      if (success) {
         bottomSheetRef.current?.dismiss();
         setEditingInvoice(null);
-      } catch (err) {
-        console.error('Failed to save invoice', err);
-        Alert.alert('Save failed', 'Could not save invoice changes.');
-      } finally {
-        setProcessing(editingInvoice.id, false);
       }
     };
 
@@ -329,82 +261,13 @@ export default function VesselInvoices() {
   }
 
   function handleDownload(inv: Invoice) {
-    // If we already have a URL open it. Otherwise try to refresh the invoice from backend and check again.
-    (async () => {
-      try {
-        setProcessing(inv.id, true);
-        if (inv.pdfUrl) {
-          await Linking.openURL(inv.pdfUrl);
-          return;
-        }
-        // fetch latest invoice from backend
-        const fresh = await invoiceService.getInvoiceById(Number(inv.id));
-        const pdf = fresh?.fileUrl ?? fresh?.pdfUrl ?? null;
-        if (pdf) {
-          // update local state with new url
-          setInvoicesState(prev => prev.map(i => i.id === inv.id ? { ...i, pdfUrl: pdf, pdfReady: true } : i));
-          await Linking.openURL(pdf);
-        } else {
-          Alert.alert('PDF not available', 'PDF is still being generated. Please try again later.');
-        }
-      } catch (err) {
-        console.error('Download failed', err);
-        Alert.alert('Could not open PDF', 'An error occurred while opening the PDF.');
-      } finally {
-        setProcessing(inv.id, false);
-      }
-    })();
+    downloadPdf(inv);
   }
 
   function handleDelete(inv: Invoice) {
-    Alert.alert(
-      'Delete invoice',
-      `Are you sure you want to delete ${inv.number}? This action cannot be undone.`,
-      [
-        { text: 'Cancel', style: 'cancel' },
-        {
-          text: 'Delete', style: 'destructive', onPress: async () => {
-            try {
-              setProcessing(inv.id, true);
-              await invoiceService.deleteInvoice(Number(inv.id));
-              setInvoicesState(prev => prev.filter(i => i.id !== inv.id));
-              Alert.alert('Deleted', `${inv.number} has been deleted.`);
-            } catch (err) {
-              console.error('Delete failed', err);
-              Alert.alert('Delete failed', 'Could not delete invoice.');
-            } finally {
-              setProcessing(inv.id, false);
-            }
-          }
-        }
-      ]
-    );
+    deleteInvoice(inv);
   }
 
-  async function changeStatus(inv: Invoice, newStatus: Invoice['status']) {
-    try {
-      setProcessing(inv.id, true);
-      const updated = await invoiceService.updateInvoiceStatus(Number(inv.id), newStatus);
-      const mapped: Invoice = {
-        id: String(updated.invoiceId ?? updated.id ?? updated.invoice_id ?? inv.id),
-        number: updated.invoiceNumber ?? updated.number ?? inv.number,
-        type: updated.invoiceType ?? updated.type ?? inv.type,
-        date: updated.invoiceDate ?? updated.date ?? inv.date,
-        dueDate: updated.dueDate ?? updated.due_date ?? inv.dueDate,
-        amount: Number((updated.totalAmount ?? updated.amount ?? inv.amount) || 0),
-        currency: updated.currency ?? inv.currency,
-        status: updated.paymentStatus ?? updated.status ?? newStatus,
-        pdfUrl: updated.fileUrl ?? updated.pdfUrl ?? inv.pdfUrl ?? null,
-        pdfReady: !!(updated.pdfReady ?? updated.fileUrl ?? inv.pdfReady)
-      };
-      setInvoicesState(prev => prev.map(i => i.id === inv.id ? mapped : i));
-    } catch (err) {
-      console.error('Failed to update status', err);
-      Alert.alert('Update failed', 'Could not update invoice status.');
-    } finally {
-      setProcessing(inv.id, false);
-    }
-  }
 
   return (
     <ThemedView className="flex-1 bg-gray-100 dark:bg-[#000] p-0">
@@ -457,7 +320,7 @@ export default function VesselInvoices() {
         visible={showCreateTC}
         onClose={() => setShowCreateTC(false)}
         onSuccess={(newInv) => {
-          setInvoicesState(prev => [newInv, ...prev]);
+          createInvoice(newInv);
           setShowCreateTC(false);
           Alert.alert('Success', 'Invoice created successfully.');
         }}
