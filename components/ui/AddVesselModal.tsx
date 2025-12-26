@@ -115,10 +115,10 @@ export function AddVesselModal({
       Alert.alert(
         title,
         'Select an option',
-        options.map(opt => ({
+        (options.map(opt => ({
           text: opt,
           onPress: () => onSelect(opt),
-        })).concat([{ text: 'Cancel', style: 'cancel', onPress: () => { } }]),
+        })) as { text: string; onPress: () => void; style?: 'cancel' | 'default' | 'destructive' }[]).concat([{ text: 'Cancel', style: 'cancel', onPress: () => { } }]),
         { cancelable: true }
       );
     }

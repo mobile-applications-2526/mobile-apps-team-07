@@ -69,18 +69,18 @@ export interface VesselStatus {
   id: number;
   reportDateTime: Timestamp;
   reportType: string;
-  latitude: number; 
-  longitude: number; 
+  latitude: number;
+  longitude: number;
   activity: VesselActivityCategory;
-  portName: number; 
-  distanceTravelledNm: number; 
-  distanceToGoNm: number; 
-  averageSpeedKnots: number; 
-  swellHeightM: number; 
+  portName: number;
+  distanceTravelledNm: number;
+  distanceToGoNm: number;
+  averageSpeedKnots: number;
+  swellHeightM: number;
   windForceBeaufort: number;
   seaCondition: string;
-  cargoTempAvgC: number; 
-  cargoPressureAvgBar: number; 
+  cargoTempAvgC: number;
+  cargoPressureAvgBar: number;
   fuelConsumptionMe: number;
   fuelConsumptionAe: number;
   fuelRob: number;
@@ -113,9 +113,9 @@ export interface VesselKPIs {
   };
 }
 
-export type VesselTypeCategory = 
-  | 'Gas Carrier' 
-  | 'Chemical Tanker' 
+export type VesselTypeCategory =
+  | 'Gas Carrier'
+  | 'Chemical Tanker'
   | 'MR Tanker';
 
 export type VesselSubtypeCategory = {
@@ -124,9 +124,11 @@ export type VesselSubtypeCategory = {
   'MR Tanker': 'Clean' | 'Dirty';
 };
 
-export type VesselActivityCategory = 
+export type VesselActivityCategory =
   | 'Underway '
-  | 'Loading' 
-  | 'Discharging' 
-  | 'Anchored' 
+  | 'Loading'
+  | 'Discharging'
+  | 'Anchored'
   | 'Drifting';
+
+export type NoonReport = VesselStatus;

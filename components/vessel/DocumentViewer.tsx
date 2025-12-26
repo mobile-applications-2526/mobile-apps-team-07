@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { View, Dimensions, ActivityIndicator } from 'react-native';
 import { FileUp } from 'lucide-react-native';
 import { ThemedText } from '@/components/common';
-import { Document } from '@/types/vessel';
+import { Document } from '@/types';
 import { IS_EXPO_GO } from '@/constants/env';
 
 // Conditionally import Pdf only if not in Expo Go

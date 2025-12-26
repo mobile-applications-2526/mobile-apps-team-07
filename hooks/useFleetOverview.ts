@@ -154,17 +154,14 @@ export function useFleetOverview() {
         setVesselToEdit(null);
     }, []);
 
-    const handleSaveEdit = useCallback(async (payload: { vesselName: string; imoNumber: string; vesselType: string; vesselSubtype: string; vesselPictureUrl: string | null; }) => {
-        if (!vesselToEdit) return;
+    const handleSaveEdit = useCallback(async (vesselId: number, updates: Partial<Vessel>) => {
+        if (!vesselToEdit || vesselToEdit.id !== vesselId) return;
         setIsSaving(true);
         try {
             const updated: Vessel = {
                 ...vesselToEdit,
-                vesselName: payload.vesselName,
-                imoNumber: payload.imoNumber,
-                vesselType: payload.vesselType as any,
-                vesselSubtype: payload.vesselSubtype,
-                vesselPictureUrl: payload.vesselPictureUrl,
+                ...updates,
+                vesselType: updates.vesselType as any || vesselToEdit.vesselType, // Ensure enum compatibility
             };
             await updateVessel(updated);
             await refreshVesselsWithStatus();

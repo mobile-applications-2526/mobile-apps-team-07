@@ -164,10 +164,10 @@ export default function TCInvoiceFormSheet({ visible, onClose, onSuccess, vessel
             Alert.alert(
                 'Select Currency',
                 'Choose a currency',
-                options.map(opt => ({
+                (options.map(opt => ({
                     text: opt,
                     onPress: () => setCurrency(opt),
-                })).concat([{ text: 'Cancel', style: 'cancel' }]),
+                })) as { text: string; onPress?: () => void; style?: 'cancel' | 'default' | 'destructive' }[]).concat([{ text: 'Cancel', style: 'cancel' }]),
                 { cancelable: true }
             );
         }
