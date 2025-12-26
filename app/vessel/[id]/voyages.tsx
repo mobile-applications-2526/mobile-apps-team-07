@@ -1,7 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import { View } from 'react-native';
-import { Route, Lock } from 'lucide-react-native';
-import { ThemedText, ThemedView } from '@/components/common';
+import { Lock } from 'lucide-react-native';
+import { ThemedText, ThemedView, Loader } from '@/components/common';
 import { VesselTopBar } from '@/components/vessel';
 import { useHaptics, useVesselDetails } from '@/hooks';
 import { EmptyVoyageList } from '@/components/voyage/EmptyVoyageList';
@@ -50,7 +50,8 @@ export default function VesselVoyages() {
     );
   }
 
-  const voyageWithDetails = useVoyageDetails(vesselVoyages[index].id);
+  const currentVoyageId = vesselVoyages?.[index]?.id;
+  const voyageWithDetails = useVoyageDetails(currentVoyageId ?? -1);
 
   const handleCycleVoyage = (direction: 'next' | 'previous') => {
     setIndex((prevIndex) => {
@@ -64,33 +65,36 @@ export default function VesselVoyages() {
 
   const handleAddVoyage = () => { }
 
+  if (isLoading) {
+    return (
+      <ThemedView className="flex-1 bg-gray-100 dark:bg-[#000]">
+        <VesselTopBar vesselName={vessel?.vesselName ?? ''} />
+        <Loader text="Loading voyages..." />
+      </ThemedView>
+    );
+  }
+
   return (
     <ThemedView className="flex-1 bg-gray-100 dark:bg-[#000]">
       {/* Top App Bar */}
-      <VesselTopBar vesselName={vessel?.vesselName!} />
+      <VesselTopBar vesselName={vessel?.vesselName ?? ''} />
 
       {/* Content */}
-      <View>
-        {isLoading &&
-          <View className="w-16 h-16 rounded-full bg-gray-100 dark:bg-gray-800 items-center justify-center mb-4">
-            <Route size={32} color="#9ca3af" />
-          </View>
-        }
-        <ThemedText className="text-gray-400 text-center text-sm">
-          {vesselVoyages.length > 0 && voyageWithDetails ?
-            <VoyageDetails
-              voyage={voyageWithDetails.voyage}
-              status={voyageWithDetails.noonReports[0] ?? null}
-              noonReports={voyageWithDetails.noonReports}
-              cargoes={voyageWithDetails.cargoes}
-              ports={voyageWithDetails.ports}
-              charterParty={voyageWithDetails.charter}
-              onCycleVoyage={handleCycleVoyage}
-              onAdd={handleAddVoyage}
-            />
-            : <EmptyVoyageList />
-          }
-        </ThemedText>
+      <View className="flex-1">
+        {vesselVoyages.length > 0 && voyageWithDetails ? (
+          <VoyageDetails
+            voyage={voyageWithDetails.voyage}
+            status={voyageWithDetails.noonReports[0] ?? null}
+            noonReports={voyageWithDetails.noonReports}
+            cargoes={voyageWithDetails.cargoes}
+            ports={voyageWithDetails.ports}
+            charterParty={voyageWithDetails.charter}
+            onCycleVoyage={handleCycleVoyage}
+            onAdd={handleAddVoyage}
+          />
+        ) : (
+          <EmptyVoyageList />
+        )}
       </View>
     </ThemedView>
   );

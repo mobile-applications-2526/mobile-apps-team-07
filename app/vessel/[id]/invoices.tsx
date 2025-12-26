@@ -5,7 +5,7 @@ import DateTimePicker from '@react-native-community/datetimepicker';
 import { Picker } from '@react-native-picker/picker';
 import { BottomSheetModal, BottomSheetBackdrop, BottomSheetScrollView } from '@gorhom/bottom-sheet';
 import { Receipt, Download, Pencil, Trash2, PlusCircle, FileText, Calendar, Lock } from 'lucide-react-native';
-import { ThemedText, ThemedView } from '@/components/common';
+import { ThemedText, ThemedView, Card, Loader } from '@/components/common';
 import { VesselTopBar } from '@/components/vessel';
 import { useVesselDetails } from '@/hooks';
 import { invoiceService } from '@/services';
@@ -64,7 +64,7 @@ function InvoiceCard({
   const statusColor = invoice.status === 'Paid' ? '#10b981' : invoice.status === 'Overdue' ? '#ef4444' : '#f59e0b';
 
   return (
-    <View className="bg-white dark:bg-[#071217] border border-gray-100 dark:border-gray-800 rounded-lg p-3 mb-3 w-full flex-row items-center">
+    <Card className="mb-3 w-full flex-row items-center">
       {/* left accent */}
       <View style={{ width: 4, height: 40, backgroundColor: statusColor, borderRadius: 4, marginRight: 2 }} />
 
@@ -105,7 +105,7 @@ function InvoiceCard({
           <Trash2 size={16} color={processing ? '#9ca3af' : '#374151'} />
         </Pressable>
       </View>
-    </View>
+    </Card>
   );
 }
 
@@ -166,6 +166,26 @@ export default function VesselInvoices() {
   }
 
   // --- Effects and Memo (Moved before Return) ---
+  // Shared mapper
+  const mapBackendInvoice = React.useCallback((i: any): Invoice => {
+    let t = i.invoiceType ?? i.invoice_type ?? i.type ?? 'TC Hire';
+    if (t === 'Hire') t = 'TC Hire';
+    if (t === 'Freight') t = 'VC Freight';
+
+    return {
+      id: String(i.invoiceId ?? i.id ?? i.invoice_id ?? i.id),
+      number: i.invoiceNumber ?? i.invoice_number ?? i.number ?? 'UNKNOWN',
+      type: t,
+      date: i.invoiceDate ?? i.invoice_date ?? i.date ?? new Date().toISOString(),
+      dueDate: i.periodTo ?? i.dueDate ?? i.due_date,
+      amount: Number(i.totalAmount ?? i.total_amount ?? i.amount ?? 0),
+      currency: i.currency ?? 'USD',
+      status: i.paymentStatus ?? i.payment_status ?? i.status ?? 'Pending',
+      pdfUrl: i.fileUrl ?? i.pdfUrl ?? null,
+      pdfReady: !!(i.pdfReady ?? i.pdf_ready ?? i.fileUrl)
+    };
+  }, []);
+
   React.useEffect(() => {
     let mounted = true;
     async function load() {
@@ -174,24 +194,7 @@ export default function VesselInvoices() {
         setIsLoadingInvoices(true);
         const raw = await invoiceService.getInvoicesByVessel(vessel.id);
         if (!mounted) return;
-        const mapped: Invoice[] = (raw || []).map((i: any) => {
-          let t = i.invoiceType ?? i.invoice_type ?? i.type ?? 'TC Hire';
-          if (t === 'Hire') t = 'TC Hire';
-          if (t === 'Freight') t = 'VC Freight';
-
-          return {
-            id: String(i.invoiceId ?? i.id ?? i.invoice_id ?? i.id),
-            number: i.invoiceNumber ?? i.invoice_number ?? i.number ?? 'UNKNOWN',
-            type: t,
-            date: i.invoiceDate ?? i.invoice_date ?? i.date ?? new Date().toISOString(),
-            dueDate: i.periodTo ?? i.dueDate ?? i.due_date,
-            amount: Number(i.totalAmount ?? i.total_amount ?? i.amount ?? 0),
-            currency: i.currency ?? 'USD',
-            status: i.paymentStatus ?? i.payment_status ?? i.status ?? 'Pending',
-            pdfUrl: i.fileUrl ?? i.pdfUrl ?? null,
-            pdfReady: !!(i.pdfReady ?? i.pdf_ready ?? i.fileUrl)
-          } as Invoice;
-        });
+        const mapped = (raw || []).map(mapBackendInvoice);
         setInvoicesState(mapped);
       } catch (err) {
         console.error('Failed to load invoices:', err);
@@ -201,7 +204,7 @@ export default function VesselInvoices() {
     }
     load();
     return () => { mounted = false };
-  }, [vessel]);
+  }, [vessel, mapBackendInvoice]);
 
   React.useEffect(() => {
     if (!editingInvoice) return;
@@ -272,26 +275,10 @@ export default function VesselInvoices() {
 
         const updated = await invoiceService.updateInvoice(Number(editingInvoice.id), payload);
 
-        // Helper to normalize backend type to frontend
-        const normalizeType = (t: string) => {
-          if (t === 'Hire') return 'TC Hire';
-          if (t === 'Freight') return 'VC Freight';
-          return t;
-        };
+        // Fetch the fresh invoice to ensure we have the correct state (especially PDF URL/ready status)
+        const fresh = await invoiceService.getInvoiceById(Number(editingInvoice.id));
+        const newDetails = mapBackendInvoice(fresh || updated); // Fallback to updated if get fails/returns null for some reason
 
-        const newDetails: Invoice = {
-          id: String(updated.invoiceId ?? updated.id ?? updated.invoice_id ?? editingInvoice.id),
-          number: updated.invoiceNumber ?? updated.invoice_number ?? payload.invoiceNumber,
-          type: normalizeType(updated.invoiceType ?? updated.invoice_type ?? payload.invoiceType),
-          date: updated.invoiceDate ?? updated.invoice_date ?? payload.invoiceDate,
-          dueDate: updated.dueDate ?? updated.due_date ?? payload.dueDate,
-          amount: Number((updated.totalAmount ?? updated.total_amount ?? payload.totalAmount) || 0),
-          currency: updated.currency ?? payload.currency,
-          status: (updated.paymentStatus ?? updated.payment_status ?? payload.paymentStatus) || 'Pending',
-          pdfUrl: updated.fileUrl ?? updated.pdfUrl ?? null,
-          // Only permit pdfReady if we actually have a valid URL url
-          pdfReady: !!(updated.fileUrl ?? updated.pdfUrl)
-        };
         setInvoicesState(prev => prev.map(i => i.id === editingInvoice.id ? newDetails : i));
         bottomSheetRef.current?.dismiss();
         setEditingInvoice(null);
@@ -421,11 +408,22 @@ export default function VesselInvoices() {
 
   return (
     <ThemedView className="flex-1 bg-gray-100 dark:bg-[#000] p-0">
-      <VesselTopBar vesselName={vessel?.vesselName ?? ''} />
+      <VesselTopBar
+        vesselName={vessel?.vesselName ?? ''}
+        rightContent={
+          <Pressable
+            onPress={() => setShowCreateTC(true)}
+            className="bg-blue-50 dark:bg-blue-900/30 p-2 rounded-full"
+          >
+            <PlusCircle size={24} color="#2563eb" />
+          </Pressable>
+        }
+      />
 
       <View className="flex-1 p-3">
-
-        {sorted.length === 0 ? (
+        {isLoadingInvoices ? (
+          <Loader />
+        ) : sorted.length === 0 ? (
           <View className="flex-1 items-center justify-center p-6">
             <View className="w-16 h-16 rounded-full bg-gray-100 dark:bg-gray-800 items-center justify-center mb-4">
               <Receipt size={32} color="#9ca3af" />
@@ -445,7 +443,6 @@ export default function VesselInvoices() {
         )}
       </View>
 
-      {/* Floating Create Invoice button (bottom-right above navbar) */}
       {/* Date picker (rendered by native module when requested) */}
       {showDatePickerFor ? (
         <DateTimePicker
@@ -455,30 +452,6 @@ export default function VesselInvoices() {
           onChange={onDateChange}
         />
       ) : null}
-
-
-      <Pressable
-        accessibilityLabel="Create invoice"
-        onPress={() => setShowCreateTC(true)}
-        style={{
-          position: 'absolute',
-          right: 16,
-          bottom: 24,
-          width: 56,
-          height: 56,
-          borderRadius: 28,
-          backgroundColor: '#2563eb',
-          alignItems: 'center',
-          justifyContent: 'center',
-          elevation: 6,
-          shadowColor: '#000',
-          shadowOpacity: 0.25,
-          shadowRadius: 4,
-          shadowOffset: { width: 0, height: 2 }
-        }}
-      >
-        <PlusCircle size={28} color="#fff" />
-      </Pressable>
 
       <TCInvoiceFormSheet
         visible={showCreateTC}

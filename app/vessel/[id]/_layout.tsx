@@ -1,27 +1,27 @@
 import React from 'react';
-import { View, TouchableOpacity, ActivityIndicator } from 'react-native';
-import { Slot, useLocalSearchParams, useRouter, usePathname } from 'expo-router';
-import { Ship, Route, FileText, Receipt, Home, Lock } from 'lucide-react-native';
-import { ThemedText, ThemedView } from '@/components/common';
+import { View, Pressable, ActivityIndicator } from 'react-native';
+import { BottomTabBarProps } from '@react-navigation/bottom-tabs';
+import { Tabs, useRouter, usePathname, useLocalSearchParams } from 'expo-router';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
-import { useColorScheme } from 'react-native';
-import { useHaptics, useVesselDetails } from '@/hooks';
-import VesselDetailsProvider from '@/context/VesselDetailsContext';
+import { Ship, Route, Home, FileText, Receipt, Lock } from 'lucide-react-native';
+import { useHaptics } from '@/hooks';
+import VesselDetailsProvider, { useVesselDetails } from '@/context/VesselDetailsContext';
+import { ThemedText } from '@/components/common';
+import * as Haptics from 'expo-haptics';
 
 type TabItem = {
-  name: string;
   route: string;
-  icon: React.ComponentType<{ size: number; color: string }>;
-  requiresQ88: boolean;
+  label: string;
+  icon: any;
   isCenter?: boolean;
 };
 
 const tabs: TabItem[] = [
-  { name: 'Overview', route: 'index', icon: Ship, requiresQ88: false },
-  { name: 'Voyages', route: 'voyages', icon: Route, requiresQ88: false },
-  { name: 'Home', route: 'home', icon: Home, requiresQ88: false, isCenter: true },
-  { name: 'Specs', route: 'specs', icon: FileText, requiresQ88: false },
-  { name: 'Invoices', route: 'invoices', icon: Receipt, requiresQ88: true },
+  { route: 'index', label: 'Overview', icon: Ship },
+  { route: 'voyages', label: 'Voyages', icon: Route },
+  { route: 'home', label: 'Home', icon: Home, isCenter: true },
+  { route: 'specs', label: 'Specs', icon: FileText },
+  { route: 'invoices', label: 'Invoices', icon: Receipt },
 ];
 
 function TabBarItem({
@@ -29,50 +29,35 @@ function TabBarItem({
   isActive,
   isLocked,
   onPress,
-  haptics,
+  haptics
 }: {
   tab: TabItem;
   isActive: boolean;
   isLocked: boolean;
   onPress: () => void;
-  haptics: ReturnType<typeof useHaptics>;
+  haptics: any;
 }) {
-  const colorScheme = useColorScheme();
-  const isDark = colorScheme === 'dark';
+  const Icon = tab.icon;
+  const color = isActive ? '#3b82f6' : isLocked ? '#9ca3af' : '#6b7280';
 
-  const activeColor = '#3b82f6';
-  const inactiveColor = isDark ? '#6b7280' : '#9ca3af';
-  const lockedColor = isDark ? '#4b5563' : '#d1d5db';
-
-  const IconComponent = tab.icon;
-  const iconColor = isLocked ? lockedColor : (isActive ? activeColor : inactiveColor);
-  const textColor = isLocked ? lockedColor : (isActive ? activeColor : inactiveColor);
-
-  const handlePress = async () => {
-    await haptics.lightImpact();
-    if (!isLocked) {
-      onPress();
-    } else {
-      await haptics.warningNotification();
+  const handlePressIn = () => {
+    if (!isLocked && !isActive) {
+      Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+    } else if (isLocked) {
+      Haptics.notificationAsync(Haptics.NotificationFeedbackType.Warning);
     }
   };
 
-  // --- CENTER (HOME) TAB ---
-  if (tab.isCenter) {
+  if (tab.route === 'home') {
     return (
-      <View className="flex-1 items-center justify-end pb-2 relative z-10">
-        <TouchableOpacity
-          onPress={handlePress}
-          activeOpacity={0.9}
-          // Absolute positioning here pulls the button UP out of the navbar flow
-          // bottom-6 pushes it 24px up from the text label
+      <View className="flex-1 items-center justify-end pb-2 relative">
+        <Pressable
+          onPress={onPress}
+          onPressIn={handlePressIn}
           className="items-center absolute bottom-7"
-          style={{
-            zIndex: 50,
-          }}
+          style={{ zIndex: 50 }}
         >
           <View
-            // Made significantly bigger (w-16 h-16)
             className="w-12 h-12 rounded-[22px] items-center justify-center bg-white dark:bg-[#2c2c2e] border-[4px] border-gray-100 dark:border-[#000]"
             style={{
               shadowColor: '#000',
@@ -82,56 +67,56 @@ function TabBarItem({
               elevation: 8,
             }}
           >
-            <IconComponent size={24} color={isActive ? activeColor : inactiveColor} />
+            <Icon size={24} color={isActive ? '#3b82f6' : (color === '#3b82f6' ? '#3b82f6' : color)} />
           </View>
-        </TouchableOpacity>
+        </Pressable>
 
-        {/* Label stays in the flow to maintain alignment with other tabs */}
         <ThemedText
-          className="text-[10px] font-medium mt-1"
-          style={{ color: isActive ? activeColor : inactiveColor }}
+          className="text-[10px] font-medium"
+          style={{ color }}
           numberOfLines={1}
         >
-          {tab.name}
+          {tab.label}
         </ThemedText>
       </View>
     );
   }
 
-  // --- STANDARD TAB ---
   return (
-    <TouchableOpacity
-      onPress={handlePress}
-      activeOpacity={0.7}
-      // Ensure flex-1, justify-end, and pb-2 match the Center tab's container
-      // to keep text vertically aligned
-      className="flex-1 items-center justify-end pb-2"
+    <Pressable
+      onPress={onPress}
+      onPressIn={handlePressIn}
+      className="flex-1 items-center justify-end h-full pb-2"
+      style={{ opacity: isLocked ? 0.5 : 1 }}
     >
-      <View className="relative mb-1">
-        <IconComponent size={24} color={iconColor} />
-        {isLocked && (
-          <View className="absolute -top-1 -right-1 w-3 h-3 bg-gray-400 dark:bg-gray-600 rounded-full items-center justify-center">
-            <Lock size={8} color="#fff" />
+      <View className="items-center justify-center mb-1">
+        {isLocked ? (
+          <View className="relative">
+            <Icon size={24} color={color} />
+            <View className="absolute -top-1 -right-2 bg-gray-100 dark:bg-gray-800 rounded-full p-0.5">
+              <Lock size={10} color={color} />
+            </View>
           </View>
+        ) : (
+          <Icon size={24} color={color} />
         )}
       </View>
       <ThemedText
         className="text-[10px] font-medium"
-        style={{ color: textColor }}
-        numberOfLines={1}
+        style={{ color }}
       >
-        {tab.name}
+        {tab.label}
       </ThemedText>
-    </TouchableOpacity>
+    </Pressable>
   );
 }
 
-export function VesselLayoutContent() {
+function CustomTabBar({ state, descriptors, navigation }: BottomTabBarProps) {
   const { id } = useLocalSearchParams<{ id: string }>();
   const router = useRouter();
-  const pathname = usePathname();
   const insets = useSafeAreaInsets();
   const haptics = useHaptics();
+  const pathname = usePathname();
 
   const {
     vessel,
@@ -140,107 +125,146 @@ export function VesselLayoutContent() {
     isLoading
   } = useVesselDetails();
 
-  // Robust detection of gas carrier: accept different field names and casing
+  // Robust detection of gas carrier
   const vesselTypeRaw = (
     (vessel as any)?.vesselType ?? (vessel as any)?.type ?? (vessel as any)?.vessel_type ?? ''
   ).toString().trim().toLowerCase();
   const isGasCarrier = vesselTypeRaw.includes('gas') && vesselTypeRaw.includes('carrier');
 
-
-  const getCurrentTab = () => {
-    if (pathname.includes('/voyages')) return 'voyages';
-    if (pathname.includes('/specs')) return 'specs';
-    if (pathname.includes('/invoices')) return 'invoices';
-    return 'index';
-  };
-
-  const currentTab = getCurrentTab();
   // For gas carriers we require BOTH Q88 and Form C. For other vessels only Q88 is required.
   const missingDocs = isGasCarrier ? !(hasQ88 && hasFormC) : !hasQ88;
 
-  // Redirect logic based on document status:
-  // - If required documents are missing: redirect to specs (upload required)
-  // - If documents are complete: allow index/overview to load normally
+  // Screen Redirect Logic
+  // Only redirect to specs if documents are missing and we are trying to view a locked tab (like index/Overview)
+  // Since we are inside the TabBar, we can check the current index.
   React.useEffect(() => {
     if (!id || isLoading || !vessel) return;
-    const basePath = `/vessel/${id}`;
-    const isOnBase = pathname === basePath || pathname === `${basePath}/` || pathname === `${basePath}?`;
 
-    // Only redirect to specs if documents are missing
-    if (isOnBase && missingDocs) {
-      router.replace(`${basePath}/specs` as any);
+    // If documents are missing, and we are on the 'index' (Overview) tab (which is index 0 usually, or find by name),
+    // we should redirect to 'specs'.
+    const currentRouteName = state.routes[state.index]?.name;
+
+    // If we are on Overview (index), Voyages, or Invoices, and docs are missing -> go to Specs.
+    if (missingDocs && ['index', 'voyages', 'invoices'].includes(currentRouteName)) {
+      navigation.navigate('specs');
     }
-    // If documents are complete and on base path, stay on index (Overview)
-  }, [id, pathname, missingDocs, isLoading, vessel]);
+  }, [id, missingDocs, isLoading, vessel, state.index, state.routes, navigation]);
 
-  const handleTabPress = (tab: TabItem) => {
-    if (tab.route === 'home') {
-      router.dismissTo('/');
-    } else if (tab.route === 'index') {
-      router.push(`/vessel/${id}` as any);
-    } else {
-      router.push(`/vessel/${id}/${tab.route}` as any);
-    }
-  };
-
-  // Show loading state
   if (isLoading) {
     return (
-      <ThemedView className="flex-1 items-center justify-center">
-        <ActivityIndicator size="large" color="#3b82f6" />
-      </ThemedView>
+      <View className="h-[55px] bg-white dark:bg-[#1c1c1e] border-t border-gray-200 dark:border-gray-800" style={{ marginBottom: insets.bottom }} />
     );
   }
 
-  if (!vessel) {
-    return (
-      <ThemedView className="flex-1 items-center justify-center">
-        <ThemedText>Vessel not found</ThemedText>
-      </ThemedView>
-    );
-  }
   return (
-    <ThemedView className="flex-1">
-      <Slot />
+    <View
+      className="bg-white dark:bg-[#1c1c1e] border-t border-gray-200 dark:border-gray-800"
+      style={{ paddingBottom: insets.bottom }}
+    >
+      <View className="flex-row items-end justify-around h-[55px] px-2">
+        {tabs.map((tab) => {
+          // Find if this tab corresponds to a route in the navigator
+          const route = state.routes.find(r => r.name === tab.route);
+          const isFocused = route ? state.routes[state.index].key === route.key : false;
 
-      <View
-        className="bg-white dark:bg-[#1c1c1e] border-t border-gray-200 dark:border-gray-800"
-        style={{ paddingBottom: insets.bottom }}
-      >
-        {/* Shrunk height from h-16 (64px) to h-[55px] */}
-        <View className="flex-row items-end justify-around h-[55px] px-2">
-          {tabs.map((tab) => {
-            const isActive = currentTab === tab.route;
-            // 'home' isn't a route inside the vessel ID, so it's only active if explicitly handled, 
-            // but visually we might want it neutral unless we are actually on a "Home" screen inside here.
-            // For now, Home is just a navigation action button.
-            const isCenterActive = tab.route === 'home' ? false : isActive;
+          // 'home' isn't in state.routes, so it's never focused by nav state.
+          const isActive = tab.route === 'home' ? false : isFocused;
 
-            // Lock Overview, Voyages, and Invoices tabs until required documents are uploaded
-            // Specs and Home always remain accessible
-            const isLocked = missingDocs && !tab.isCenter && tab.route !== 'specs';
+          // Lock Overview, Voyages, and Invoices tabs until required documents are uploaded
+          const isLocked = missingDocs && !tab.isCenter && tab.route !== 'specs';
 
-            return (
-              <TabBarItem
-                key={tab.route}
-                tab={tab}
-                isActive={isCenterActive}
-                isLocked={isLocked}
-                onPress={() => handleTabPress(tab)}
-                haptics={haptics}
-              />
-            );
-          })}
-        </View>
+          const handlePress = () => {
+            // Handle Home specially
+            if (tab.route === 'home') {
+              router.dismissTo('/');
+              return;
+            }
+
+            // If locked, TabBarItem handles the warning haptic, we just don't navigate.
+            if (isLocked) return;
+
+            // If already active, don't navigate (haptics handled by TabBarItem)
+            if (isActive) return;
+
+            // Navigate to the tab
+            if (route) {
+              const event = navigation.emit({
+                type: 'tabPress',
+                target: route.key,
+                canPreventDefault: true,
+              });
+
+              if (!isFocused && !event.defaultPrevented) {
+                navigation.navigate(route.name, route.params);
+              }
+            }
+          };
+
+          return (
+            <TabBarItem
+              key={tab.route}
+              tab={tab}
+              isActive={isActive}
+              isLocked={isLocked}
+              onPress={handlePress}
+              haptics={haptics}
+            />
+          );
+        })}
       </View>
-    </ThemedView>
+    </View>
+  );
+}
+
+function VesselTabsContent() {
+  const { hasQ88, hasFormC, vessel, isLoading, isInitialized } = useVesselDetails();
+  const insets = useSafeAreaInsets();
+
+  // Wait for data to be initialized before rendering tabs
+  // This ensures we know the correct initial route based on document status
+  if (!isInitialized || isLoading) {
+    return (
+      <View
+        className="flex-1 items-center justify-center bg-gray-100 dark:bg-[#000]"
+        style={{ paddingTop: insets.top }}
+      >
+        <ActivityIndicator size="large" color="#3b82f6" />
+      </View>
+    );
+  }
+
+  // Determine the initial screen based on document availability
+  const vesselTypeRaw = (
+    (vessel as any)?.vesselType ?? (vessel as any)?.type ?? (vessel as any)?.vessel_type ?? ''
+  ).toString().trim().toLowerCase();
+  const isGasCarrier = vesselTypeRaw.includes('gas') && vesselTypeRaw.includes('carrier');
+  const missingDocs = isGasCarrier ? !(hasQ88 && hasFormC) : !hasQ88;
+
+  // Set initial route name based on document status
+  const initialRouteName = missingDocs ? 'specs' : 'index';
+
+  return (
+    <Tabs
+      tabBar={props => <CustomTabBar {...props} />}
+      screenOptions={{
+        headerShown: false,
+      }}
+      // @ts-ignore - initialRouteName is valid but types may not reflect it
+      initialRouteName={initialRouteName}
+    >
+      <Tabs.Screen name="index" options={{ title: 'Overview' }} />
+      <Tabs.Screen name="voyages" options={{ title: 'Voyages' }} />
+      <Tabs.Screen name="specs" options={{ title: 'Specs' }} />
+      <Tabs.Screen name="invoices" options={{ title: 'Invoices' }} />
+      {/* Home is not a screen here */}
+    </Tabs>
   );
 }
 
 export default function VesselLayout() {
   return (
     <VesselDetailsProvider>
-      <VesselLayoutContent />
+      <VesselTabsContent />
     </VesselDetailsProvider>
   );
 }

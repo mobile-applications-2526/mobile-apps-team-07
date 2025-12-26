@@ -5,7 +5,7 @@ import {
   Text,
   ScrollView,
 } from 'react-native';
-import { ThemedText, ThemedView } from '@/components/common';
+import { ThemedText, ThemedView, DataSection, Card } from '@/components/common';
 import { VesselTopBar, DocumentUpload } from '@/components/vessel';
 import { useVesselDetails, useVesselDocuments } from '@/hooks';
 
@@ -35,7 +35,7 @@ export default function VesselSpecs() {
     <ThemedView className="flex-1 bg-gray-100 dark:bg-[#000]">
       <VesselTopBar vesselName={vessel?.vesselName ?? ''} />
 
-  <ScrollView contentContainerStyle={{ padding: 16 }} className="flex-1" showsVerticalScrollIndicator={false}>
+      <ScrollView contentContainerStyle={{ padding: 16 }} className="flex-1" showsVerticalScrollIndicator={false}>
         {/* Specification page: no global unlock banner (banner shown in layout on other pages) */}
 
         {/* Upload Progress Indicator */}
@@ -46,16 +46,16 @@ export default function VesselSpecs() {
               <ThemedText className="text-sm text-gray-600 dark:text-gray-400">{Math.round(uploadState.progress * 100)}%</ThemedText>
             </View>
             <View className="w-full h-2 bg-gray-200 dark:bg-gray-700 rounded-full overflow-hidden">
-              <View 
-                style={{ width: `${Math.round(uploadState.progress * 100)}%` }} 
+              <View
+                style={{ width: `${Math.round(uploadState.progress * 100)}%` }}
                 className="h-full bg-blue-600 rounded-full transition-all duration-300"
               />
             </View>
           </View>
         )}
 
-        {/* Sections listed sequentially */}
-        <View className="flex-1">
+        {/* Required Documents Section */}
+        <DataSection title="Required Documents">
           <DocumentUpload
             type="Q88"
             title="Q88"
@@ -74,9 +74,28 @@ export default function VesselSpecs() {
               onUpload={pickAndUpload}
               onReplace={onReplace}
               onDownload={onDownload}
+              hasBorder
             />
           )}
+        </DataSection>
 
+        {/* Optional Documents Section */}
+        <Card className="mb-3">
+          <View className="flex-row items-center mb-3">
+            <Text
+              className="text-xs font-medium"
+              style={{
+                backgroundColor: '#F3F4F6',
+                color: '#6B7280',
+                borderRadius: 8,
+                paddingHorizontal: 10,
+                paddingVertical: 2,
+                overflow: 'hidden',
+              }}
+            >
+              Optional
+            </Text>
+          </View>
           <DocumentUpload
             type="CharterParty"
             title="Charter Party"
@@ -86,7 +105,7 @@ export default function VesselSpecs() {
             onReplace={onReplace}
             onDownload={onDownload}
           />
-        </View>
+        </Card>
       </ScrollView>
     </ThemedView>
   );

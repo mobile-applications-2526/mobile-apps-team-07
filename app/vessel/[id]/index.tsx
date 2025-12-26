@@ -1,12 +1,12 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import { View, RefreshControl, StyleSheet } from 'react-native';
 import { Lock } from 'lucide-react-native';
-import { ThemedText, ThemedView } from '@/components/common';
+import { ThemedText, ThemedView, DataSection } from '@/components/common';
 import { VesselTopBar } from '@/components/vessel';
 import { useColorScheme } from 'nativewind';
 import { VesselKPIs } from '@/types';
 import { useVesselDetails } from '@/hooks';
-import { useFocusEffect } from 'expo-router';
+import { useFocusEffect, Redirect } from 'expo-router';
 import { IS_EXPO_GO } from '@/constants/env';
 import BottomSheet, { BottomSheetScrollView } from '@gorhom/bottom-sheet';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
@@ -69,21 +69,7 @@ function DataRow({ label, value }: DataRowProps) {
   );
 }
 
-interface DataSectionProps {
-  title: string;
-  children: React.ReactNode;
-}
 
-function DataSection({ title, children }: DataSectionProps) {
-  return (
-    <View className="bg-white dark:bg-[#1c1c1e] rounded-xl p-4 mb-3">
-      <ThemedText type="defaultSemiBold" className="text-base mb-2">
-        {title}
-      </ThemedText>
-      {children}
-    </View>
-  );
-}
 
 // ============================================
 // KPI GRAPH COMPONENT
@@ -275,6 +261,20 @@ export default function VesselOverview() {
 
   const snapPoints = React.useMemo(() => ['25%', '50%', maxSheetHeight], [maxSheetHeight]);
 
+  useEffect(() => {
+    const pollInterval = setInterval(() => {
+      refreshVessel();
+    }, 30000)
+
+    return () => clearInterval(pollInterval);
+  }, [vessel?.id, refreshVessel]);
+
+  const onRefresh = useCallback(async () => {
+    setRefreshing(true);
+    await refreshVessel();
+    setRefreshing(false);
+  }, [refreshVessel]);
+
   // Document verification guard
   const vesselTypeRaw = (
     (vessel as any)?.vesselType ?? (vessel as any)?.type ?? (vessel as any)?.vessel_type ?? ''
@@ -282,36 +282,10 @@ export default function VesselOverview() {
   const isGasCarrier = vesselTypeRaw.includes('gas') && vesselTypeRaw.includes('carrier');
   const missingDocs = isGasCarrier ? !(hasQ88 && hasFormC) : !hasQ88;
 
-  // If required documents are missing, show locked state
+  // If required documents are missing, automatically redirect to specs
   if (missingDocs) {
-    return (
-      <ThemedView className="flex-1 items-center justify-center px-6">
-        <View className="w-20 h-20 rounded-full bg-gray-100 dark:bg-gray-800 items-center justify-center mb-4">
-          <Lock size={40} color="#9ca3af" />
-        </View>
-        <ThemedText className="text-xl font-semibold mb-2">Overview Locked</ThemedText>
-        <ThemedText className="text-center text-gray-500 dark:text-gray-400">
-          {isGasCarrier
-            ? 'Please upload Q88 and Form C in the Specs section to unlock this page.'
-            : 'Please upload Q88 in the Specs section to unlock this page.'}
-        </ThemedText>
-      </ThemedView>
-    );
+    return <Redirect href={`/vessel/${vessel?.id}/specs`} />;
   }
-
-  useEffect(() => {
-    const pollInterval = setInterval(() => {
-      refreshVessel();
-    }, 30000)
-
-    return () => clearInterval(pollInterval);
-  }, [vessel?.id]);
-
-  const onRefresh = useCallback(async () => {
-    setRefreshing(true);
-    await refreshVessel();
-    setRefreshing(false);
-  }, []);
 
   if (!vessel) {
     return (

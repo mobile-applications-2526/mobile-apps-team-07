@@ -1,7 +1,7 @@
 import React, { useState, useCallback, useEffect } from 'react';
-import { FlatList, TouchableOpacity, View, ActivityIndicator } from 'react-native';
+import { FlatList, TouchableOpacity, View } from 'react-native';
 import { Plus } from 'lucide-react-native';
-import { ThemedText, ThemedView, OverlayToast } from '@/components/common';
+import { ThemedText, ThemedView, OverlayToast, Loader } from '@/components/common';
 import { VesselCard, EmptyVesselList } from '@/components/vessel';
 import { DeleteVesselModal } from '@/components/ui/delete-vessel-modal';
 import { AddVesselModal } from '@/components/ui/add-vessel-modal';
@@ -229,12 +229,7 @@ export default function Overview() {
 
   // Show loading state while database initializes
   if (!isInitialized) {
-    return (
-      <ThemedView className="flex-1 bg-gray-100 dark:bg-[#000] items-center justify-center">
-        <ActivityIndicator size="large" color="#3b82f6" />
-        <ThemedText className="mt-4 text-gray-500">Loading vessels...</ThemedText>
-      </ThemedView>
-    );
+    return <Loader text="Loading vessels..." />;
   }
 
   return (

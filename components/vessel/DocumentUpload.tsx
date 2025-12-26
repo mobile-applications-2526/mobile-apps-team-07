@@ -13,6 +13,7 @@ type Props = {
   onUpload: (type: DocumentTypeCategory) => void;
   onReplace: (type: DocumentTypeCategory) => void;
   onDownload: (doc: DocType) => void;
+  hasBorder?: boolean;
 };
 
 export const DocumentUpload: React.FC<Props> = ({
@@ -23,13 +24,14 @@ export const DocumentUpload: React.FC<Props> = ({
   onUpload,
   onReplace,
   onDownload,
+  hasBorder,
 }) => {
   return (
-    <View className="w-full bg-white dark:bg-[#1a1a1a] rounded-2xl p-5 mb-4 border border-gray-100 dark:border-gray-800">
-      <View className="mb-3">
+    <View className={`w-full mb-4 ${hasBorder ? 'border-t border-gray-100 dark:border-gray-800 pt-4 mt-2' : ''}`}>
+      <View className="mb-2">
         <View className="flex-row items-center justify-between w-full">
           <View className="flex-row items-center flex-shrink-0">
-            <ThemedText type="defaultSemiBold" className="text-lg">{title}</ThemedText>
+            <ThemedText type="defaultSemiBold" className="text-sm">{title}</ThemedText>
             {doc && <BadgeCheck size={18} color="green" style={{ marginLeft: 8 }} />}
           </View>
           <View style={{ flexDirection: 'row', alignItems: 'center', flex: 1, justifyContent: 'flex-end', minWidth: 0 }}>
@@ -42,22 +44,6 @@ export const DocumentUpload: React.FC<Props> = ({
               >
                 {doc.documentNumber || 'Document.pdf'}
               </ThemedText>
-            )}
-            {optional && (
-              <Text
-                className="text-xs font-medium"
-                style={{
-                  backgroundColor: '#F3F4F6',
-                  color: '#6B7280',
-                  borderRadius: 8,
-                  paddingHorizontal: 10,
-                  paddingVertical: 2,
-                  overflow: 'hidden',
-                  marginLeft: doc ? 0 : 12,
-                }}
-              >
-                Optional
-              </Text>
             )}
           </View>
         </View>
