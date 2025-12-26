@@ -36,9 +36,9 @@ export const DocumentUpload: React.FC<Props> = ({
             {doc && (
               <ThemedText
                 className="text-xs font-medium text-right mr-2"
-                numberOfLines={3}
+                numberOfLines={1}
                 ellipsizeMode="tail"
-                style={{ textAlign: 'right', lineHeight: 20, paddingTop: 2, maxWidth: 180 }}
+                style={{ textAlign: 'right', maxWidth: 180 }}
               >
                 {doc.documentNumber || 'Document.pdf'}
               </ThemedText>

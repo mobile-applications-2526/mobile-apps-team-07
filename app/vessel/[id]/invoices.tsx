@@ -4,7 +4,7 @@ import { View, FlatList, Pressable, Alert, Image, Linking, TextInput, StyleSheet
 import DateTimePicker from '@react-native-community/datetimepicker';
 import { Picker } from '@react-native-picker/picker';
 import { BottomSheetModal, BottomSheetBackdrop, BottomSheetScrollView } from '@gorhom/bottom-sheet';
-import { Receipt, Download, Pencil, Trash2, PlusCircle, FileText, Calendar } from 'lucide-react-native';
+import { Receipt, Download, Pencil, Trash2, PlusCircle, FileText, Calendar, Lock } from 'lucide-react-native';
 import { ThemedText, ThemedView } from '@/components/common';
 import { VesselTopBar } from '@/components/vessel';
 import { useVesselDetails } from '@/hooks';
@@ -48,18 +48,18 @@ function TypeBadge({ type }: { type: string }) {
 }
 
 function InvoiceCard({
-  invoice, 
-  onDownload, 
-  onEdit, 
-  onDelete, 
+  invoice,
+  onDownload,
+  onEdit,
+  onDelete,
   processing
-}:{
-  invoice:Invoice; 
-  onDownload:(i:Invoice)=>void; 
-  onEdit:(i:Invoice)=>void; 
-  onDelete:(i:Invoice)=>void; 
-  processing?:boolean
-}){
+}: {
+  invoice: Invoice;
+  onDownload: (i: Invoice) => void;
+  onEdit: (i: Invoice) => void;
+  onDelete: (i: Invoice) => void;
+  processing?: boolean
+}) {
   // small helper for status color accent
   const statusColor = invoice.status === 'Paid' ? '#10b981' : invoice.status === 'Overdue' ? '#ef4444' : '#f59e0b';
 
@@ -110,7 +110,7 @@ function InvoiceCard({
 }
 
 export default function VesselInvoices() {
-  const { vessel } = useVesselDetails();
+  const { vessel, hasQ88, hasFormC } = useVesselDetails();
   const { colorScheme } = useColorScheme();
   const isDark = colorScheme === 'dark';
 
@@ -136,6 +136,30 @@ export default function VesselInvoices() {
 
   const bottomSheetRef = React.useRef<BottomSheetModal>(null);
   const snapPoints = React.useMemo(() => ['60%', '90%'], []);
+
+  // Document verification guard
+  const vesselTypeRaw = (
+    (vessel as any)?.vesselType ?? (vessel as any)?.type ?? (vessel as any)?.vessel_type ?? ''
+  ).toString().trim().toLowerCase();
+  const isGasCarrier = vesselTypeRaw.includes('gas') && vesselTypeRaw.includes('carrier');
+  const missingDocs = isGasCarrier ? !(hasQ88 && hasFormC) : !hasQ88;
+
+  // If required documents are missing, show locked state
+  if (missingDocs) {
+    return (
+      <ThemedView className="flex-1 items-center justify-center px-6">
+        <View className="w-20 h-20 rounded-full bg-gray-100 dark:bg-gray-800 items-center justify-center mb-4">
+          <Lock size={40} color="#9ca3af" />
+        </View>
+        <ThemedText className="text-xl font-semibold mb-2">Invoices Locked</ThemedText>
+        <ThemedText className="text-center text-gray-500 dark:text-gray-400">
+          {isGasCarrier
+            ? 'Please upload Q88 and Form C in the Specs section to unlock this page.'
+            : 'Please upload Q88 in the Specs section to unlock this page.'}
+        </ThemedText>
+      </ThemedView>
+    );
+  }
 
   function setProcessing(id: string, value: boolean) {
     setProcessingMap(prev => ({ ...prev, [id]: value }));

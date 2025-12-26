@@ -1,5 +1,6 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import { View, RefreshControl, StyleSheet } from 'react-native';
+import { Lock } from 'lucide-react-native';
 import { ThemedText, ThemedView } from '@/components/common';
 import { VesselTopBar } from '@/components/vessel';
 import { useColorScheme } from 'nativewind';
@@ -252,7 +253,9 @@ export default function VesselOverview() {
     activeVoyage,
     activeCharterParty,
     refreshVessel,
-    getLatestNoonReport
+    getLatestNoonReport,
+    hasQ88,
+    hasFormC,
   } = useVesselDetails();
   const { colorScheme } = useColorScheme();
   const isDark = colorScheme === 'dark';
@@ -264,7 +267,37 @@ export default function VesselOverview() {
   // Note: we'll use a functional component approach for BottomSheet which typically doesn't require a ref for initial presentation
   // but if we used ref it would be BottomSheet
   const bottomSheetRef = React.useRef<BottomSheet>(null);
-  const snapPoints = React.useMemo(() => ['25%', '50%', '90%'], []);
+
+  // Calculate max height to stop slightly below the top app bar
+  // Top app bar height = insets.top + padding (8) + content height (~56) + bottom padding (12)
+  const topBarHeight = insets.top + 76;
+  const maxSheetHeight = `${100 - ((topBarHeight + 64) / 812) * 100}%`; // 16px gap below app bar, assuming standard iPhone height as reference
+
+  const snapPoints = React.useMemo(() => ['25%', '50%', maxSheetHeight], [maxSheetHeight]);
+
+  // Document verification guard
+  const vesselTypeRaw = (
+    (vessel as any)?.vesselType ?? (vessel as any)?.type ?? (vessel as any)?.vessel_type ?? ''
+  ).toString().trim().toLowerCase();
+  const isGasCarrier = vesselTypeRaw.includes('gas') && vesselTypeRaw.includes('carrier');
+  const missingDocs = isGasCarrier ? !(hasQ88 && hasFormC) : !hasQ88;
+
+  // If required documents are missing, show locked state
+  if (missingDocs) {
+    return (
+      <ThemedView className="flex-1 items-center justify-center px-6">
+        <View className="w-20 h-20 rounded-full bg-gray-100 dark:bg-gray-800 items-center justify-center mb-4">
+          <Lock size={40} color="#9ca3af" />
+        </View>
+        <ThemedText className="text-xl font-semibold mb-2">Overview Locked</ThemedText>
+        <ThemedText className="text-center text-gray-500 dark:text-gray-400">
+          {isGasCarrier
+            ? 'Please upload Q88 and Form C in the Specs section to unlock this page.'
+            : 'Please upload Q88 in the Specs section to unlock this page.'}
+        </ThemedText>
+      </ThemedView>
+    );
+  }
 
   useEffect(() => {
     const pollInterval = setInterval(() => {
@@ -311,6 +344,7 @@ export default function VesselOverview() {
         enablePanDownToClose={false}
         backgroundStyle={{ backgroundColor: isDark ? '#151718' : '#F2F2F7' }}
         handleIndicatorStyle={{ backgroundColor: isDark ? '#404040' : '#e5e7eb' }}
+        enableDynamicSizing={false}
       >
         <BottomSheetScrollView
           contentContainerStyle={{ padding: 16, paddingBottom: 32 }}

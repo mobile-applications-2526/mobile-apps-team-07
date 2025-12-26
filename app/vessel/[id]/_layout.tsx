@@ -18,32 +18,32 @@ type TabItem = {
 
 const tabs: TabItem[] = [
   { name: 'Overview', route: 'index', icon: Ship, requiresQ88: false },
-  { name: 'Voyages', route: 'voyages', icon: Route, requiresQ88: false},
+  { name: 'Voyages', route: 'voyages', icon: Route, requiresQ88: false },
   { name: 'Home', route: 'home', icon: Home, requiresQ88: false, isCenter: true },
   { name: 'Specs', route: 'specs', icon: FileText, requiresQ88: false },
   { name: 'Invoices', route: 'invoices', icon: Receipt, requiresQ88: true },
 ];
 
-function TabBarItem({ 
-  tab, 
-  isActive, 
-  isLocked, 
+function TabBarItem({
+  tab,
+  isActive,
+  isLocked,
   onPress,
   haptics,
-}: { 
-  tab: TabItem; 
-  isActive: boolean; 
+}: {
+  tab: TabItem;
+  isActive: boolean;
   isLocked: boolean;
   onPress: () => void;
   haptics: ReturnType<typeof useHaptics>;
 }) {
   const colorScheme = useColorScheme();
   const isDark = colorScheme === 'dark';
-  
+
   const activeColor = '#3b82f6';
   const inactiveColor = isDark ? '#6b7280' : '#9ca3af';
   const lockedColor = isDark ? '#4b5563' : '#d1d5db';
-  
+
   const IconComponent = tab.icon;
   const iconColor = isLocked ? lockedColor : (isActive ? activeColor : inactiveColor);
   const textColor = isLocked ? lockedColor : (isActive ? activeColor : inactiveColor);
@@ -71,7 +71,7 @@ function TabBarItem({
             zIndex: 50,
           }}
         >
-          <View 
+          <View
             // Made significantly bigger (w-16 h-16)
             className="w-12 h-12 rounded-[22px] items-center justify-center bg-white dark:bg-[#2c2c2e] border-[4px] border-gray-100 dark:border-[#000]"
             style={{
@@ -85,9 +85,9 @@ function TabBarItem({
             <IconComponent size={24} color={isActive ? activeColor : inactiveColor} />
           </View>
         </TouchableOpacity>
-        
+
         {/* Label stays in the flow to maintain alignment with other tabs */}
-        <ThemedText 
+        <ThemedText
           className="text-[10px] font-medium mt-1"
           style={{ color: isActive ? activeColor : inactiveColor }}
           numberOfLines={1}
@@ -115,7 +115,7 @@ function TabBarItem({
           </View>
         )}
       </View>
-      <ThemedText 
+      <ThemedText
         className="text-[10px] font-medium"
         style={{ color: textColor }}
         numberOfLines={1}
@@ -153,22 +153,25 @@ export function VesselLayoutContent() {
     if (pathname.includes('/invoices')) return 'invoices';
     return 'index';
   };
-  
+
   const currentTab = getCurrentTab();
   // For gas carriers we require BOTH Q88 and Form C. For other vessels only Q88 is required.
   const missingDocs = isGasCarrier ? !(hasQ88 && hasFormC) : !hasQ88;
 
-  // If this is a newly created vessel (missing docs) and user landed on the dynamic index route,
-  // redirect to specs so they can upload required documents first.
+  // Redirect logic based on document status:
+  // - If required documents are missing: redirect to specs (upload required)
+  // - If documents are complete: allow index/overview to load normally
   React.useEffect(() => {
-    if (!id) return;
+    if (!id || isLoading || !vessel) return;
     const basePath = `/vessel/${id}`;
     const isOnBase = pathname === basePath || pathname === `${basePath}/` || pathname === `${basePath}?`;
+
+    // Only redirect to specs if documents are missing
     if (isOnBase && missingDocs) {
-      // replace so back button doesn't go back to index
       router.replace(`${basePath}/specs` as any);
     }
-  }, [id, pathname, missingDocs]);
+    // If documents are complete and on base path, stay on index (Overview)
+  }, [id, pathname, missingDocs, isLoading, vessel]);
 
   const handleTabPress = (tab: TabItem) => {
     if (tab.route === 'home') {
@@ -198,18 +201,9 @@ export function VesselLayoutContent() {
   }
   return (
     <ThemedView className="flex-1">
-      {/* Unlock banner shown on all vessel pages except Specs when required */}
-      {missingDocs && currentTab !== 'specs' && (
-        <View className="bg-yellow-50 dark:bg-yellow-900/20 rounded-xl p-4 mx-4 my-3 border border-yellow-200 dark:border-yellow-800">
-          <ThemedText className="text-sm text-yellow-800 dark:text-yellow-200">
-            {isGasCarrier ? 'Upload Q88 and Form C to unlock vessel features' : 'Upload Q88 to unlock vessel features'}
-          </ThemedText>
-        </View>
-      )}
-
       <Slot />
 
-      <View 
+      <View
         className="bg-white dark:bg-[#1c1c1e] border-t border-gray-200 dark:border-gray-800"
         style={{ paddingBottom: insets.bottom }}
       >
@@ -220,12 +214,12 @@ export function VesselLayoutContent() {
             // 'home' isn't a route inside the vessel ID, so it's only active if explicitly handled, 
             // but visually we might want it neutral unless we are actually on a "Home" screen inside here.
             // For now, Home is just a navigation action button.
-            const isCenterActive = tab.route === 'home' ? false : isActive; 
-            
-            // Lock all tabs except specs and Home until required documents uploaded
-            // const isLocked = missingDocs && !tab.isCenter && tab.route !== 'specs';
-            const isLocked = false;
-            
+            const isCenterActive = tab.route === 'home' ? false : isActive;
+
+            // Lock Overview, Voyages, and Invoices tabs until required documents are uploaded
+            // Specs and Home always remain accessible
+            const isLocked = missingDocs && !tab.isCenter && tab.route !== 'specs';
+
             return (
               <TabBarItem
                 key={tab.route}

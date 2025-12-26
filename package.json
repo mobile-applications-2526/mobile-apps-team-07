@@ -24,7 +24,7 @@
     "@rn-primitives/slot": "^1.2.0",
     "class-variance-authority": "^0.7.1",
     "clsx": "^2.1.1",
-    "expo": "^54.0.27",
+    "expo": "^54.0.30",
     "expo-dev-client": "~6.0.20",
     "expo-document-picker": "~14.0.8",
     "expo-file-system": "~19.0.21",

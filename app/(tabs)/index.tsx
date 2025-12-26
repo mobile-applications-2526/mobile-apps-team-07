@@ -214,8 +214,8 @@ export default function Overview() {
       // Haptic feedback for success
       await haptics.successNotification();
 
-      // Navigate to vessel specs page to upload Q88
-      router.push(`/vessel/${newVessel.id}/specs` as any);
+      // Navigate to vessel page - layout will redirect to specs if docs missing, or show overview if complete
+      router.push(`/vessel/${newVessel.id}` as any);
     } catch (error) {
       console.error('Failed to create vessel:', error);
       await haptics.errorNotification();
