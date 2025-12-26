@@ -53,7 +53,7 @@ function InvoiceCard({ invoice, onDownload, onEdit, onDelete, processing }: { in
   return (
     <View className="bg-white dark:bg-[#071217] border border-gray-100 dark:border-gray-800 rounded-lg p-3 mb-3 w-full flex-row items-center">
       {/* left accent */}
-      <View style={{ width: 4, height: 40, backgroundColor: statusColor, borderRadius: 4, marginRight: 10 }} />
+      <View style={{ width: 4, height: 40, backgroundColor: statusColor, borderRadius: 4, marginRight: 2 }} />
 
       {/* Left: thumbnail */}
       <View className="w-10 items-center">
@@ -135,18 +135,24 @@ export default function VesselInvoices() {
         setIsLoadingInvoices(true);
         const raw = await invoiceService.getInvoicesByVessel(vessel.id);
         if (!mounted) return;
-        const mapped: Invoice[] = (raw || []).map((i: any) => ({
-          id: String(i.invoiceId ?? i.id ?? i.invoice_id ?? i.id),
-          number: i.invoiceNumber ?? i.invoice_number ?? i.number ?? 'UNKNOWN',
-          type: i.invoiceType ?? i.invoice_type ?? i.type ?? 'TC Hire',
-          date: i.invoiceDate ?? i.invoice_date ?? i.date ?? new Date().toISOString(),
-          dueDate: i.periodTo ?? i.dueDate ?? i.due_date,
-          amount: Number(i.totalAmount ?? i.total_amount ?? i.amount ?? 0),
-          currency: i.currency ?? 'USD',
-          status: i.paymentStatus ?? i.payment_status ?? i.status ?? 'Pending',
-          pdfUrl: i.fileUrl ?? i.pdfUrl ?? null,
-          pdfReady: !!(i.pdfReady ?? i.pdf_ready ?? i.fileUrl)
-        } as Invoice));
+        const mapped: Invoice[] = (raw || []).map((i: any) => {
+          let t = i.invoiceType ?? i.invoice_type ?? i.type ?? 'TC Hire';
+          if (t === 'Hire') t = 'TC Hire';
+          if (t === 'Freight') t = 'VC Freight';
+
+          return {
+            id: String(i.invoiceId ?? i.id ?? i.invoice_id ?? i.id),
+            number: i.invoiceNumber ?? i.invoice_number ?? i.number ?? 'UNKNOWN',
+            type: t,
+            date: i.invoiceDate ?? i.invoice_date ?? i.date ?? new Date().toISOString(),
+            dueDate: i.periodTo ?? i.dueDate ?? i.due_date,
+            amount: Number(i.totalAmount ?? i.total_amount ?? i.amount ?? 0),
+            currency: i.currency ?? 'USD',
+            status: i.paymentStatus ?? i.payment_status ?? i.status ?? 'Pending',
+            pdfUrl: i.fileUrl ?? i.pdfUrl ?? null,
+            pdfReady: !!(i.pdfReady ?? i.pdf_ready ?? i.fileUrl)
+          } as Invoice;
+        });
         setInvoicesState(mapped);
       } catch (err) {
         console.error('Failed to load invoices:', err);
@@ -209,11 +215,35 @@ export default function VesselInvoices() {
     const proceed = async () => {
       try {
         setProcessing(editingInvoice.id, true);
+
+        // Map frontend types back to backend types
+        let backendType = formState.type;
+        if (formState.type === 'TC Hire') backendType = 'Hire';
+        if (formState.type === 'VC Freight') backendType = 'Freight';
+
+        const payload = {
+          invoiceNumber: formState.number,
+          invoiceType: backendType,
+          invoiceDate: formState.date || undefined,
+          dueDate: formState.dueDate || undefined,
+          totalAmount: Number(formState.amount) || 0,
+          currency: formState.currency || 'USD',
+          paymentStatus: formState.status || 'Pending'
+        };
+
         const updated = await invoiceService.updateInvoice(Number(editingInvoice.id), payload);
+
+        // Helper to normalize backend type to frontend
+        const normalizeType = (t: string) => {
+          if (t === 'Hire') return 'TC Hire';
+          if (t === 'Freight') return 'VC Freight';
+          return t;
+        };
+
         const newDetails: Invoice = {
           id: String(updated.invoiceId ?? updated.id ?? updated.invoice_id ?? editingInvoice.id),
           number: updated.invoiceNumber ?? updated.invoice_number ?? payload.invoiceNumber,
-          type: updated.invoiceType ?? updated.invoice_type ?? payload.invoiceType,
+          type: normalizeType(updated.invoiceType ?? updated.invoice_type ?? payload.invoiceType),
           date: updated.invoiceDate ?? updated.invoice_date ?? payload.invoiceDate,
           dueDate: updated.dueDate ?? updated.due_date ?? payload.dueDate,
           amount: Number((updated.totalAmount ?? updated.total_amount ?? payload.totalAmount) || 0),
