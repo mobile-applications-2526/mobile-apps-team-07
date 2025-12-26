@@ -5,7 +5,7 @@ import {
   Text,
   ScrollView,
 } from 'react-native';
-import { ThemedText, ThemedView, DataSection, Card } from '@/components/common';
+import { ThemedText, ThemedView, Card } from '@/components/common';
 import { VesselTopBar, DocumentUpload } from '@/components/vessel';
 import { useVesselDetails, useVesselDocuments } from '@/hooks';
 
@@ -55,7 +55,22 @@ export default function VesselSpecs() {
         )}
 
         {/* Required Documents Section */}
-        <DataSection title="Required Documents">
+        <Card className="mb-3">
+          <View className="flex-row items-center mb-3">
+            <Text
+              className="text-xs font-medium"
+              style={{
+                backgroundColor: '#F3F4F6',
+                color: '#6B7280',
+                borderRadius: 8,
+                paddingHorizontal: 10,
+                paddingVertical: 2,
+                overflow: 'hidden',
+              }}
+            >
+              Required
+            </Text>
+          </View>
           <DocumentUpload
             type="Q88"
             title="Q88"
@@ -77,7 +92,7 @@ export default function VesselSpecs() {
               hasBorder
             />
           )}
-        </DataSection>
+        </Card>
 
         {/* Optional Documents Section */}
         <Card className="mb-3">
