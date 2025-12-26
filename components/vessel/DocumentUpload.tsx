@@ -76,7 +76,7 @@ export const DocumentUpload: React.FC<Props> = ({
                 className="w-full px-3 py-2 border border-blue-500 rounded-lg items-center justify-center mb-2"
                 activeOpacity={0.7}
               >
-                <ThemedText className="text-blue-600 font-medium text-xs">Replace</ThemedText>
+                <ThemedText className="text-[#fff] font-medium text-xs">Replace</ThemedText>
               </TouchableOpacity>
               <TouchableOpacity
                 onPress={() => onDownload(doc)}

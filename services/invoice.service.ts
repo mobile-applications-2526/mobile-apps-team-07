@@ -44,4 +44,17 @@ export async function deleteInvoice(id: number) {
   return;
 }
 
-export default { getInvoicesByVessel, getInvoiceById, updateInvoiceStatus, deleteInvoice };
+/**
+ * Update an invoice (full update) and return updated invoice
+ */
+export async function updateInvoice(id: number, payload: any) {
+  const response = await fetch(`${API_URL}/api/invoices/${id}`, {
+    method: 'PUT',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(payload)
+  });
+  if (!response.ok) throw new Error(`Failed to update invoice ${id}: ${response.status}`);
+  return await response.json();
+}
+
+export default { getInvoicesByVessel, getInvoiceById, updateInvoiceStatus, deleteInvoice, updateInvoice };
