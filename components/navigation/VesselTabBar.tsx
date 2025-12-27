@@ -167,7 +167,7 @@ export function VesselTabBar({ state, descriptors, navigation }: BottomTabBarPro
                     const handlePress = () => {
                         // Handle Home specially
                         if (tab.route === 'home') {
-                            router.dismissTo('/');
+                            router.dismissTo('/(tabs)');
                             return;
                         }
 

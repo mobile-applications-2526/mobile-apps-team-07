@@ -13,6 +13,7 @@ import { VesselProvider } from '@/context/VesselContext';
 import { databaseService } from '@/services';
 import { ToastProvider } from '@/context/ToastContext';
 import { NetworkStatusProvider } from '@/context/NetworkStatusContext';
+import { AuthProvider } from '@/context/AuthContext';
 import { useEffect } from 'react';
 import 'react-native-reanimated';
 
@@ -22,7 +23,8 @@ export {
 } from 'expo-router';
 
 export const unstable_settings = {
-  anchor: '(tabs)',
+  // Ensure that reloading on `/modal` keeps a back button present.
+  initialRouteName: 'index',
 };
 
 export default function RootLayout() {
@@ -42,15 +44,19 @@ export default function RootLayout() {
           <ToastProvider>
             <NetworkStatusProvider>
               <VesselProvider>
-                <ThemeProvider value={NAV_THEME[colorScheme ?? 'light']}>
-                  <StatusBar style={colorScheme === 'dark' ? 'light' : 'dark'} />
-                  <Stack>
-                    <Stack.Screen name="(tabs)" options={{ headerShown: false }} />
-                    <Stack.Screen name="vessel/[id]" options={{ headerShown: false, animation: 'slide_from_right' }} />
-                    <Stack.Screen name="modal" options={{ presentation: 'modal', title: 'Modal' }} />
-                  </Stack>
-                  <PortalHost />
-                </ThemeProvider>
+                <AuthProvider>
+                  <ThemeProvider value={NAV_THEME[colorScheme ?? 'light']}>
+                    <StatusBar style={colorScheme === 'dark' ? 'light' : 'dark'} />
+                    <Stack initialRouteName="index">
+                      <Stack.Screen name="index" options={{ headerShown: false }} />
+                      <Stack.Screen name="sign-in" options={{ headerShown: false, presentation: 'card' }} />
+                      <Stack.Screen name="(tabs)" options={{ headerShown: false }} />
+                      <Stack.Screen name="vessel/[id]" options={{ headerShown: false, animation: 'slide_from_right' }} />
+                      <Stack.Screen name="modal" options={{ presentation: 'modal', title: 'Modal' }} />
+                    </Stack>
+                    <PortalHost />
+                  </ThemeProvider>
+                </AuthProvider>
               </VesselProvider>
             </NetworkStatusProvider>
           </ToastProvider>
