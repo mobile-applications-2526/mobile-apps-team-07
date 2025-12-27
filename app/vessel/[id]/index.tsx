@@ -11,12 +11,16 @@ import { IS_EXPO_GO } from '@/constants/env';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 // Conditionally import MapView only if not in Expo Go
-let MapView: any;
+let MapView: any = null;
+let MapLibreGL: any = null;
+
 if (!IS_EXPO_GO) {
   try {
-    MapView = require('@maplibre/maplibre-react-native').default;
+    // MapLibre exports the entire library, and MapView is accessed via MapLibreGL.MapView
+    MapLibreGL = require('@maplibre/maplibre-react-native');
+    MapView = MapLibreGL.MapView;
   } catch (e) {
-    console.warn('@maplibre/maplibre-react-native could not be loaded outside of Expo Go:', e);
+    console.warn('@maplibre/maplibre-react-native could not be loaded:', e);
     MapView = null;
   }
 }
@@ -24,31 +28,24 @@ if (!IS_EXPO_GO) {
 // ============================================
 // MAIN COMPONENT
 // ============================================
-
 export default function VesselOverview() {
   const {
     vessel,
-    activeVoyage,
-    activeCharterParty,
     refreshVessel,
-    getLatestNoonReport,
     isLocked: missingDocs
   } = useVesselDetails();
+  
   const { colorScheme } = useColorScheme();
   const isDark = colorScheme === 'dark';
   const [refreshing, setRefreshing] = useState(false);
   const [kpis, setKPIs] = useState<VesselKPIs | null>(null);
   const insets = useSafeAreaInsets();
 
-  // Use standard BottomSheet ref instead of BottomSheetModal
-  // Note: we'll use a functional component approach for BottomSheet which typically doesn't require a ref for initial presentation
-
-
   useEffect(() => {
     const pollInterval = setInterval(() => {
       refreshVessel();
-    }, 30000)
-
+    }, 30000);
+    
     return () => clearInterval(pollInterval);
   }, [vessel?.id, refreshVessel]);
 
@@ -57,8 +54,6 @@ export default function VesselOverview() {
     await refreshVessel();
     setRefreshing(false);
   }, [refreshVessel]);
-
-
 
   // If required documents are missing, automatically redirect to specs
   if (missingDocs) {
@@ -84,11 +79,13 @@ export default function VesselOverview() {
             </ThemedText>
           </View>
         ) : (
-          <MapView style={styles.map} />
+          <MapView 
+            style={styles.map}
+            styleURL="https://demotiles.maplibre.org/style.json"
+          />
         )}
       </View>
 
-      {/* 2. LAYER: Bottom Sheet (Standard, not Modal) */}
       {/* 2. LAYER: Bottom Sheet (Standard, not Modal) */}
       <VesselOverviewSheet
         vessel={vessel}
@@ -108,7 +105,10 @@ export default function VesselOverview() {
           zIndex: 9999, // Ensure highest z-order
         }}
       >
-        <VesselTopBar vesselName={vessel.vesselName} vesselImage={vessel.vesselPictureUrl} />
+        <VesselTopBar 
+          vesselName={vessel.vesselName} 
+          vesselImage={vessel.vesselPictureUrl} 
+        />
       </View>
     </View>
   );
