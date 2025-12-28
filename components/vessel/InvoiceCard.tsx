@@ -1,21 +1,10 @@
 import React from 'react';
-import { View, Image, Pressable } from 'react-native';
-import { FileText, Download, Pencil, Trash2 } from 'lucide-react-native';
+import { View, TouchableOpacity, Pressable } from 'react-native';
+import { FileText, Download, Pencil, Trash2, CheckCircle, AlertCircle, Clock } from 'lucide-react-native';
 import { ThemedText } from '@/components/common/ThemedText';
-import { Card } from '@/components/common/Card';
 import { Invoice } from '@/types';
 import { formatCurrency } from '@/lib/utils';
-
-export function StatusBadge({ status }: { status: Invoice['status'] }) {
-    const base = 'px-1 py-0.5 rounded-full text-xs font-medium mr-2';
-    if (status === 'Paid') return <ThemedText className={`${base} bg-green-50 text-green-700 border border-green-100`}>Paid</ThemedText>;
-    if (status === 'Overdue') return <ThemedText className={`${base} bg-red-50 text-red-700 border border-red-100`}>Overdue</ThemedText>;
-    return <ThemedText className={`${base} bg-yellow-50 text-yellow-700 border border-yellow-100`}>Pending</ThemedText>;
-}
-
-export function TypeBadge({ type }: { type: string }) {
-    return <ThemedText className="px-0.5 py-0.5 rounded-full bg-blue-50 text-blue-700 border border-blue-100 text-xs font-medium uppercase">{type}</ThemedText>;
-}
+import { useHaptics } from '@/hooks';
 
 interface InvoiceCardProps {
     invoice: Invoice;
@@ -32,50 +21,86 @@ export function InvoiceCard({
     onDelete,
     processing
 }: InvoiceCardProps) {
-    const statusColor = invoice.status === 'Paid' ? '#10b981' : invoice.status === 'Overdue' ? '#ef4444' : '#f59e0b';
+    const { mediumImpact } = useHaptics();
+
+    const getStatusConfig = (status: Invoice['status']) => {
+        switch (status) {
+            case 'Paid': return { color: '#10b981', icon: CheckCircle, bg: 'bg-green-50 dark:bg-green-900/20', text: 'text-green-700 dark:text-green-400' };
+            case 'Overdue': return { color: '#ef4444', icon: AlertCircle, bg: 'bg-red-50 dark:bg-red-900/20', text: 'text-red-700 dark:text-red-400' };
+            default: return { color: '#f59e0b', icon: Clock, bg: 'bg-yellow-50 dark:bg-yellow-900/20', text: 'text-yellow-700 dark:text-yellow-400' };
+        }
+    };
+
+    const statusConfig = getStatusConfig(invoice.status);
+    const StatusIcon = statusConfig.icon;
 
     return (
-        <Card className="mb-3 w-full flex-row items-center">
-            {/* left accent */}
-            <View style={{ width: 4, height: 40, backgroundColor: statusColor, borderRadius: 4, marginRight: 2 }} />
+        <View
+            className="bg-white dark:bg-[#1c1c1e] rounded-xl mb-3 overflow-hidden"
+            style={{
+                shadowColor: '#000',
+                shadowOffset: { width: 0, height: 1 },
+                shadowOpacity: 0.05,
+                shadowRadius: 2,
+                elevation: 1,
+            }}
+        >
+            <View className="flex-row items-start px-3 py-3">
+                {/* Icon */}
+                <View className="w-10 h-10 rounded-lg mr-3 items-center justify-center bg-gray-100 dark:bg-gray-800">
+                    <FileText size={20} color="#6b7280" />
+                </View>
 
-            {/* Left: thumbnail */}
-            <View className="w-10 items-center">
-                {invoice.pdfReady ? (
-                    <Image source={{ uri: invoice.pdfUrl ?? '' }} style={{ width: 36, height: 36, borderRadius: 6 }} resizeMode="contain" />
-                ) : (
-                    <View className="w-10 h-10 rounded items-center justify-center">
-                        <FileText size={24} color="#9ca3af" />
+                {/* Info */}
+                <View className="flex-1 mr-2 justify-center min-h-[40px]">
+                    <View className="flex-row items-center">
+                        <ThemedText type="defaultSemiBold" className="text-[15px] flex-shrink" numberOfLines={1}>
+                            {invoice.number}
+                        </ThemedText>
                     </View>
-                )}
-            </View>
-
-            {/* Middle: content */}
-            <View className="flex-1">
-                <ThemedText className="text-sm font-semibold text-gray-800 dark:text-gray-100" numberOfLines={1} ellipsizeMode="tail">{invoice.number}</ThemedText>
-                <View className="flex-row items-center gap-2 space-x-2 mt-1">
-                    <TypeBadge type={invoice.type} />
-                    <ThemedText className="text-xs text-gray-500 dark:text-gray-400">{new Date(invoice.date).toLocaleDateString()}</ThemedText>
+                    <ThemedText className="text-xs text-gray-500 dark:text-gray-400 mt-0.5" numberOfLines={1}>
+                        {invoice.type} • {new Date(invoice.date).toLocaleDateString()}
+                    </ThemedText>
                 </View>
 
-                <View className="flex-row items-center justify-between mt-2">
-                    <ThemedText className="text-xs font-bold text-gray-900 dark:text-white">{formatCurrency(invoice.amount, invoice.currency)}</ThemedText>
-                    <StatusBadge status={invoice.status} />
+                {/* Actions */}
+                <View className="flex-row items-center gap-1">
+                    <TouchableOpacity
+                        className="p-2 bg-gray-50 dark:bg-gray-800 rounded-full"
+                        onPress={() => onDownload(invoice)}
+                        disabled={!!processing}
+                    >
+                        <Download size={14} color={processing ? '#9ca3af' : '#374151'} />
+                    </TouchableOpacity>
+                    <TouchableOpacity
+                        className="p-2 bg-gray-50 dark:bg-gray-800 rounded-full"
+                        onPress={() => onEdit(invoice)}
+                        disabled={!!processing}
+                    >
+                        <Pencil size={14} color={processing ? '#9ca3af' : '#374151'} />
+                    </TouchableOpacity>
+                    <TouchableOpacity
+                        className="p-2 bg-red-50 dark:bg-red-900/20 rounded-full"
+                        onPress={() => { mediumImpact(); onDelete(invoice); }}
+                        disabled={!!processing}
+                    >
+                        <Trash2 size={14} color={processing ? '#9ca3af' : '#ef4444'} />
+                    </TouchableOpacity>
                 </View>
             </View>
 
-            {/* Right: actions */}
-            <View className="items-end justify-between">
-                <Pressable onPress={() => onDownload(invoice)} accessibilityLabel="Download invoice" className="p-1 rounded-full" disabled={!!processing}>
-                    <Download size={16} color={processing ? '#9ca3af' : '#374151'} />
-                </Pressable>
-                <Pressable onPress={() => onEdit(invoice)} className="mt-2 p-1 rounded-full" disabled={!!processing}>
-                    <Pencil size={16} color={processing ? '#9ca3af' : '#374151'} />
-                </Pressable>
-                <Pressable onPress={() => onDelete(invoice)} className="mt-2 p-1 rounded-full" disabled={!!processing}>
-                    <Trash2 size={16} color={processing ? '#9ca3af' : '#374151'} />
-                </Pressable>
+            {/* Bottom Strip (Status & Amount) */}
+            <View className={`flex-row items-center justify-between px-3 py-2 ${statusConfig.bg}`}>
+                <View className="flex-row items-center">
+                    <StatusIcon size={14} color={statusConfig.color} />
+                    <ThemedText className={`text-xs ml-1.5 font-medium ${statusConfig.text}`}>
+                        {invoice.status}
+                    </ThemedText>
+                </View>
+                <ThemedText type="defaultSemiBold" className="text-sm">
+                    {formatCurrency(invoice.amount, invoice.currency)}
+                </ThemedText>
             </View>
-        </Card>
+        </View>
     );
 }
