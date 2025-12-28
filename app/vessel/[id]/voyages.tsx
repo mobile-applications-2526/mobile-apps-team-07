@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from 'react';
-import { View } from 'react-native';
-import { Lock } from 'lucide-react-native';
+import { View, TouchableOpacity } from 'react-native';
+import { Lock, Plus } from 'lucide-react-native';
 import { ThemedText, ThemedView, Loader } from '@/components/common';
 import { VesselTopBar } from '@/components/vessel';
 import { useHaptics, useVesselDetails } from '@/hooks';
@@ -77,7 +77,17 @@ export default function VesselVoyages() {
   return (
     <ThemedView className="flex-1 bg-gray-100 dark:bg-[#000]">
       {/* Top App Bar */}
-      <VesselTopBar vesselName={vessel?.vesselName ?? ''} />
+      <VesselTopBar
+        vesselName={vessel?.vesselName ?? ''}
+        rightContent={
+          <TouchableOpacity
+            onPress={handleAddVoyage}
+            className="p-2 bg-blue-600 rounded-full"
+          >
+            <Plus size={20} color="#fff" />
+          </TouchableOpacity>
+        }
+      />
 
       {/* Content */}
       <View className="flex-1">

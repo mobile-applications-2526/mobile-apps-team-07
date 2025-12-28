@@ -5,8 +5,8 @@
  */
 import React from 'react';
 import { TouchableOpacity, View, ScrollView } from 'react-native';
-import { ChevronLeft, ChevronRight, Plus, MapPin, Anchor, Clock, FileText, Upload } from 'lucide-react-native';
-import { ThemedText } from '@/components/common';
+import { ChevronLeft, ChevronRight, MapPin, Clock, FileText, Anchor, Eye, EyeOff } from 'lucide-react-native';
+import { ThemedText, DataSection, DataRow, Card } from '@/components/common';
 import { CharterParty, VesselStatus, Voyage, VoyagePort } from '@/types';
 import { Cargo } from '@/types/cargo';
 import { DocumentUpload } from '../vessel';
@@ -27,9 +27,9 @@ interface VoyageDetailsProps {
   onCreateFirstVoyage?: () => void;
 }
 
-export function VoyageDetails({ 
+export function VoyageDetails({
   voyage,
-  status, 
+  status,
   noonReports,
   cargoes,
   ports,
@@ -78,15 +78,15 @@ export function VoyageDetails({
     const hours = distanceToGoNm / averageSpeedKnots;
     const etaDate = new Date();
     etaDate.setHours(etaDate.getHours() + hours);
-    
+
     const monthAbbr = etaDate.toLocaleString('en-US', { month: 'short' });
     const day = etaDate.getDate();
-    const timeStr = etaDate.toLocaleTimeString('en-US', { 
-      hour: '2-digit', 
-      minute: '2-digit', 
-      hour12: false 
+    const timeStr = etaDate.toLocaleTimeString('en-US', {
+      hour: '2-digit',
+      minute: '2-digit',
+      hour12: false
     });
-    
+
     const portText = nextPort ? ` to ${nextPort}` : '';
     return `${monthAbbr} ${day}, ${timeStr} UTC${portText}`;
   };
@@ -94,7 +94,7 @@ export function VoyageDetails({
   // Get load and discharge ports
   const loadPorts = ports.filter(p => p.portType === 'Load');
   const dischargePorts = ports.filter(p => p.portType === 'Discharge');
-  
+
   const visibleLoadPorts = showAllPorts ? loadPorts : loadPorts.slice(0, 2);
   const visibleDischargePorts = showAllPorts ? dischargePorts : dischargePorts.slice(0, 2);
   const hasMorePorts = loadPorts.length + dischargePorts.length > 4;
@@ -125,7 +125,7 @@ export function VoyageDetails({
     <ScrollView className="flex-1 bg-gray-50 dark:bg-black">
       <View className="p-4">
         {/* Header */}
-        <View className="flex-row items-center justify-between mb-4">
+        <View className="flex-row items-center justify-center mb-4">
           <View className="flex-row items-center gap-3">
             <TouchableOpacity
               onPress={() => onCycleVoyage('previous')}
@@ -134,9 +134,11 @@ export function VoyageDetails({
             >
               <ChevronLeft size={24} color="#000" className="dark:color-white" />
             </TouchableOpacity>
+
             <ThemedText className="text-3xl font-bold">
               {voyage.voyageNumber}
             </ThemedText>
+
             <TouchableOpacity
               onPress={() => onCycleVoyage('next')}
               className={`p-2 rounded-full ${isLastVoyage ? 'opacity-30' : 'active:bg-gray-200 dark:active:bg-gray-800'}`}
@@ -145,27 +147,19 @@ export function VoyageDetails({
               <ChevronRight size={24} color="#000" className="dark:color-white" />
             </TouchableOpacity>
           </View>
-          {onAdd && (
-            <TouchableOpacity
-              onPress={onAdd}
-              className="p-2 bg-blue-600 rounded-full"
-            >
-              <Plus size={24} color="#fff" />
-            </TouchableOpacity>
-          )}
-        </View>
-
-        {/* Status Badge */}
-        <View className="mb-4">
-          <View className={`self-start px-4 py-2 rounded-full ${getStatusColor(voyage.voyageStatus)}`}>
-            <ThemedText className="text-sm font-medium text-white">
-              {voyage.voyageStatus}
-            </ThemedText>
-          </View>
         </View>
 
         {/* Route Visualization */}
-        <View className="bg-white dark:bg-[#1c1c1e] rounded-2xl p-6 mb-4">
+        <DataSection
+          title="Route"
+          rightContent={
+            <View className={`px-2 py-1 rounded-full ${getStatusColor(voyage.voyageStatus)}`}>
+              <ThemedText className="text-xs font-medium text-white">
+                {voyage.voyageStatus}
+              </ThemedText>
+            </View>
+          }
+        >
           <View className="flex-row items-center justify-between">
             {/* Load Ports */}
             {visibleLoadPorts.map((port, index) => (
@@ -202,7 +196,7 @@ export function VoyageDetails({
 
           {/* Show all ports link */}
           {hasMorePorts && (
-            <TouchableOpacity 
+            <TouchableOpacity
               onPress={() => setShowAllPorts(!showAllPorts)}
               className="mt-4"
             >
@@ -211,128 +205,92 @@ export function VoyageDetails({
               </ThemedText>
             </TouchableOpacity>
           )}
-        </View>
+        </DataSection>
 
         {/* Voyage Info */}
-        <View className="bg-white dark:bg-[#1c1c1e] rounded-2xl p-6 mb-4">
-          <ThemedText className="text-xl font-bold mb-4">Voyage Info</ThemedText>
-          <View className="gap-2">
+        <DataSection title="Voyage Info">
+          <View>
             {voyage.voyageStartDate && voyage.voyageEndDate && (
-              <ThemedText className="text-gray-800 dark:text-gray-200">
-                <ThemedText className="font-semibold">Laycan: </ThemedText>
-                {formatDate(voyage.voyageStartDate)} - {formatDate(voyage.voyageEndDate)}
-              </ThemedText>
+              <DataRow
+                label="Laycan"
+                value={`${formatDate(voyage.voyageStartDate)} - ${formatDate(voyage.voyageEndDate)}`}
+              />
             )}
 
             {charterParty ? (
               <>
-                <ThemedText className="text-gray-800 dark:text-gray-200">
-                  <ThemedText className="font-semibold">Charter Party: </ThemedText>
-                  {charterParty.chartererName}
-                </ThemedText>
+                <DataRow label="Charter Party" value={charterParty.chartererName} />
                 {charterParty.isVC && (
-                  <View className="my-2">
-                    <View className="self-start px-3 py-1.5 bg-blue-600 rounded-full">
-                      <ThemedText className="text-sm font-medium text-white">
-                        Charter Type: VC
-                      </ThemedText>
+                  <View className="flex-row justify-between py-2">
+                    <ThemedText className="text-sm text-gray-500 dark:text-gray-400">Type:</ThemedText>
+                    <View className="px-3 py-1 bg-blue-600 rounded-full">
+                      <ThemedText className="text-xs font-medium text-white">VC</ThemedText>
                     </View>
                   </View>
                 )}
               </>
             ) : (
-              <ThemedText className="text-gray-800 dark:text-gray-200">
-                <ThemedText className="font-semibold">Charter Party: </ThemedText>
-                No Charter Party linked
-              </ThemedText>
+              <DataRow label="Charter Party" value="None" />
             )}
 
             {status && (
-              <View className="flex-row items-center gap-2 mt-2">
-                <ThemedText className="text-gray-800 dark:text-gray-200">
-                  <ThemedText className="font-semibold">Current Position: </ThemedText>
-                  {status.latitude}°N, {status.longitude}°E
-                </ThemedText>
-                <MapPin size={18} color="#6b7280" />
-              </View>
+              <DataRow
+                label="Current Position"
+                value={`${status.latitude}°N, ${status.longitude}°E`}
+              />
             )}
 
             {status && (
-              <View className="flex-row items-center gap-2">
-                <ThemedText className="text-gray-800 dark:text-gray-200">
-                  <ThemedText className="font-semibold">ETA: </ThemedText>
-                  {formatETA(status.distanceToGoNm, status.averageSpeedKnots, nextPort || undefined)}
-                </ThemedText>
-                <Clock size={18} color="#6b7280" />
-              </View>
+              <DataRow
+                label="ETA"
+                value={formatETA(status.distanceToGoNm, status.averageSpeedKnots, nextPort || undefined)}
+              />
             )}
           </View>
-        </View>
+        </DataSection>
 
         {/* Cargo Summary */}
         {cargoes.length > 0 && (
-          <View className="bg-white dark:bg-[#1c1c1e] rounded-2xl p-6 mb-4">
-            <ThemedText className="text-xl font-bold mb-4">Cargo Summary</ThemedText>
+          <DataSection title="Cargo Summary">
             {cargoes.map((cargo, index) => (
-              <View key={index} className="gap-2 mb-3">
+              <View key={index} className="gap-1 mb-3 last:mb-0">
                 {cargo.cargoType && (
-                  <ThemedText className="text-gray-800 dark:text-gray-200">
-                    <ThemedText className="font-semibold">Cargo: </ThemedText>
-                    {cargo.cargoType}
-                  </ThemedText>
+                  <DataRow label="Cargo" value={cargo.cargoType} />
                 )}
-                
+
                 {cargo.shipQuantityMt && (
-                  <ThemedText className="text-gray-800 dark:text-gray-200">
-                    <ThemedText className="font-semibold">Quantity: </ThemedText>
-                    {cargo.shipQuantityMt.toLocaleString()} MT
-                  </ThemedText>
+                  <DataRow label="Quantity" value={`${cargo.shipQuantityMt.toLocaleString()} MT`} />
                 )}
 
                 {cargo.requiredTempC && (
-                  <ThemedText className="text-gray-800 dark:text-gray-200">
-                    <ThemedText className="font-semibold">Required Temp: </ThemedText>
-                    {cargo.requiredTempC}°C 🌡️
-                  </ThemedText>
+                  <DataRow label="Required Temp" value={`${cargo.requiredTempC}°C`} />
                 )}
               </View>
             ))}
-          </View>
+          </DataSection>
         )}
 
-        {/* Tabs */}
-        <View className="flex-row gap-2 mb-4">
+        {/* Tabs - Native Segmented Control Style */}
+        <View className="flex-row mb-4 bg-gray-200 dark:bg-gray-800 p-1 rounded-xl">
           <TouchableOpacity
             onPress={() => setActiveTab('reports')}
-            className={`flex-1 py-3 rounded-xl ${
-              activeTab === 'reports' 
-                ? 'bg-blue-600' 
-                : 'bg-white dark:bg-[#1c1c1e]'
-            }`}
+            style={{ flex: 1 }}
           >
-            <ThemedText
-              className={`text-center font-semibold ${
-                activeTab === 'reports' ? 'text-white' : 'text-gray-600 dark:text-gray-400'
-              }`}
-            >
-              Noon Reports
-            </ThemedText>
+            <View className={`py-1.5 rounded-lg items-center justify-center ${activeTab === 'reports' ? 'bg-white shadow-sm' : 'bg-transparent'}`}>
+              <ThemedText className={`text-sm font-medium ${activeTab === 'reports' ? 'text-black' : 'text-gray-500 dark:text-gray-400'}`}>
+                Noon Reports
+              </ThemedText>
+            </View>
           </TouchableOpacity>
           <TouchableOpacity
             onPress={() => setActiveTab('cargo')}
-            className={`flex-1 py-3 rounded-xl ${
-              activeTab === 'cargo' 
-                ? 'bg-blue-600' 
-                : 'bg-white dark:bg-[#1c1c1e]'
-            }`}
+            style={{ flex: 1 }}
           >
-            <ThemedText
-              className={`text-center font-semibold ${
-                activeTab === 'cargo' ? 'text-white' : 'text-gray-600 dark:text-gray-400'
-              }`}
-            >
-              Cargo
-            </ThemedText>
+            <View className={`py-1.5 rounded-lg items-center justify-center ${activeTab === 'cargo' ? 'bg-white shadow-sm' : 'bg-transparent'}`}>
+              <ThemedText className={`text-sm font-medium ${activeTab === 'cargo' ? 'text-black' : 'text-gray-500 dark:text-gray-400'}`}>
+                Cargo
+              </ThemedText>
+            </View>
           </TouchableOpacity>
         </View>
 
@@ -341,40 +299,40 @@ export function VoyageDetails({
           <>
             {noonReports.length > 0 ? (
               <View>
-               {noonReports.map((report, index) => (
-                  <View
+                {noonReports.map((report, index) => (
+                  <Card
                     key={index}
-                    className="bg-white dark:bg-[#1c1c1e] rounded-2xl p-6 mb-4"
+                    className="mb-3"
                   >
                     <ThemedText className="text-lg font-bold mb-3">
                       {formatDate(new Date(report.reportDateTime))}
                     </ThemedText>
                     <View className="gap-1 mb-4">
-                      <ThemedText className="text-gray-800 dark:text-gray-200">
-                        <ThemedText className="font-semibold">Position: </ThemedText>
-                        {report.latitude}°N, {report.longitude}°E
-                      </ThemedText>
-                      <ThemedText className="text-gray-800 dark:text-gray-200">
-                        <ThemedText className="font-semibold">Speed: </ThemedText>
-                        {report.averageSpeedKnots} kts
-                      </ThemedText>
-                      <ThemedText className="text-gray-800 dark:text-gray-200">
-                        <ThemedText className="font-semibold">Fuel: </ThemedText>
-                        {report.fuelRob} MT/day
-                      </ThemedText>
+                      <DataRow
+                        label="Position"
+                        value={`${report.latitude}°N, ${report.longitude}°E`}
+                      />
+                      <DataRow
+                        label="Speed"
+                        value={`${report.averageSpeedKnots} kts`}
+                      />
+                      <DataRow
+                        label="Fuel"
+                        value={`${report.fuelRob} MT/day`}
+                      />
                     </View>
                     <TouchableOpacity className="flex-row items-center gap-2">
-                      <FileText size={20} color="#6b7280" />
+                      <Eye size={20} color="#6b7280" />
                       <ThemedText className="text-gray-600 dark:text-gray-400">
                         View Report
                       </ThemedText>
                     </TouchableOpacity>
-                  </View>
+                  </Card>
                 ))}
               </View>
             ) : (
               <View className="bg-white dark:bg-[#1c1c1e] rounded-2xl p-8 mb-4 items-center">
-                <FileText size={48} color="#9ca3af" />
+                <EyeOff size={48} color="#9ca3af" />
                 <ThemedText className="text-center text-gray-500 dark:text-gray-400 mt-3">
                   No noon reports submitted for this voyage
                 </ThemedText>
@@ -385,21 +343,20 @@ export function VoyageDetails({
 
         {/* Cargo Tab Content */}
         {activeTab === 'cargo' && (
-            <View className="bg-white dark:bg-[#1c1c1e] rounded-2xl p-8 mb-4 items-center">
-              <ThemedText className="text-center text-gray-500 dark:text-gray-400">
-                Cargo Details here
-              </ThemedText>
-            </View>
+          <View className="bg-white dark:bg-[#1c1c1e] rounded-2xl p-8 mb-4 items-center">
+            <ThemedText className="text-center text-gray-500 dark:text-gray-400">
+              Cargo Details here
+            </ThemedText>
+          </View>
         )}
 
         {/* Remarks */}
         {voyage.remarks && (
-          <View className="bg-white dark:bg-[#1c1c1e] rounded-2xl p-6 mb-4">
-            <ThemedText className="text-xl font-bold mb-3">Remarks</ThemedText>
+          <DataSection title="Remarks">
             <ThemedText className="text-gray-800 dark:text-gray-200">
               {voyage.remarks}
             </ThemedText>
-          </View>
+          </DataSection>
         )}
 
         {/* Document Upload Section */}

@@ -1,6 +1,6 @@
 import React from 'react';
 import { View } from 'react-native';
-import { ThemedText } from '@/components/common';
+import { ThemedText } from './ThemedText';
 
 export interface DataRowProps {
     label: string;
