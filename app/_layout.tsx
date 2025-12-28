@@ -2,6 +2,7 @@ import { BottomSheetModalProvider } from '@gorhom/bottom-sheet';
 import '@/global.css';
 
 import { NAV_THEME } from '@/lib/theme';
+import { getTheme } from '@/services/storage';
 import { ThemeProvider } from '@react-navigation/native';
 import { PortalHost } from '@rn-primitives/portal';
 import { Stack } from 'expo-router';
@@ -28,12 +29,18 @@ export const unstable_settings = {
 };
 
 export default function RootLayout() {
-  const { colorScheme } = useColorScheme();
+  const { colorScheme, setColorScheme } = useColorScheme();
 
-  // Initialize database on app startup
+  // Initialize database and theme on app startup
   useEffect(() => {
+    // Database init
     databaseService.initializeDatabase().catch(err => {
       console.error('Failed to initialize database:', err);
+    });
+
+    // Theme init
+    getTheme().then(theme => {
+      setColorScheme(theme);
     });
   }, []);
 
