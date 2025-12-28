@@ -12,12 +12,11 @@ export default function SignIn() {
     const { signIn, session, isLoading } = useSession();
     const [email, setEmail] = useState('');
     const [password, setPassword] = useState('');
+    const [error, setError] = useState<string | null>(null);
 
     if (!isLoading && session) {
         return <Redirect href="/(tabs)" />;
     }
-
-    const [error, setError] = useState<string | null>(null);
 
     const handleSignIn = async () => {
         if (!email || !password) {
@@ -53,9 +52,6 @@ export default function SignIn() {
 
                     <View className="items-center mb-10">
                         <ThemedText type="title" className="text-2xl font-bold mb-1">Welcome Back</ThemedText>
-                        <ThemedText className="text-gray-500 dark:text-gray-400 text-center text-sm">
-                            Sign in to manage your fleet
-                        </ThemedText>
                     </View>
 
                     {error && (

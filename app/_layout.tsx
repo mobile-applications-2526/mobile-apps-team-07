@@ -52,6 +52,7 @@ export default function RootLayout() {
                       <Stack.Screen name="sign-in" options={{ headerShown: false, presentation: 'card' }} />
                       <Stack.Screen name="(tabs)" options={{ headerShown: false }} />
                       <Stack.Screen name="vessel/[id]" options={{ headerShown: false, animation: 'slide_from_right' }} />
+                      <Stack.Screen name="settings" options={{ headerShown: false, presentation: 'card', animation: 'slide_from_right' }} />
                       <Stack.Screen name="modal" options={{ presentation: 'modal', title: 'Modal' }} />
                     </Stack>
                     <PortalHost />

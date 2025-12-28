@@ -85,6 +85,16 @@ export function VesselProvider({ children }: VesselProviderProps) {
     }
   }, [isOfflineData, setIsOffline, isInitialized, isLoading]);
 
+  // Clear data on logout
+  useEffect(() => {
+    if (!session) {
+      setVessels([]);
+      setVesselsWithStatus([]);
+      setIsInitialized(false);
+      setIsOfflineData(false);
+    }
+  }, [session]);
+
   // Initialize database and load vessels
   useEffect(() => {
     if (!isAuthLoading && session) {

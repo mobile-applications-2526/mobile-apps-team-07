@@ -1,6 +1,6 @@
 import React, { useState, useCallback, useEffect } from 'react';
 import { FlatList, TouchableOpacity, View, RefreshControl } from 'react-native';
-import { Plus } from 'lucide-react-native';
+import { Plus, User } from 'lucide-react-native';
 import { ThemedText, ThemedView, Loader } from '@/components/common';
 import { VesselCard, EmptyVesselList } from '@/components/vessel';
 import { DeleteVesselModal } from '@/components/ui/DeleteVesselModal';
@@ -39,13 +39,23 @@ export default function Overview() {
               {state.vesselsWithStatus.length} vessel{state.vesselsWithStatus.length !== 1 ? 's' : ''}
             </ThemedText>
           </View>
-          <TouchableOpacity
-            className="w-9 h-9 rounded-full bg-blue-500 items-center justify-center"
-            activeOpacity={0.8}
-            onPress={actions.handleAddPress}
-          >
-            <Plus size={22} color="#fff" strokeWidth={2.5} />
-          </TouchableOpacity>
+          <View className="flex-row items-center gap-3">
+            <TouchableOpacity
+              className="w-9 h-9 rounded-full bg-gray-200 dark:bg-gray-800 items-center justify-center"
+              activeOpacity={0.8}
+              onPress={() => router.push('/settings')}
+            >
+              <User size={20} color="#666" className="dark:text-gray-300" />
+            </TouchableOpacity>
+
+            <TouchableOpacity
+              className="w-9 h-9 rounded-full bg-blue-500 items-center justify-center"
+              activeOpacity={0.8}
+              onPress={actions.handleAddPress}
+            >
+              <Plus size={22} color="#fff" strokeWidth={2.5} />
+            </TouchableOpacity>
+          </View>
         </View>
       </View>
 

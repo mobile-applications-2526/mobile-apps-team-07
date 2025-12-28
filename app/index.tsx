@@ -37,12 +37,6 @@ export default function LandingPage() {
                         className="shadow-md shadow-blue-200 dark:shadow-none"
                     />
                 </View>
-
-                <View className="mt-8">
-                    <ThemedText className="text-[10px] text-gray-400 text-center">
-                        v1.0.0
-                    </ThemedText>
-                </View>
             </View>
         </SafeAreaView>
     );
