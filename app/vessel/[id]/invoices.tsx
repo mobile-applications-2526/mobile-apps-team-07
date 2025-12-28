@@ -89,7 +89,7 @@ export default function VesselInvoices() {
         }
       />
 
-      <View className="flex-1 p-3">
+      <View className="flex-1 p-4">
         {isLoadingInvoices ? (
           <Loader />
         ) : sorted.length === 0 ? (

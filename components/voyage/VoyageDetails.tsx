@@ -139,7 +139,7 @@ export function VoyageDetails({
               <ChevronLeft size={24} color={iconColor} />
             </TouchableOpacity>
 
-            <ThemedText className="text-3xl font-bold">
+            <ThemedText className="text-2xl font-bold">
               {voyage.voyageNumber}
             </ThemedText>
 
@@ -164,38 +164,66 @@ export function VoyageDetails({
             </View>
           }
         >
-          <View className="flex-row items-center justify-between">
-            {/* Load Ports */}
-            {visibleLoadPorts.map((port, index) => (
-              <React.Fragment key={`load-${index}`}>
-                <View className="flex-1 items-center">
-                  <View className={`w-12 h-12 ${index === 0 ? 'bg-blue-600' : 'bg-white dark:bg-[#1c1c1e] border-4 border-blue-600'} rounded-full items-center justify-center mb-2 z-10`}>
-                    {index === 0 && <Anchor size={24} color="#fff" />}
+          <View>
+            {/* Row 1: Circles and Lines */}
+            <View className="flex-row items-center justify-between mb-2">
+              {/* Load Ports */}
+              {visibleLoadPorts.map((_, index) => (
+                <React.Fragment key={`load-circle-${index}`}>
+                  <View className="flex-1 items-center">
+                    <View className={`w-12 h-12 ${index === 0 ? 'bg-blue-600' : 'bg-white dark:bg-[#1c1c1e] border-4 border-blue-600'} rounded-full items-center justify-center z-10`}>
+                      {index === 0 && <Anchor size={24} color="#fff" />}
+                    </View>
                   </View>
-                  <ThemedText className="text-sm font-semibold text-center">
-                    {port.portName}
-                  </ThemedText>
-                </View>
-                {(index < visibleLoadPorts.length - 1 || visibleDischargePorts.length > 0) && (
-                  <View className="flex-1 h-0.5 bg-blue-600 -mx-4" />
-                )}
-              </React.Fragment>
-            ))}
+                  {(index < visibleLoadPorts.length - 1 || visibleDischargePorts.length > 0) && (
+                    <View className="flex-1 h-0.5 bg-blue-600 -mx-4" />
+                  )}
+                </React.Fragment>
+              ))}
 
-            {/* Discharge Ports */}
-            {visibleDischargePorts.map((port, index) => (
-              <React.Fragment key={`discharge-${index}`}>
-                <View className="flex-1 items-center">
-                  <View className="w-12 h-12 bg-white dark:bg-[#1c1c1e] border-4 border-blue-600 rounded-full mb-2 z-10" />
-                  <ThemedText className="text-sm font-semibold text-center">
-                    {port.portName}
-                  </ThemedText>
-                </View>
-                {index < visibleDischargePorts.length - 1 && (
-                  <View className="flex-1 h-0.5 bg-blue-600 -mx-4" />
-                )}
-              </React.Fragment>
-            ))}
+              {/* Discharge Ports */}
+              {visibleDischargePorts.map((_, index) => (
+                <React.Fragment key={`discharge-circle-${index}`}>
+                  <View className="flex-1 items-center">
+                    <View className="w-12 h-12 bg-white dark:bg-[#1c1c1e] border-4 border-blue-600 rounded-full z-10" />
+                  </View>
+                  {index < visibleDischargePorts.length - 1 && (
+                    <View className="flex-1 h-0.5 bg-blue-600 -mx-4" />
+                  )}
+                </React.Fragment>
+              ))}
+            </View>
+
+            {/* Row 2: Labels */}
+            <View className="flex-row items-start justify-between">
+              {/* Load Ports Labels */}
+              {visibleLoadPorts.map((port, index) => (
+                <React.Fragment key={`load-label-${index}`}>
+                  <View className="flex-1 items-center">
+                    <ThemedText className="text-xs font-semibold text-center w-full px-1" numberOfLines={2}>
+                      {port.portName}
+                    </ThemedText>
+                  </View>
+                  {(index < visibleLoadPorts.length - 1 || visibleDischargePorts.length > 0) && (
+                    <View className="flex-1 -mx-4" />
+                  )}
+                </React.Fragment>
+              ))}
+
+              {/* Discharge Ports Labels */}
+              {visibleDischargePorts.map((port, index) => (
+                <React.Fragment key={`discharge-label-${index}`}>
+                  <View className="flex-1 items-center">
+                    <ThemedText className="text-xs font-semibold text-center w-full px-1" numberOfLines={2}>
+                      {port.portName}
+                    </ThemedText>
+                  </View>
+                  {index < visibleDischargePorts.length - 1 && (
+                    <View className="flex-1 -mx-4" />
+                  )}
+                </React.Fragment>
+              ))}
+            </View>
           </View>
 
           {/* Show all ports link */}
