@@ -315,7 +315,7 @@ export function VoyageDetails({
             onPress={() => setActiveTab('reports')}
             style={{ flex: 1 }}
           >
-            <View className={`py-1.5 rounded-lg items-center justify-center ${activeTab === 'reports' ? 'bg-white shadow-sm' : 'bg-transparent'}`}>
+            <View className={`py-1.5 rounded-lg items-center justify-center ${activeTab === 'reports' ? 'bg-white' : 'bg-transparent'}`}>
               <ThemedText className={`text-sm font-medium ${activeTab === 'reports' ? 'text-black' : 'text-gray-500 dark:text-gray-400'}`}>
                 Noon Reports
               </ThemedText>
@@ -325,7 +325,7 @@ export function VoyageDetails({
             onPress={() => setActiveTab('cargo')}
             style={{ flex: 1 }}
           >
-            <View className={`py-1.5 rounded-lg items-center justify-center ${activeTab === 'cargo' ? 'bg-white shadow-sm' : 'bg-transparent'}`}>
+            <View className={`py-1.5 rounded-lg items-center justify-center ${activeTab === 'cargo' ? 'bg-white' : 'bg-transparent'}`}>
               <ThemedText className={`text-sm font-medium ${activeTab === 'cargo' ? 'text-black' : 'text-gray-500 dark:text-gray-400'}`}>
                 Cargo
               </ThemedText>

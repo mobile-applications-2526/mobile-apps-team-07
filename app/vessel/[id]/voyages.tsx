@@ -7,12 +7,12 @@ import { useHaptics, useVesselDetails } from '@/hooks';
 import { EmptyVoyageList } from '@/components/voyage/EmptyVoyageList';
 import { VoyageDetails } from '@/components/voyage/VoyageDetails';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
-import { useRouter } from 'expo-router';
+
 import { useVoyageDetails } from '@/hooks/useVoyageDetails';
 
 export default function VesselVoyages() {
   const insets = useSafeAreaInsets();
-  const router = useRouter();
+
   const haptics = useHaptics();
   const [index, setIndex] = useState<number>(0);
 
