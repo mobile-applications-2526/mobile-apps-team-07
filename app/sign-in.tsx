@@ -17,9 +17,20 @@ export default function SignIn() {
         return <Redirect href="/(tabs)" />;
     }
 
-    const handleSignIn = () => {
-        // For now, allow any non-empty input
-        signIn();
+    const [error, setError] = useState<string | null>(null);
+
+    const handleSignIn = async () => {
+        if (!email || !password) {
+            setError('Please enter both email and password');
+            return;
+        }
+
+        setError(null);
+        try {
+            await signIn({ email, password });
+        } catch (err: any) {
+            setError(err.message || 'Failed to sign in. Please check your credentials.');
+        }
     };
 
     if (isLoading) {
@@ -46,6 +57,12 @@ export default function SignIn() {
                             Sign in to manage your fleet
                         </ThemedText>
                     </View>
+
+                    {error && (
+                        <View className="mb-4 bg-red-50 dark:bg-red-900/20 p-3 rounded-lg">
+                            <ThemedText className="text-red-500 text-center text-sm">{error}</ThemedText>
+                        </View>
+                    )}
 
                     <View className="space-y-6 gap-4">
                         <AuthInput

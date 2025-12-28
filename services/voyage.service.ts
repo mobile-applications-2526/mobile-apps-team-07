@@ -7,15 +7,14 @@
  */
 
 import { Voyage, VoyageWithDetails } from "@/types";
-import { API_URL } from "./config";
+import { apiClient } from "./api.client";
 import * as db from '@/lib/database';
 
 /**
  * Get all voyages (with basic caching)
  */
 export async function getAllVoyages(): Promise<Voyage[]> {
-  const response = await fetch(`${API_URL}/api/voyages`);
-  return await response.json();
+  return await apiClient.get<Voyage[]>('/api/voyages');
 }
 
 /**
@@ -62,30 +61,34 @@ export async function getVoyageDetailsById(id: number): Promise<VoyageWithDetail
  * Fetch voyage by ID from backend and update cache
  */
 async function fetchAndCacheVoyageById(id: number): Promise<Voyage | null> {
-  const response = await fetch(`${API_URL}/api/voyages/${id}`);
-  if (!response.ok) return null;
+  try {
+    const voyage = await apiClient.get<Voyage>(`/api/voyages/${id}`);
 
-  const voyage = await response.json();
+    // Cache the result
+    await db.setCacheValue(db.CACHE_KEYS.VOYAGE_BY_ID(id), voyage);
 
-  // Cache the result
-  await db.setCacheValue(db.CACHE_KEYS.VOYAGE_BY_ID(id), voyage);
+    return voyage;
+  } catch (err) {
+    return null;
+  }
 
-  return voyage;
 }
 
 /**
  * Fetch voyage by ID from backend and update cache
  */
 async function fetchAndCacheVoyageDetailsById(id: number): Promise<VoyageWithDetails | null> {
-  const response = await fetch(`${API_URL}/api/voyages/${id}/details`);
-  if (!response.ok) return null;
+  try {
+    const voyage = await apiClient.get<VoyageWithDetails>(`/api/voyages/${id}/details`);
 
-  const voyage = await response.json();
+    // Cache the result
+    await db.setCacheValue(db.CACHE_KEYS.VOYAGE_DETAILS_BY_ID(id), voyage);
 
-  // Cache the result
-  await db.setCacheValue(db.CACHE_KEYS.VOYAGE_DETAILS_BY_ID(id), voyage);
+    return voyage;
+  } catch (err) {
+    return null;
+  }
 
-  return voyage;
 }
 
 /**
@@ -112,8 +115,7 @@ export async function getVoyagesByVesselId(vesselId: number): Promise<Voyage[]> 
  * Fetch voyages by vessel ID from backend and update cache
  */
 async function fetchAndCacheVoyagesByVesselId(vesselId: number): Promise<Voyage[]> {
-  const response = await fetch(`${API_URL}/api/vessels/${vesselId}/voyages`);
-  const voyages = await response.json();
+  const voyages = await apiClient.get<Voyage[]>(`/api/vessels/${vesselId}/voyages`);
 
   // Cache the result
   await db.setCacheValue(db.CACHE_KEYS.VOYAGES_BY_VESSEL(vesselId), voyages);
@@ -126,10 +128,7 @@ async function fetchAndCacheVoyagesByVesselId(vesselId: number): Promise<Voyage[
  * Throws on network error / non-ok response.
  */
 export async function fetchVoyagesByVesselIdNetwork(vesselId: number): Promise<Voyage[]> {
-  const response = await fetch(`${API_URL}/api/vessels/${vesselId}/voyages`);
-  if (!response.ok) throw new Error(`Failed to fetch voyages: ${response.status}`);
-
-  const voyages = await response.json();
+  const voyages = await apiClient.get<Voyage[]>(`/api/vessels/${vesselId}/voyages`);
 
   // Cache the result
   await db.setCacheValue(db.CACHE_KEYS.VOYAGES_BY_VESSEL(vesselId), voyages);
@@ -142,10 +141,7 @@ export async function fetchVoyagesByVesselIdNetwork(vesselId: number): Promise<V
  * Throws on network error / non-ok response.
  */
 export async function fetchVoyageDetailsByIdNetwork(id: number): Promise<VoyageWithDetails | null> {
-  const response = await fetch(`${API_URL}/api/voyages/${id}/details`);
-  if (!response.ok) throw new Error(`Failed to fetch voyage details: ${response.status}`);
-
-  const voyage_details = await response.json();
+  const voyage_details = await apiClient.get<VoyageWithDetails>(`/api/voyages/${id}/details`);
 
   // Cache the result
   await db.setCacheValue(db.CACHE_KEYS.VOYAGE_DETAILS_BY_ID(id), voyage_details);

@@ -2,6 +2,7 @@ import { Platform } from 'react-native';
 import * as DocumentPicker from 'expo-document-picker';
 import { DocumentTypeCategory } from '@/types';
 import { API_URL } from './config';
+import { getToken } from './storage';
 
 export const uploadDocument = async (
   vesselId: string,
@@ -16,6 +17,14 @@ export const uploadDocument = async (
     // Dynamic import of expo-file-system/legacy to avoid module resolution issues
     const FileSystem = await import('expo-file-system/legacy');
 
+    const token = await getToken();
+    const headers: Record<string, string> = {
+      Accept: 'application/json',
+    };
+    if (token) {
+      headers['Authorization'] = `Bearer ${token}`;
+    }
+
     const uploadResult = await FileSystem.uploadAsync(uploadUrl, uri, {
       fieldName: 'file',
       httpMethod: 'POST',
@@ -24,9 +33,7 @@ export const uploadDocument = async (
         documentType: type as string,
         filename: fileName,
       },
-      headers: {
-        Accept: 'application/json',
-      },
+      headers,
     });
 
     if (uploadResult.status >= 200 && uploadResult.status < 300) {

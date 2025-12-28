@@ -43,8 +43,8 @@ export default function RootLayout() {
         <BottomSheetModalProvider>
           <ToastProvider>
             <NetworkStatusProvider>
-              <VesselProvider>
-                <AuthProvider>
+              <AuthProvider>
+                <VesselProvider>
                   <ThemeProvider value={NAV_THEME[colorScheme ?? 'light']}>
                     <StatusBar style={colorScheme === 'dark' ? 'light' : 'dark'} />
                     <Stack initialRouteName="index">
@@ -56,8 +56,8 @@ export default function RootLayout() {
                     </Stack>
                     <PortalHost />
                   </ThemeProvider>
-                </AuthProvider>
-              </VesselProvider>
+                </VesselProvider>
+              </AuthProvider>
             </NetworkStatusProvider>
           </ToastProvider>
         </BottomSheetModalProvider>

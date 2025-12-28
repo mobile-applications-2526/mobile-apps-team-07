@@ -10,6 +10,7 @@ import { Vessel, VesselWithStatus, CreateVesselInput, Document, DocumentTypeCate
 import { vesselService } from '@/services';
 import { DOCUMENT_TYPES } from '@/constants';
 import { useNetworkStatus } from './NetworkStatusContext';
+import { useSession } from './AuthContext';
 
 // ============================================
 // TYPES
@@ -75,6 +76,7 @@ export function VesselProvider({ children }: VesselProviderProps) {
   const [error, setError] = useState<string | null>(null);
   const [isOfflineData, setIsOfflineData] = useState(false);
   const { setIsOffline } = useNetworkStatus();
+  const { session, isLoading: isAuthLoading } = useSession();
 
   // Sync offline state to global NetworkStatus
   useEffect(() => {
@@ -85,8 +87,10 @@ export function VesselProvider({ children }: VesselProviderProps) {
 
   // Initialize database and load vessels
   useEffect(() => {
-    initializeData();
-  }, []);
+    if (!isAuthLoading && session) {
+      initializeData();
+    }
+  }, [session, isAuthLoading]);
 
   const initializeData = async () => {
     try {
