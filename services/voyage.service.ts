@@ -6,7 +6,7 @@
  * Implements cache-first strategy: load from cache immediately, then fetch from backend and update cache.
  */
 
-import { Voyage, VoyageWithDetails } from "@/types";
+import { Document, Voyage, VoyageWithDetails } from "@/types";
 import { apiClient } from "./api.client";
 import * as db from '@/lib/database';
 
@@ -55,6 +55,26 @@ export async function getVoyageDetailsById(id: number): Promise<VoyageWithDetail
 
   // No cache, fetch from backend
   return await fetchAndCacheVoyageDetailsById(id);
+}
+
+/*
+ * Get voyage documents by ID (cache-first strategy)
+ */
+export async function getVoyageDocuments(id: number): Promise<Document[]> {
+  // Try to get from cache first
+  const cached = await db.getCacheValue<Document[]>(db.CACHE_KEYS.DOCUMENTS_BY_VOYAGE(id));
+
+  // Return cached data immediately if available
+  if (cached) {
+    // Fetch fresh data in background and update cache
+    fetchAndCacheVoyageDocuments(id).catch(err =>
+      console.error('Background fetch failed:', err)
+    );
+    return cached;
+  }
+
+  // No cache, fetch from backend
+  return await fetchAndCacheVoyageDocuments(id);
 }
 
 /**
@@ -124,6 +144,18 @@ async function fetchAndCacheVoyagesByVesselId(vesselId: number): Promise<Voyage[
 }
 
 /**
+ * Fetch voyages by vessel ID from backend and update cache
+ */
+async function fetchAndCacheVoyageDocuments(voyageId: number): Promise<Document[]> {
+  const documents = await apiClient.get<Document[]>(`/api/voyages/${voyageId}/documents`);
+
+  // Cache the result
+  await db.setCacheValue(db.CACHE_KEYS.DOCUMENTS_BY_VOYAGE(voyageId), documents);
+
+  return documents;
+}
+
+/**
  * Network-only fetch for voyages by vessel ID. Does not return cached data.
  * Throws on network error / non-ok response.
  */
@@ -147,4 +179,17 @@ export async function fetchVoyageDetailsByIdNetwork(id: number): Promise<VoyageW
   await db.setCacheValue(db.CACHE_KEYS.VOYAGE_DETAILS_BY_ID(id), voyage_details);
 
   return voyage_details;
+}
+
+/**
+ * Network-only fetch for voyage documents. Does not return cached data.
+ * Throws on network error / non-ok response.
+ */
+export async function fetchVoyageDocumentsNetwork(id: number): Promise<Document[]> {
+  const documents = await apiClient.get<Document[]>(`/api/voyages/${id}/documents`);
+
+  // Cache the result
+  await db.setCacheValue(db.CACHE_KEYS.DOCUMENTS_BY_VOYAGE(id), documents);
+
+  return documents;
 }

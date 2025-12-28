@@ -1,25 +1,26 @@
 import React, { useEffect } from 'react';
 import {
   View,
-  ActivityIndicator,
   Text,
   ScrollView,
 } from 'react-native';
 import { ThemedText, ThemedView, Card } from '@/components/common';
 import { VesselTopBar, DocumentUpload } from '@/components/vessel';
-import { useVesselDetails, useVesselDocuments } from '@/hooks';
+import { useVesselDetails, useDocuments } from '@/hooks';
+import { DocumentsSection } from '@/components/common/DocumentSection';
 
 export default function VesselSpecs() {
   const { vessel } = useVesselDetails();
 
   const {
+    documents,
     uploadState,
     loadDocuments,
     findDoc,
     onDownload,
-    pickAndUpload,
-    onReplace,
-  } = useVesselDocuments();
+    uploadDocument,
+    replaceDocument,
+  } = useDocuments('vessels', vessel?.id);
 
   useEffect(() => {
     loadDocuments();
@@ -67,8 +68,8 @@ export default function VesselSpecs() {
             type="Q88"
             title="Q88"
             doc={findDoc('Q88')}
-            onUpload={pickAndUpload}
-            onReplace={onReplace}
+            onUpload={uploadDocument}
+            onReplace={replaceDocument}
             onDownload={onDownload}
           />
 
@@ -78,8 +79,8 @@ export default function VesselSpecs() {
               type="FormC"
               title="Form C"
               doc={findDoc('FormC')}
-              onUpload={pickAndUpload}
-              onReplace={onReplace}
+              onUpload={uploadDocument}
+              onReplace={replaceDocument}
               onDownload={onDownload}
               hasBorder
             />
@@ -95,13 +96,11 @@ export default function VesselSpecs() {
               Optional
             </Text>
           </View>
-          <DocumentUpload
-            type="CharterParty"
-            title="Charter Party"
-            optional
-            doc={findDoc('CharterParty')}
-            onUpload={pickAndUpload}
-            onReplace={onReplace}
+          <DocumentsSection
+            documents={documents}
+            category='vessels'
+            onUpload={uploadDocument}
+            onReplace={replaceDocument}
             onDownload={onDownload}
           />
         </Card>

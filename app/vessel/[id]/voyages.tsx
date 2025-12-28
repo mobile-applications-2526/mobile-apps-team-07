@@ -9,10 +9,8 @@ import { VoyageDetails } from '@/components/voyage/VoyageDetails';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useRouter } from 'expo-router';
 import { useVoyageDetails } from '@/hooks/useVoyageDetails';
-import { VoyageWithDetails } from '@/types';
 
 export default function VesselVoyages() {
-
   const insets = useSafeAreaInsets();
   const router = useRouter();
   const haptics = useHaptics();
@@ -21,7 +19,7 @@ export default function VesselVoyages() {
   const {
     vessel,
     vesselVoyages,
-    isLoading,
+    isLoading: isLoadingVessel,
     hasQ88,
     hasFormC,
   } = useVesselDetails();
@@ -43,17 +41,38 @@ export default function VesselVoyages() {
         <ThemedText className="text-xl font-semibold mb-2">Voyages Locked</ThemedText>
         <ThemedText className="text-center text-gray-500 dark:text-gray-400">
           {isGasCarrier
-            ? 'Please upload Q88 and Form C in the Specs section to un lock this page.'
+            ? 'Please upload Q88 and Form C in the Specs section to unlock this page.'
             : 'Please upload Q88 in the Specs section to unlock this page.'}
         </ThemedText>
       </ThemedView>
     );
   }
 
+  // Get current voyage ID and fetch its details
   const currentVoyageId = vesselVoyages?.[index]?.id;
-  const voyageWithDetails = useVoyageDetails(currentVoyageId ?? -1);
+  const {
+    voyageWithDetails,
+    isLoading: isLoadingVoyage,
+    error: voyageError,
+    refresh,
+  } = useVoyageDetails(currentVoyageId);
+
+  // Reset index if voyages list changes and current index is out of bounds
+  useEffect(() => {
+    if (vesselVoyages.length > 0 && index >= vesselVoyages.length) {
+      setIndex(0);
+    }
+  }, [vesselVoyages.length, index]);
+
+  // Refresh voyage details when cycling
+  useEffect(() => {
+    if (currentVoyageId) {
+      refresh();
+    }
+  }, [currentVoyageId]);
 
   const handleCycleVoyage = (direction: 'next' | 'previous') => {
+    haptics.lightImpact();
     setIndex((prevIndex) => {
       if (direction === 'next') {
         return Math.max(prevIndex - 1, 0);
@@ -63,9 +82,17 @@ export default function VesselVoyages() {
     });
   };
 
-  const handleAddVoyage = () => { }
+  const handleAddVoyage = () => {
+    haptics.mediumImpact();
+    // TODO: Navigate to add voyage screen
+  };
 
-  if (isLoading) {
+  const handleRefresh = () => {
+    haptics.lightImpact();
+    refresh();
+  };
+
+  if (isLoadingVessel) {
     return (
       <ThemedView className="flex-1 bg-gray-100 dark:bg-[#000]">
         <VesselTopBar vesselName={vessel?.vesselName ?? ''} />
@@ -91,19 +118,40 @@ export default function VesselVoyages() {
 
       {/* Content */}
       <View className="flex-1">
-        {vesselVoyages.length > 0 && voyageWithDetails ? (
-          <VoyageDetails
-            voyage={voyageWithDetails.voyage}
-            status={voyageWithDetails.noonReports[0] ?? null}
-            noonReports={voyageWithDetails.noonReports}
-            cargoes={voyageWithDetails.cargoes}
-            ports={voyageWithDetails.ports}
-            charterParty={voyageWithDetails.charter}
-            onCycleVoyage={handleCycleVoyage}
-            onAdd={handleAddVoyage}
-          />
+        {vesselVoyages.length > 0 ? (
+          isLoadingVoyage && !voyageWithDetails ? (
+            <Loader text="Loading voyage details..." />
+          ) : voyageError ? (
+            <ThemedView className="flex-1 items-center justify-center px-6">
+              <ThemedText className="text-lg font-semibold mb-2">
+                Failed to load voyage details
+              </ThemedText>
+              <ThemedText className="text-center text-gray-500 dark:text-gray-400 mb-4">
+                {voyageError.message}
+              </ThemedText>
+              <ThemedText
+                className="text-blue-500 font-semibold"
+                onPress={handleRefresh}
+              >
+                Tap to retry
+              </ThemedText>
+            </ThemedView>
+          ) : voyageWithDetails ? (
+            <VoyageDetails
+              voyage={voyageWithDetails.voyage}
+              status={voyageWithDetails.noonReports[0] ?? null}
+              noonReports={voyageWithDetails.noonReports}
+              cargoes={voyageWithDetails.cargoes}
+              ports={voyageWithDetails.ports}
+              charterParty={voyageWithDetails.charter}
+              onCycleVoyage={handleCycleVoyage}
+              onAdd={handleAddVoyage}
+              onRefresh={handleRefresh}
+              isRefreshing={isLoadingVoyage}
+            />
+          ) : null
         ) : (
-          <EmptyVoyageList />
+          <EmptyVoyageList onAdd={handleAddVoyage} />
         )}
       </View>
     </ThemedView>

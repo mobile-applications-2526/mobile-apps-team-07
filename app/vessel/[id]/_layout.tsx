@@ -1,6 +1,5 @@
-import { useState } from 'react';
 import { View, ActivityIndicator } from 'react-native';
-import { Tabs, Stack } from 'expo-router';
+import { Tabs } from 'expo-router';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import VesselDetailsProvider, { useVesselDetails } from '@/context/VesselDetailsContext';
 import { VesselTabBar } from '@/components/navigation/VesselTabBar';
@@ -8,7 +7,7 @@ import { VesselTabBar } from '@/components/navigation/VesselTabBar';
 
 
 function VesselTabsContent() {
-  const { vessel, isLoading, isInitialized, isLocked } = useVesselDetails();
+  const { isLoading, isInitialized, isLocked } = useVesselDetails();
   const insets = useSafeAreaInsets();
 
   // Wait for data to be initialized before rendering tabs

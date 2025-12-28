@@ -3,15 +3,15 @@
  * 
  * Card component displaying vessel information in a list.
  */
-import React from 'react';
+import React, { useEffect } from 'react';
 import { TouchableOpacity, View, ScrollView } from 'react-native';
 import { useColorScheme } from 'nativewind';
 import { ChevronLeft, ChevronRight, MapPin, Clock, FileText, Anchor, Eye, EyeOff } from 'lucide-react-native';
 import { ThemedText, DataSection, DataRow, Card } from '@/components/common';
 import { CharterParty, VesselStatus, Voyage, VoyagePort } from '@/types';
 import { Cargo } from '@/types/cargo';
-import { DocumentUpload } from '../vessel';
-import { useVesselDocuments } from '@/hooks';
+import { useDocuments } from '@/hooks';
+import { DocumentsSection } from '../common/DocumentSection';
 
 interface VoyageDetailsProps {
   voyage: Voyage;
@@ -22,6 +22,8 @@ interface VoyageDetailsProps {
   charterParty: CharterParty | null;
   onCycleVoyage: (direction: 'next' | 'previous') => void;
   onAdd: () => void;
+  onRefresh: () => void;
+  isRefreshing: boolean;
   isFirstVoyage?: boolean;
   isLastVoyage?: boolean;
   hasNoVoyages?: boolean;
@@ -47,14 +49,20 @@ export function VoyageDetails({
   const iconColor = colorScheme === 'dark' ? '#fff' : '#000';
 
   const {
+    documents,
+    loadDocuments,
     findDoc,
     onDownload,
-    pickAndUpload,
-    onReplace,
-  } = useVesselDocuments();
+    uploadDocument,
+    replaceDocument,
+  } = useDocuments('voyages', voyage.id);
 
   const [activeTab, setActiveTab] = React.useState<'reports' | 'cargo'>('reports');
   const [showAllPorts, setShowAllPorts] = React.useState(false);
+
+  useEffect(()=>{
+    loadDocuments();
+  },[]);
 
   // Format dates
   const formatDate = (date: Date) => {
@@ -392,13 +400,12 @@ export function VoyageDetails({
         )}
 
         {/* Document Upload Section */}
-        <DocumentUpload
-          type="CharterParty"
-          title="Charter Party"
-          optional
-          doc={findDoc('CharterParty')}
-          onUpload={pickAndUpload}
-          onReplace={onReplace}
+        <DocumentsSection
+          documents={documents}
+          category='voyages'
+          title='Voyage Documents'
+          onUpload={uploadDocument}
+          onReplace={replaceDocument}
           onDownload={onDownload}
         />
       </View>

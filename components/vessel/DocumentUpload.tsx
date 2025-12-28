@@ -1,17 +1,17 @@
 import React from 'react';
-import { View, TouchableOpacity, Text } from 'react-native';
-import { FileUp, Download, CheckCircle, BadgeCheck } from 'lucide-react-native';
+import { View, TouchableOpacity } from 'react-native';
+import { FileUp, Download, BadgeCheck } from 'lucide-react-native';
 import { ThemedText } from '@/components/common';
-import { Document as DocType, DocumentTypeCategory } from '@/types';
+import { Document as DocType, DocumentType } from '@/types';
 import { DocumentViewer } from './DocumentViewer';
 
 type Props = {
   doc: DocType | undefined;
-  type: DocumentTypeCategory;
+  type: DocumentType;
   title: string;
   optional?: boolean;
-  onUpload: (type: DocumentTypeCategory) => void;
-  onReplace: (type: DocumentTypeCategory) => void;
+  onUpload: (type: DocumentType) => void;
+  onReplace: (type: DocumentType, documentId: number) => void;
   onDownload: (doc: DocType) => void;
   hasBorder?: boolean;
 };
@@ -20,7 +20,6 @@ export const DocumentUpload: React.FC<Props> = ({
   doc,
   type,
   title,
-  optional,
   onUpload,
   onReplace,
   onDownload,
@@ -34,18 +33,6 @@ export const DocumentUpload: React.FC<Props> = ({
             <ThemedText type="defaultSemiBold" className="text-sm">{title}</ThemedText>
             {doc && <BadgeCheck size={18} color="green" style={{ marginLeft: 8 }} />}
           </View>
-          <View style={{ flexDirection: 'row', alignItems: 'center', flex: 1, justifyContent: 'flex-end', minWidth: 0 }}>
-            {doc && (
-              <ThemedText
-                className="text-xs font-medium text-right mr-2 text-gray-900 dark:text-gray-100"
-                numberOfLines={1}
-                ellipsizeMode="tail"
-                style={{ textAlign: 'right', maxWidth: 180 }}
-              >
-                {doc.documentName || doc.documentNumber || 'Document.pdf'}
-              </ThemedText>
-            )}
-          </View>
         </View>
       </View>
 
@@ -58,7 +45,7 @@ export const DocumentUpload: React.FC<Props> = ({
                 Uploaded {new Date(doc.documentDate).toLocaleDateString('en-US', { day: 'numeric', month: 'short', year: 'numeric' })}
               </ThemedText>
               <TouchableOpacity
-                onPress={() => onReplace(type)}
+                onPress={() => onReplace(type, doc.id)}
                 className="w-full px-3 py-2 border border-blue-500 dark:border-blue-400 rounded-lg items-center justify-center mb-2"
                 activeOpacity={0.7}
               >

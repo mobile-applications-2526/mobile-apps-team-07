@@ -8,7 +8,7 @@
 export { useAnimatedModal } from './useAnimatedModal';
 export { useToast } from './useToast';
 export { useHaptics } from './useHaptics';
-export { useVesselDocuments } from './useVesselDocuments';
+export { useDocuments } from './useDocuments';
 export { useVoyageDetails } from './useVoyageDetails';
 export { useVesselDetails } from '@/context/VesselDetailsContext';
 export * from './useFleetOverview';

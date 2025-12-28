@@ -6,28 +6,36 @@
 
 export interface Document {
   id: number,
-  documentType: DocumentTypeCategory;
-  documentNumber: string;
+  documentType: DocumentType;
+  documentName: string;
   documentDate: Date;
   fileUrl: string;
   remarks: string;
 }
 
-export type DocumentTypeCategory =   
+export type DocumentCategory = 
+  | 'vessels'
+  | 'voyages'
+  | 'cargoes';
+
+export type DocumentType =
+  | VesselDocumentType
+  | VoyageDocumentType
+  | CargoDocumentType;
+
+export type VesselDocumentType =
   | 'Q88'
   | 'FormC'
-  | 'ClassCert'
   | 'CharterParty'
-  | 'BillOfLading'
-  | 'CargoManifest'
-  | 'CertificateOrigin'
-  | 'PackingList'
-  | 'CommercialInvoice'
-  | 'StatementFacts'
-  | 'NoticeReadiness'
-  | 'LetterProtest'
-  | 'SurveyorReport'
-  | 'UllageReport'
+  | 'ClassCert'
+  | 'CrewList'
+  | 'InsuranceCert';
+
+export type VoyageDocumentType =
+  | 'NoonReport'
+  | 'StatementOfFacts'
+  | 'NoticeOfReadiness'
+  | 'LetterOfProtest'
   | 'TimeSheet'
   | 'BunkerDeliveryNote'
   | 'LoadingPlan'
@@ -35,5 +43,12 @@ export type DocumentTypeCategory =
   | 'DischargePlan'
   | 'PortClearance'
   | 'CustomsDeclaration'
-  | 'CrewList';
+  | 'SurveyorReport';
 
+export type CargoDocumentType =
+  | 'BillOfLading'
+  | 'CargoManifest'
+  | 'CertificateOrigin'
+  | 'PackingList'
+  | 'UllageReport'
+  | 'CommercialInvoice';

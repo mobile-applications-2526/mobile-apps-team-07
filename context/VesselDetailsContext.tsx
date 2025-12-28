@@ -1,7 +1,7 @@
 import { noonReportService, vesselService, voyageService } from "@/services";
 import { on, off } from '@/lib/events';
 import { isGasCarrier } from '@/lib/utils';
-import { CharterParty, Document, DocumentTypeCategory, NoonReport, Vessel, VesselStatus, Voyage } from "@/types";
+import { CharterParty, Document, DocumentType, NoonReport, Vessel, VesselStatus, Voyage } from "@/types";
 import { useLocalSearchParams } from "expo-router";
 import { createContext, ReactNode, useCallback, useContext, useEffect, useState } from "react";
 import { useNetworkStatus } from './NetworkStatusContext';
@@ -24,8 +24,8 @@ export interface VesselDetailsContextType {
   refreshVessel: () => Promise<void>,
   refreshVesselVoyages: () => Promise<void>,
   getLatestNoonReport: (id: number) => Promise<NoonReport | null>
-  vesselHasDocument: (id: number, document: DocumentTypeCategory) => Promise<boolean>,
-  getVesselDocuments: (id: number) => Promise<Document[]>
+  vesselHasDocument: (document: DocumentType) => Promise<boolean>,
+  getDocuments: () => Promise<Document[]>
 }
 
 export const VesselDetailContext = createContext<VesselDetailsContextType | null>(null);
@@ -68,12 +68,12 @@ export function VesselDetailsProvider({ children }: VesselDetailsProviderProps) 
     }
   }, [isOfflineData, setIsOffline, isInitialized, isLoading]);
 
-  const getVesselDocuments = useCallback(async (vesselId: number): Promise<Document[]> => {
-    return await vesselService.getVesselDocuments(vesselId);
+  const getDocuments = useCallback(async (): Promise<Document[]> => {
+    return await vesselService.getVesselDocuments(id);
   }, [])
 
-  const vesselHasDocument = useCallback(async (vesselId: number, document: DocumentTypeCategory): Promise<boolean> => {
-    const documents = await vesselService.getVesselDocuments(vesselId);
+  const vesselHasDocument = useCallback(async (document: DocumentType): Promise<boolean> => {
+    const documents = await vesselService.getVesselDocuments(id);
     return documents.some(d => d.documentType == document);
   }, [])
 
@@ -178,8 +178,8 @@ export function VesselDetailsProvider({ children }: VesselDetailsProviderProps) 
   useEffect(() => {
     const handler = async (payload: any) => {
       try {
-        if (!payload || typeof payload.vesselId === 'undefined') return;
-        if (Number(payload.vesselId) !== id) return;
+        if (!payload || typeof payload.subjectId === 'undefined') return;
+        if (Number(payload.subjectId) !== id) return;
 
         // Recompute documents -> hasQ88 / hasFormC
         const docs = await vesselService.getVesselDocuments(id);
@@ -192,9 +192,9 @@ export function VesselDetailsProvider({ children }: VesselDetailsProviderProps) 
       }
     };
 
-    const unsub = on('documents:updated', handler);
+    const unsub = on('vessels:documents:updated', handler);
     return () => {
-      try { unsub(); } catch (e) { off('documents:updated', handler); }
+      try { unsub(); } catch (e) { off('vessels:documents:updated', handler); }
     };
   }, [id]);
 
@@ -253,7 +253,7 @@ export function VesselDetailsProvider({ children }: VesselDetailsProviderProps) 
     refreshVesselVoyages,
     getLatestNoonReport,
     vesselHasDocument,
-    getVesselDocuments
+    getDocuments
   }
 
   return (

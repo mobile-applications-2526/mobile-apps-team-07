@@ -162,8 +162,14 @@ export const CACHE_KEYS = {
   VOYAGE_DETAILS_BY_ID: (id: number) => `voyages:details:${id}`,
   VOYAGE_BY_ID: (id: number) => `voyages:${id}`,
 
+  // Cargo caches
+
+  CARGO_BY_ID: (id: number) => `cargoes:${id}`,
+
   // Document caches
   DOCUMENTS_BY_VESSEL: (vesselId: number) => `documents:vessel:${vesselId}`,
+  DOCUMENTS_BY_VOYAGE: (voyageId: number) => `documents:voyage:${voyageId}`,
+  DOCUMENTS_BY_CARGO: (cargoId: number) => `documents:cargoes:${cargoId}`,
   INVOICES_BY_VESSEL: (vesselId: number) => `invoices:vessel:${vesselId}`,
 
   // Noon report caches
