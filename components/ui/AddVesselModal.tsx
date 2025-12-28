@@ -192,94 +192,107 @@ export function AddVesselModal({
         <ThemedText style={styles.headerTitle}>Add New Vessel</ThemedText>
       </View>
 
-      <BottomSheetScrollView contentContainerStyle={styles.content}>
-        {/* Vessel Name */}
-        <View style={styles.fieldContainer}>
-          <ThemedText style={styles.label}>Vessel Name</ThemedText>
-          <View style={[styles.input, isDark && styles.inputDark, { flexDirection: 'row', alignItems: 'center' }]}>
-            <ThemedText style={{ fontSize: 17, color: isDark ? '#FFF' : '#000', minWidth: 100 }}>Name</ThemedText>
-            <TextInput
-              style={[styles.nativeInput, isDark && { color: '#FFF' }]}
-              placeholder="Enter name"
-              placeholderTextColor={isDark ? '#666' : '#999'}
-              value={vesselName}
-              onChangeText={setVesselName}
-              clearButtonMode="while-editing"
-            />
-          </View>
-        </View>
+      <BottomSheetScrollView
+        contentContainerStyle={styles.content}
+        showsVerticalScrollIndicator={false}
+      >
+        {/* Vessel Details Section */}
+        <View style={[styles.section, isDark && styles.sectionDark]}>
+          <ThemedText style={styles.sectionHeader}>Vessel Details</ThemedText>
 
-        {/* IMO Number */}
-        <View style={styles.fieldContainer}>
-          <ThemedText style={styles.label}>IMO Number</ThemedText>
-          <View style={[styles.input, isDark && styles.inputDark, { flexDirection: 'row', alignItems: 'center' }]}>
-            <ThemedText style={{ fontSize: 17, color: isDark ? '#FFF' : '#000', minWidth: 100 }}>IMO</ThemedText>
-            <TextInput
-              style={[styles.nativeInput, isDark && { color: '#FFF' }]}
-              placeholder="7-digit number"
-              placeholderTextColor={isDark ? '#666' : '#999'}
-              value={imoNumber}
-              onChangeText={text => {
-                // Only allow numbers
-                const numeric = text.replace(/[^0-9]/g, '');
-                if (numeric.length <= 7) setImoNumber(numeric);
-              }}
-              keyboardType="number-pad"
-              maxLength={7}
-            />
-          </View>
-        </View>
-        {imoNumber.length > 0 && imoNumber.length !== 7 && (
-          <ThemedText style={styles.hint}>IMO must be exactly 7 digits</ThemedText>
-        )}
-        {existingImos.includes(imoNumber) && imoNumber.length === 7 && (
-          <ThemedText style={[styles.hint, { color: '#ef4444' }]}>
-            This IMO already exists
-          </ThemedText>
-        )}
-
-        {/* Vessel Type */}
-        <View style={styles.fieldContainer}>
-          <ThemedText style={styles.label}>Vessel Type</ThemedText>
-          <Pressable
-            onPress={() => showSelection('Select Vessel Type', [...VESSEL_TYPES], (opt) => setVesselType(opt as VesselType))}
-            style={[styles.input, isDark && styles.inputDark, { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' }]}
-          >
-            <ThemedText style={{ fontSize: 17, color: isDark ? '#FFF' : '#000' }}>{vesselType}</ThemedText>
-            <ThemedText style={{ color: '#007AFF', fontSize: 17 }}>Edit</ThemedText>
-          </Pressable>
-        </View>
-
-        {/* Vessel Subtype */}
-        <View style={styles.fieldContainer}>
-          <ThemedText style={styles.label}>Subtype</ThemedText>
-          <Pressable
-            onPress={() => showSelection('Select Subtype', SUBTYPES[vesselType], (opt) => setVesselSubtype(opt))}
-            style={[styles.input, isDark && styles.inputDark, { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' }]}
-          >
-            <ThemedText style={{ fontSize: 17, color: isDark ? '#FFF' : '#000' }}>{vesselSubtype}</ThemedText>
-            <ThemedText style={{ color: '#007AFF', fontSize: 17 }}>Edit</ThemedText>
-          </Pressable>
-        </View>
-
-        {/* Vessel Picture */}
-        <View style={styles.fieldContainer}>
-          <ThemedText style={styles.label}>Vessel Photo</ThemedText>
-          <Pressable
-            onPress={showImageSelection}
-            style={[styles.input, isDark && styles.inputDark, { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' }]}
-          >
-            <ThemedText style={{ fontSize: 17, color: isDark ? '#FFF' : '#000' }}>Photo</ThemedText>
-            <View style={{ flexDirection: 'row', alignItems: 'center' }}>
-              {vesselPictureUrl ? (
-                <Image
-                  source={{ uri: vesselPictureUrl }}
-                  style={{ width: 32, height: 32, borderRadius: 4, marginRight: 8 }}
-                />
-              ) : null}
-              <ThemedText style={{ color: '#007AFF', fontSize: 17 }}>{vesselPictureUrl ? 'Edit' : 'Add'}</ThemedText>
+          {/* Vessel Name */}
+          <View style={styles.fieldContainer}>
+            <ThemedText style={styles.label}>Vessel Name</ThemedText>
+            <View style={[styles.input, isDark && styles.inputDark, { flexDirection: 'row', alignItems: 'center' }]}>
+              <ThemedText style={{ fontSize: 17, color: isDark ? '#FFF' : '#000', minWidth: 100 }}>Name</ThemedText>
+              <TextInput
+                style={[styles.nativeInput, isDark && { color: '#FFF' }]}
+                placeholder="Enter name"
+                placeholderTextColor={isDark ? '#666' : '#999'}
+                value={vesselName}
+                onChangeText={setVesselName}
+                clearButtonMode="while-editing"
+              />
             </View>
-          </Pressable>
+          </View>
+
+          {/* IMO Number */}
+          <View style={styles.fieldContainer}>
+            <ThemedText style={styles.label}>IMO Number</ThemedText>
+            <View style={[styles.input, isDark && styles.inputDark, { flexDirection: 'row', alignItems: 'center' }]}>
+              <ThemedText style={{ fontSize: 17, color: isDark ? '#FFF' : '#000', minWidth: 100 }}>IMO</ThemedText>
+              <TextInput
+                style={[styles.nativeInput, isDark && { color: '#FFF' }]}
+                placeholder="7-digit number"
+                placeholderTextColor={isDark ? '#666' : '#999'}
+                value={imoNumber}
+                onChangeText={text => {
+                  // Only allow numbers
+                  const numeric = text.replace(/[^0-9]/g, '');
+                  if (numeric.length <= 7) setImoNumber(numeric);
+                }}
+                keyboardType="number-pad"
+                maxLength={7}
+              />
+            </View>
+          </View>
+          {imoNumber.length > 0 && imoNumber.length !== 7 && (
+            <ThemedText style={styles.hint}>IMO must be exactly 7 digits</ThemedText>
+          )}
+          {existingImos.includes(imoNumber) && imoNumber.length === 7 && (
+            <ThemedText style={[styles.hint, { color: '#ef4444' }]}>
+              This IMO already exists
+            </ThemedText>
+          )}
+        </View>
+
+        {/* Classification Section */}
+        <View style={[styles.section, isDark && styles.sectionDark]}>
+          <ThemedText style={styles.sectionHeader}>Classification</ThemedText>
+
+          {/* Vessel Type */}
+          <View style={styles.fieldContainer}>
+            <ThemedText style={styles.label}>Vessel Type</ThemedText>
+            <Pressable
+              onPress={() => showSelection('Select Vessel Type', [...VESSEL_TYPES], (opt) => setVesselType(opt as VesselType))}
+              style={[styles.input, isDark && styles.inputDark, { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' }]}
+            >
+              <ThemedText style={{ fontSize: 17, color: isDark ? '#FFF' : '#000' }}>{vesselType}</ThemedText>
+              <ThemedText style={{ color: '#007AFF', fontSize: 17 }}>Edit</ThemedText>
+            </Pressable>
+          </View>
+
+          {/* Vessel Subtype */}
+          <View style={styles.fieldContainer}>
+            <ThemedText style={styles.label}>Subtype</ThemedText>
+            <Pressable
+              onPress={() => showSelection('Select Subtype', SUBTYPES[vesselType], (opt) => setVesselSubtype(opt))}
+              style={[styles.input, isDark && styles.inputDark, { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' }]}
+            >
+              <ThemedText style={{ fontSize: 17, color: isDark ? '#FFF' : '#000' }}>{vesselSubtype}</ThemedText>
+              <ThemedText style={{ color: '#007AFF', fontSize: 17 }}>Edit</ThemedText>
+            </Pressable>
+          </View>
+
+          {/* Vessel Picture */}
+          <View style={styles.fieldContainer}>
+            <ThemedText style={styles.label}>Vessel Photo</ThemedText>
+            <Pressable
+              onPress={showImageSelection}
+              style={[styles.input, isDark && styles.inputDark, { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' }]}
+            >
+              <ThemedText style={{ fontSize: 17, color: isDark ? '#FFF' : '#000' }}>Photo</ThemedText>
+              <View style={{ flexDirection: 'row', alignItems: 'center' }}>
+                {vesselPictureUrl ? (
+                  <Image
+                    source={{ uri: vesselPictureUrl }}
+                    style={{ width: 32, height: 32, borderRadius: 4, marginRight: 8 }}
+                  />
+                ) : null}
+                <ThemedText style={{ color: '#007AFF', fontSize: 17 }}>{vesselPictureUrl ? 'Edit' : 'Add'}</ThemedText>
+              </View>
+            </Pressable>
+          </View>
         </View>
 
         {/* Submit Button */}
@@ -318,6 +331,27 @@ const styles = StyleSheet.create({
   },
   content: {
     padding: 16,
+    paddingBottom: 40,
+  },
+  section: {
+    backgroundColor: '#fff',
+    borderRadius: 12,
+    padding: 16,
+    marginBottom: 20,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 1 },
+    shadowOpacity: 0.05,
+    shadowRadius: 2,
+    elevation: 2,
+  },
+  sectionDark: {
+    backgroundColor: '#1C1C1E', // System Gray 6
+  },
+  sectionHeader: {
+    fontSize: 15,
+    fontWeight: '600',
+    color: '#666',
+    marginBottom: 12,
   },
   imageButton: {
     height: 80,
@@ -344,15 +378,15 @@ const styles = StyleSheet.create({
     color: '#666',
   },
   input: {
-    backgroundColor: '#FFF',
+    backgroundColor: '#F2F2F7', // Changed from '#FFF' to light gray for better contrast in white section
     padding: 12,
     borderRadius: 10,
     fontSize: 16,
     // Borders handled by container if needed, but for native rows usually just background
   },
   inputDark: {
-    backgroundColor: '#1C1C1E',
-    color: '#FFF', // Corrected from '#IMG_FFF'
+    backgroundColor: '#2C2C2E', // Changed from '#1C1C1E' to lighter dark gray for contrast
+    color: '#FFF',
   },
   nativeInput: {
     flex: 1,
@@ -368,7 +402,7 @@ const styles = StyleSheet.create({
   },
   segmentedControl: {
     flexDirection: 'row',
-    backgroundColor: '#F2F2F7',
+    backgroundColor: '#E5E5EA',
     borderRadius: 10,
     padding: 2,
     gap: 4,

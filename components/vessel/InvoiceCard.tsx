@@ -23,16 +23,17 @@ export function InvoiceCard({
 }: InvoiceCardProps) {
     const { mediumImpact } = useHaptics();
 
-    const getStatusConfig = (status: Invoice['status']) => {
+    // Uniform styling matching VesselCard (Blue/Gray palette)
+    // We keep the icon variety but unify the colors
+    const getStatusIcon = (status: Invoice['status']) => {
         switch (status) {
-            case 'Paid': return { color: '#10b981', icon: CheckCircle, bg: 'bg-green-50 dark:bg-green-900/20', text: 'text-green-700 dark:text-green-400' };
-            case 'Overdue': return { color: '#ef4444', icon: AlertCircle, bg: 'bg-red-50 dark:bg-red-900/20', text: 'text-red-700 dark:text-red-400' };
-            default: return { color: '#f59e0b', icon: Clock, bg: 'bg-yellow-50 dark:bg-yellow-900/20', text: 'text-yellow-700 dark:text-yellow-400' };
+            case 'Paid': return CheckCircle;
+            case 'Overdue': return AlertCircle;
+            default: return Clock;
         }
     };
 
-    const statusConfig = getStatusConfig(invoice.status);
-    const StatusIcon = statusConfig.icon;
+    const StatusIcon = getStatusIcon(invoice.status);
 
     return (
         <View
@@ -46,9 +47,9 @@ export function InvoiceCard({
             }}
         >
             <View className="flex-row items-start px-3 py-3">
-                {/* Icon */}
-                <View className="w-10 h-10 rounded-lg mr-3 items-center justify-center bg-gray-100 dark:bg-gray-800">
-                    <FileText size={20} color="#6b7280" />
+                {/* Icon - Blue accent like VesselCard */}
+                <View className="w-10 h-10 rounded-lg mr-3 items-center justify-center bg-blue-50 dark:bg-blue-900/20">
+                    <FileText size={20} color="#3b82f6" />
                 </View>
 
                 {/* Info */}
@@ -64,36 +65,39 @@ export function InvoiceCard({
                 </View>
 
                 {/* Actions */}
-                <View className="flex-row items-center gap-1">
+                <View className="flex-row items-center">
                     <TouchableOpacity
-                        className="p-2 bg-gray-50 dark:bg-gray-800 rounded-full"
+                        className="p-2"
                         onPress={() => onDownload(invoice)}
                         disabled={!!processing}
+                        hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
                     >
-                        <Download size={14} color={processing ? '#9ca3af' : '#374151'} />
+                        <Download size={16} color={processing ? '#d1d5db' : '#9ca3af'} />
                     </TouchableOpacity>
                     <TouchableOpacity
-                        className="p-2 bg-gray-50 dark:bg-gray-800 rounded-full"
+                        className="p-2"
                         onPress={() => onEdit(invoice)}
                         disabled={!!processing}
+                        hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
                     >
-                        <Pencil size={14} color={processing ? '#9ca3af' : '#374151'} />
+                        <Pencil size={16} color={processing ? '#d1d5db' : '#9ca3af'} />
                     </TouchableOpacity>
                     <TouchableOpacity
-                        className="p-2 bg-red-50 dark:bg-red-900/20 rounded-full"
+                        className="p-2"
                         onPress={() => { mediumImpact(); onDelete(invoice); }}
                         disabled={!!processing}
+                        hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
                     >
-                        <Trash2 size={14} color={processing ? '#9ca3af' : '#ef4444'} />
+                        <Trash2 size={16} color={processing ? '#d1d5db' : '#9ca3af'} />
                     </TouchableOpacity>
                 </View>
             </View>
 
-            {/* Bottom Strip (Status & Amount) */}
-            <View className={`flex-row items-center justify-between px-3 py-2 ${statusConfig.bg}`}>
+            {/* Bottom Strip (Status & Amount) - Uniform Blue Scheme */}
+            <View className="flex-row items-center justify-between px-3 py-2 bg-blue-50 dark:bg-blue-900/10">
                 <View className="flex-row items-center">
-                    <StatusIcon size={14} color={statusConfig.color} />
-                    <ThemedText className={`text-xs ml-1.5 font-medium ${statusConfig.text}`}>
+                    <StatusIcon size={14} color="#3b82f6" />
+                    <ThemedText className="text-xs ml-1.5 font-medium text-blue-600 dark:text-blue-400">
                         {invoice.status}
                     </ThemedText>
                 </View>

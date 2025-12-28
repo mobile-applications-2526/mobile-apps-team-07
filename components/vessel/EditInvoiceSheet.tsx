@@ -17,7 +17,7 @@ export default function EditInvoiceSheet({ invoice, onClose, onSave }: EditInvoi
     const { colorScheme } = useColorScheme();
     const isDark = colorScheme === 'dark';
     const bottomSheetRef = useRef<BottomSheetModal>(null);
-    const snapPoints = useMemo(() => ['60%', '90%'], []);
+    const snapPoints = useMemo(() => ['60%', '100%'], []);
 
     const [formState, setFormState] = useState({
         number: '',
@@ -116,43 +116,56 @@ export default function EditInvoiceSheet({ invoice, onClose, onSave }: EditInvoi
 
             <BottomSheetScrollView
                 style={{ flex: 1 }}
-                contentContainerStyle={{ padding: 16, paddingBottom: 40 }}
+                contentContainerStyle={styles.content}
                 showsVerticalScrollIndicator={false}
             >
-                <ThemedText className="text-xs text-gray-500 ml-1 mb-1 font-medium">Invoice Number</ThemedText>
-                <TextInput
-                    style={[styles.iosInput, isDark && styles.iosInputDark]}
-                    value={formState.number}
-                    onChangeText={v => setFormState(s => ({ ...s, number: v }))}
-                    placeholder="INV-0000"
-                    placeholderTextColor={isDark ? '#5c5c5e' : '#aeaeb2'}
-                />
+                {/* Invoice Details Section */}
+                <View style={[styles.section, isDark && styles.sectionDark]}>
+                    <ThemedText style={styles.sectionHeader}>Invoice Details</ThemedText>
 
-                <ThemedText className="text-xs text-gray-500 mt-5 ml-1 mb-2 font-medium">Type</ThemedText>
-                <View style={[styles.iosSegmentedContainer, isDark && styles.iosSegmentedContainerDark]}>
-                    {['TC Hire', 'VC Freight', 'Demurrage'].map((t) => {
-                        const isActive = formState.type === t;
-                        return (
-                            <Pressable
-                                key={t}
-                                onPress={() => setFormState(s => ({ ...s, type: t }))}
-                                style={[styles.iosSegmentedItem, isActive && styles.iosSegmentedItemActive, isActive && isDark && styles.iosSegmentedItemActiveDark]}
-                            >
-                                <ThemedText style={[styles.iosSegmentedText, isDark && styles.iosSegmentedTextDark, isActive && styles.iosSegmentedTextActive]}>
-                                    {t}
-                                </ThemedText>
-                            </Pressable>
-                        );
-                    })}
-                </View>
+                    {/* Invoice Number */}
+                    <View style={styles.fieldContainer}>
+                        <ThemedText style={styles.label}>Invoice Number</ThemedText>
+                        <TextInput
+                            style={[styles.input, isDark && styles.inputDark]}
+                            value={formState.number}
+                            onChangeText={v => setFormState(s => ({ ...s, number: v }))}
+                            placeholder="INV-0000"
+                            placeholderTextColor={isDark ? '#5c5c5e' : '#aeaeb2'}
+                        />
+                    </View>
 
-                <View style={{ marginTop: 20 }}>
+                    {/* Type */}
+                    <View style={styles.fieldContainer}>
+                        <ThemedText style={styles.label}>Type</ThemedText>
+                        <View style={[styles.segmentedControl, isDark && styles.segmentedControlDark]}>
+                            {['TC Hire', 'VC Freight', 'Demurrage'].map((t) => {
+                                const isActive = formState.type === t;
+                                return (
+                                    <Pressable
+                                        key={t}
+                                        onPress={() => setFormState(s => ({ ...s, type: t }))}
+                                        style={[styles.segment, isActive && (isDark ? styles.segmentActiveDark : styles.segmentActiveLight)]}
+                                    >
+                                        <ThemedText style={[
+                                            styles.segmentText,
+                                            isDark && { color: '#FFF' },
+                                            isActive && styles.segmentTextActive
+                                        ]}>
+                                            {t}
+                                        </ThemedText>
+                                    </Pressable>
+                                );
+                            })}
+                        </View>
+                    </View>
+
                     {/* Invoice Date */}
-                    <View>
-                        <ThemedText className="text-xs text-gray-500 ml-1 mb-1 font-medium">Invoice Date</ThemedText>
+                    <View style={styles.fieldContainer}>
+                        <ThemedText style={styles.label}>Invoice Date</ThemedText>
                         <Pressable
                             onPress={() => setShowDatePickerFor(showDatePickerFor === 'date' ? null : 'date')}
-                            style={[styles.iosInput, isDark && styles.iosInputDark, { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginTop: 0 }]}
+                            style={[styles.input, isDark && styles.inputDark, { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' }]}
                         >
                             <ThemedText style={{ color: isDark ? '#FFF' : '#000', fontSize: 16 }}>
                                 {formState.date ? new Date(formState.date).toLocaleDateString(undefined, { dateStyle: 'medium' }) : 'Select Date'}
@@ -174,11 +187,11 @@ export default function EditInvoiceSheet({ invoice, onClose, onSave }: EditInvoi
                     </View>
 
                     {/* Due Date */}
-                    <View style={{ marginTop: 20 }}>
-                        <ThemedText className="text-xs text-gray-500 ml-1 mb-1 font-medium">Due Date</ThemedText>
+                    <View style={styles.fieldContainer}>
+                        <ThemedText style={styles.label}>Due Date</ThemedText>
                         <Pressable
                             onPress={() => setShowDatePickerFor(showDatePickerFor === 'dueDate' ? null : 'dueDate')}
-                            style={[styles.iosInput, isDark && styles.iosInputDark, { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginTop: 0 }]}
+                            style={[styles.input, isDark && styles.inputDark, { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' }]}
                         >
                             <ThemedText style={{ color: isDark ? '#FFF' : '#000', fontSize: 16 }}>
                                 {formState.dueDate ? new Date(formState.dueDate).toLocaleDateString(undefined, { dateStyle: 'medium' }) : 'Select Due Date'}
@@ -200,42 +213,51 @@ export default function EditInvoiceSheet({ invoice, onClose, onSave }: EditInvoi
                     </View>
                 </View>
 
-                <ThemedText className="text-xs text-gray-500 mt-5 ml-1 mb-1 font-medium">Amount</ThemedText>
-                <TextInput
-                    style={[styles.iosInput, isDark && styles.iosInputDark]}
-                    value={formState.amount}
-                    keyboardType="numeric"
-                    onChangeText={v => setFormState(s => ({ ...s, amount: v }))}
-                    placeholder="0.00"
-                    placeholderTextColor={isDark ? '#5c5c5e' : '#aeaeb2'}
-                />
+                {/* Financials Section */}
+                <View style={[styles.section, isDark && styles.sectionDark]}>
+                    <ThemedText style={styles.sectionHeader}>Financials</ThemedText>
 
-                <ThemedText className="text-xs text-gray-500 mt-5 ml-1 mb-2 font-medium">Status</ThemedText>
-                <View style={[styles.iosSegmentedContainer, isDark && styles.iosSegmentedContainerDark]}>
-                    {['Pending', 'Paid', 'Overdue'].map((st) => {
-                        const isActive = formState.status === st;
+                    {/* Amount */}
+                    <View style={styles.fieldContainer}>
+                        <ThemedText style={styles.label}>Amount</ThemedText>
+                        <TextInput
+                            style={[styles.input, isDark && styles.inputDark]}
+                            value={formState.amount}
+                            keyboardType="numeric"
+                            onChangeText={v => setFormState(s => ({ ...s, amount: v }))}
+                            placeholder="0.00"
+                            placeholderTextColor={isDark ? '#5c5c5e' : '#aeaeb2'}
+                        />
+                    </View>
 
-                        return (
-                            <Pressable
-                                key={st}
-                                onPress={() => setFormState(s => ({ ...s, status: st }))}
-                                style={[styles.iosSegmentedItem, isActive && styles.iosSegmentedItemActive, isActive && isDark && styles.iosSegmentedItemActiveDark]}
-                            >
-                                <ThemedText style={[
-                                    styles.iosSegmentedText,
-                                    isDark && styles.iosSegmentedTextDark,
-                                    isActive && styles.iosSegmentedTextActive
-                                ]}>
-                                    {st}
-                                </ThemedText>
-                            </Pressable>
-                        );
-                    })}
+                    {/* Status */}
+                    <View style={styles.fieldContainer}>
+                        <ThemedText style={styles.label}>Status</ThemedText>
+                        <View style={[styles.segmentedControl, isDark && styles.segmentedControlDark]}>
+                            {['Pending', 'Paid', 'Overdue'].map((st) => {
+                                const isActive = formState.status === st;
+                                return (
+                                    <Pressable
+                                        key={st}
+                                        onPress={() => setFormState(s => ({ ...s, status: st }))}
+                                        style={[styles.segment, isActive && (isDark ? styles.segmentActiveDark : styles.segmentActiveLight)]}
+                                    >
+                                        <ThemedText style={[
+                                            styles.segmentText,
+                                            isDark && { color: '#FFF' },
+                                            isActive && styles.segmentTextActive
+                                        ]}>
+                                            {st}
+                                        </ThemedText>
+                                    </Pressable>
+                                );
+                            })}
+                        </View>
+                    </View>
                 </View>
 
-
-                <Pressable onPress={handleSave} style={styles.iosSaveButton}>
-                    <ThemedText style={styles.iosSaveButtonText}>Save</ThemedText>
+                <Pressable onPress={handleSave} style={styles.submitButton}>
+                    <ThemedText style={styles.submitButtonText}>Save</ThemedText>
                 </Pressable>
 
             </BottomSheetScrollView>
@@ -259,35 +281,71 @@ const styles = StyleSheet.create({
         textAlign: 'center',
         flex: 1,
     },
-    iosInput: {
-        backgroundColor: '#F2F2F7', // systemGray6
+    content: {
+        padding: 16,
+        paddingBottom: 40,
+    },
+    section: {
+        backgroundColor: '#fff',
+        borderRadius: 12,
+        padding: 16,
+        marginBottom: 20,
+        shadowColor: '#000',
+        shadowOffset: { width: 0, height: 1 },
+        shadowOpacity: 0.05,
+        shadowRadius: 2,
+        elevation: 2,
+    },
+    sectionDark: {
+        backgroundColor: '#1C1C1E', // System Gray 6
+    },
+    sectionHeader: {
+        fontSize: 15,
+        fontWeight: '600',
+        color: '#666',
+        marginBottom: 12,
+    },
+    fieldContainer: {
+        marginBottom: 16,
+    },
+    label: {
+        fontSize: 13,
+        fontWeight: '500',
+        marginBottom: 6,
+        color: '#666',
+    },
+    input: {
+        backgroundColor: '#F2F2F7', // Changed from '#FFF' to light gray for better contrast
         borderRadius: 10,
         padding: 12,
         fontSize: 17,
         color: '#000',
-        marginTop: 6,
     },
-    iosInputDark: {
-        backgroundColor: '#1C1C1E', // systemGray6 Dark
+    inputDark: {
+        backgroundColor: '#2C2C2E', // System Gray 5 Dark
         color: '#FFF',
     },
-    iosSegmentedContainer: {
+    segmentedControl: {
         flexDirection: 'row',
-        backgroundColor: '#E5E5EA', // systemGray5
+        backgroundColor: '#E5E5EA',
         borderRadius: 8,
         padding: 2,
-        height: 36, // Standard iOS height
+        gap: 4,
     },
-    iosSegmentedContainerDark: {
+    segmentedControlDark: {
         backgroundColor: '#2C2C2E',
     },
-    iosSegmentedItem: {
+    segment: {
         flex: 1,
         borderRadius: 6,
         alignItems: 'center',
         justifyContent: 'center',
+        paddingVertical: 8,
     },
-    iosSegmentedItemActive: {
+    segmentActiveDark: {
+        backgroundColor: '#636366', // systemGray3
+    },
+    segmentActiveLight: {
         backgroundColor: '#FFFFFF',
         shadowColor: '#000',
         shadowOffset: { width: 0, height: 1 },
@@ -295,25 +353,22 @@ const styles = StyleSheet.create({
         shadowRadius: 2,
         elevation: 2,
     },
-    iosSegmentedItemActiveDark: {
-        backgroundColor: '#636366', // systemGray3
-    },
-    iosSegmentedText: {
+    segmentText: {
         fontSize: 13,
         fontWeight: '500',
+        color: '#000',
     },
-    iosSegmentedTextDark: {},
-    iosSegmentedTextActive: {
+    segmentTextActive: {
         fontWeight: '600',
     },
-    iosSaveButton: {
+    submitButton: {
         backgroundColor: '#fff',
         borderRadius: 30,
         paddingVertical: 12,
         width: '100%',
         alignItems: 'center',
         justifyContent: 'center',
-        marginTop: 32,
+        marginTop: 12,
         marginBottom: 20,
         borderColor: '#fff',
         shadowColor: '#000',
@@ -322,14 +377,14 @@ const styles = StyleSheet.create({
         shadowRadius: 8,
         elevation: 4,
     },
-    iosSaveButtonText: {
+    submitButtonText: {
         color: '#000',
         fontSize: 16,
         fontWeight: '700',
     },
     datePickerContainer: {
         marginTop: 8,
-        backgroundColor: '#f2f2f7', // Fallback, will be overridden by dark check in render if extracted fully, but here using style prop
+        backgroundColor: '#f2f2f7',
         borderRadius: 12,
         paddingVertical: 8,
         overflow: 'hidden',

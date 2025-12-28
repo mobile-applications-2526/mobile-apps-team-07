@@ -80,8 +80,8 @@ export default function SettingsScreen() {
                     <View className="bg-white dark:bg-[#1c1c1e] rounded-xl overflow-hidden border border-gray-100 dark:border-gray-800">
 
                         <View className="p-4 flex-row items-center border-b border-gray-100 dark:border-gray-800">
-                            <View className="w-10 h-10 rounded-full bg-blue-100 dark:bg-blue-900/30 items-center justify-center mr-3">
-                                <User size={20} className="text-blue-600 dark:text-blue-400" color="#3b82f6" />
+                            <View className="w-10 h-10 rounded-full bg-gray-100 dark:bg-gray-800 items-center justify-center mr-3">
+                                <User size={20} className="text-gray-900 dark:text-gray-100" color="#374151" />
                             </View>
                             <View className="flex-1">
                                 <ThemedText type="defaultSemiBold">User Profile</ThemedText>
@@ -140,12 +140,12 @@ export default function SettingsScreen() {
                             className="p-4 flex-row items-center justify-between border-b border-gray-100 dark:border-gray-800 active:bg-gray-50 dark:active:bg-[#2c2c2e]"
                         >
                             <View className="flex-row items-center">
-                                <View className="w-8 h-8 rounded-full bg-purple-100 dark:bg-purple-900/30 items-center justify-center mr-3">
+                                <View className="w-8 h-8 rounded-full bg-gray-100 dark:bg-gray-800 items-center justify-center mr-3">
                                     {themePreference === 'system' ?
-                                        <Smartphone size={16} color="#a855f7" /> :
+                                        <Smartphone size={16} color="#6b7280" /> :
                                         (themePreference === 'dark' ?
-                                            <Moon size={16} color="#a855f7" /> :
-                                            <Sun size={16} color="#a855f7" />
+                                            <Moon size={16} color="#6b7280" /> :
+                                            <Sun size={16} color="#6b7280" />
                                         )
                                     }
                                 </View>
@@ -153,7 +153,7 @@ export default function SettingsScreen() {
                             </View>
                             <View className="flex-row items-center">
                                 <ThemedText className="text-gray-500 mr-2 capitalize">
-                                    {themePreference === 'system' ? 'System Default' : themePreference}
+                                    {themePreference === 'system' ? 'System' : themePreference}
                                 </ThemedText>
                                 <ChevronRight size={16} color="#9ca3af" />
                             </View>
@@ -188,8 +188,8 @@ export default function SettingsScreen() {
                             className="p-4 flex-row items-center justify-between active:bg-gray-50 dark:active:bg-[#2c2c2e]"
                         >
                             <View className="flex-row items-center">
-                                <View className="w-8 h-8 rounded-full bg-indigo-100 dark:bg-indigo-900/30 items-center justify-center mr-3">
-                                    <Globe size={16} color="#6366f1" />
+                                <View className="w-8 h-8 rounded-full bg-gray-100 dark:bg-gray-800 items-center justify-center mr-3">
+                                    <Globe size={16} color="#6b7280" />
                                 </View>
                                 <ThemedText type="defaultSemiBold">Language</ThemedText>
                             </View>

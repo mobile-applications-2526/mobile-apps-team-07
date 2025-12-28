@@ -37,7 +37,7 @@ export default function TCInvoiceFormSheet({ visible, onClose, onSuccess, vessel
     const { colorScheme } = useColorScheme();
     const isDark = colorScheme === 'dark';
     const bottomSheetRef = React.useRef<BottomSheetModal>(null);
-    const snapPoints = React.useMemo(() => ['60%', '90%'], []);
+    const snapPoints = React.useMemo(() => ['60%', '100%'], []);
 
     // Form State
     const [invoiceNumber, setInvoiceNumber] = React.useState(`HIRE-${new Date().getFullYear()}-${Math.floor(Math.random() * 1000)}`);
@@ -244,7 +244,7 @@ export default function TCInvoiceFormSheet({ visible, onClose, onSuccess, vessel
                 ]
             };
 
-            const result = await invoiceService.createTCInvoice(payload);
+            const result = await invoiceService.createTCInvoice(payload) as any;
 
             const newInv: Invoice = {
                 id: String(result.id),
@@ -332,10 +332,15 @@ export default function TCInvoiceFormSheet({ visible, onClose, onSuccess, vessel
                 {/* Cancel button removed */}
             </View>
 
-            <BottomSheetScrollView contentContainerStyle={styles.content}>
+            <BottomSheetScrollView
+                contentContainerStyle={styles.content}
+                showsVerticalScrollIndicator={false}
+            >
 
-                {/* Basic Info Group */}
-                <View>
+                {/* Basic Info Section */}
+                <View style={[styles.section, isDark && styles.sectionDark]}>
+                    <ThemedText style={styles.sectionHeader}>Basic Information</ThemedText>
+
                     <View style={styles.fieldContainer}>
                         <ThemedText style={styles.label}>Invoice Number</ThemedText>
                         <TextInput
@@ -363,8 +368,10 @@ export default function TCInvoiceFormSheet({ visible, onClose, onSuccess, vessel
                     </View>
                 </View>
 
-                <ThemedText style={styles.sectionHeader}>Period & Rate</ThemedText>
-                <View>
+                {/* Period & Rate Section */}
+                <View style={[styles.section, isDark && styles.sectionDark]}>
+                    <ThemedText style={styles.sectionHeader}>Period & Rate</ThemedText>
+
                     {/* Stacked Period Dates */}
                     <View>
                         {renderDateInput('Period From', periodFrom, 'from')}
@@ -403,8 +410,10 @@ export default function TCInvoiceFormSheet({ visible, onClose, onSuccess, vessel
                     </View>
                 </View>
 
-                <ThemedText style={styles.sectionHeader}>Deductions</ThemedText>
-                <View>
+                {/* Deductions Section */}
+                <View style={[styles.section, isDark && styles.sectionDark]}>
+                    <ThemedText style={styles.sectionHeader}>Deductions</ThemedText>
+
                     <ThemedText style={styles.label}>Off-Hire Duration</ThemedText>
                     <View style={styles.row}>
                         <TextInput style={[styles.input, isDark && styles.inputDark, { flex: 1, marginRight: 4 }]} value={offHireDays} onChangeText={setOffHireDays} placeholder="Days" keyboardType="numeric" />
@@ -415,7 +424,7 @@ export default function TCInvoiceFormSheet({ visible, onClose, onSuccess, vessel
 
                     <View style={styles.summaryRow}>
                         <ThemedText style={styles.label}>Off-Hire Deduction</ThemedText>
-                        <ThemedText style={[styles.value, { color: '#ef4444' }]}>- {currency} {offHireAmount.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</ThemedText>
+                        <ThemedText style={styles.label}>- {currency} {offHireAmount.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</ThemedText>
                     </View>
 
                     <View style={styles.fieldContainer}>
@@ -441,8 +450,10 @@ export default function TCInvoiceFormSheet({ visible, onClose, onSuccess, vessel
                     </View>
                 </View>
 
-                <ThemedText style={styles.sectionHeader}>Additional Charges</ThemedText>
-                <View>
+                {/* Additional Charges Section */}
+                <View style={[styles.section, isDark && styles.sectionDark]}>
+                    <ThemedText style={styles.sectionHeader}>Additional Charges</ThemedText>
+
                     {additionalCharges.map((charge, index) => (
                         <View key={charge.id} style={{ marginBottom: 12 }}>
                             <View style={[styles.row, { alignItems: 'center' }]}>
@@ -472,8 +483,9 @@ export default function TCInvoiceFormSheet({ visible, onClose, onSuccess, vessel
                     </Pressable>
                 </View>
 
-                <ThemedText style={styles.sectionHeader}>Remarks</ThemedText>
-                <View style={{ marginBottom: 16 }}>
+                {/* Remarks Section */}
+                <View style={[styles.section, isDark && styles.sectionDark]}>
+                    <ThemedText style={styles.sectionHeader}>Remarks</ThemedText>
                     <TextInput
                         style={[styles.input, isDark && styles.inputDark, { height: 80, textAlignVertical: 'top' }]}
                         value={remarks}
@@ -524,6 +536,7 @@ const styles = StyleSheet.create({
     },
     content: {
         padding: 16,
+        paddingBottom: 40,
     },
     section: {
         backgroundColor: '#fff',
@@ -540,12 +553,10 @@ const styles = StyleSheet.create({
         backgroundColor: '#1C1C1E', // System Gray 6
     },
     sectionHeader: {
-        fontSize: 13,
+        fontSize: 15,
         fontWeight: '600',
         color: '#666',
-        marginBottom: 8,
-        marginLeft: 4,
-        textTransform: 'uppercase',
+        marginBottom: 12,
     },
     row: {
         flexDirection: 'row',
@@ -567,7 +578,7 @@ const styles = StyleSheet.create({
         color: '#000',
     },
     inputDark: {
-        backgroundColor: '#1C1C1E', // systemGray6 Dark
+        backgroundColor: '#2C2C2E', // systemGray5 Dark
         color: '#FFF',
     },
     dateInput: {
