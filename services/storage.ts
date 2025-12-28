@@ -58,3 +58,23 @@ export const deleteUser = async () => {
         console.error('Error deleting user:', error);
     }
 };
+
+const THEME_KEY = 'theme_preference';
+
+export const saveTheme = async (theme: 'system' | 'light' | 'dark') => {
+    try {
+        await SecureStore.setItemAsync(THEME_KEY, theme);
+    } catch (error) {
+        console.error('Error saving theme:', error);
+    }
+};
+
+export const getTheme = async (): Promise<'system' | 'light' | 'dark'> => {
+    try {
+        const data = await SecureStore.getItemAsync(THEME_KEY);
+        return (data === 'light' || data === 'dark') ? data : 'system';
+    } catch (error) {
+        console.error('Error getting theme:', error);
+        return 'system';
+    }
+};

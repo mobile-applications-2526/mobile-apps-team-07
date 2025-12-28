@@ -3,7 +3,7 @@ import { View, Pressable } from 'react-native';
 import { BottomTabBarProps } from '@react-navigation/bottom-tabs';
 import { useRouter, usePathname, useLocalSearchParams } from 'expo-router';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
-import { Ship, Route, Home, FileText, Receipt, Lock } from 'lucide-react-native';
+import { Ship, Route, Home, FileText, Receipt, Lock, Wallet } from 'lucide-react-native';
 import * as Haptics from 'expo-haptics';
 import { useHaptics } from '@/hooks';
 import { useVesselDetails } from '@/context/VesselDetailsContext';
@@ -21,7 +21,7 @@ export const tabs: TabItem[] = [
     { route: 'voyages', label: 'Voyages', icon: Route },
     { route: 'home', label: 'Home', icon: Home, isCenter: true },
     { route: 'specs', label: 'Specs', icon: FileText },
-    { route: 'invoices', label: 'Invoices', icon: Receipt },
+    { route: 'invoices', label: 'Invoices', icon: Wallet },
 ];
 
 function TabBarItem({

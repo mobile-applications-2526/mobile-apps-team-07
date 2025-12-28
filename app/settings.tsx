@@ -4,19 +4,31 @@ import { useRouter } from 'expo-router';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { ThemedText, ThemedView } from '@/components/common';
 import { useSession } from '@/context/AuthContext';
-import { ChevronLeft, LogOut, User, Mail, Shield, Globe, Moon, Sun, Check, ChevronRight } from 'lucide-react-native';
+import { saveTheme, getTheme } from '@/services/storage';
+import { ChevronLeft, LogOut, User, Mail, Shield, Globe, Moon, Sun, Check, ChevronRight, Smartphone } from 'lucide-react-native';
 import { useColorScheme } from 'nativewind';
+import { useEffect } from 'react';
 
 export default function SettingsScreen() {
     const router = useRouter();
     const insets = useSafeAreaInsets();
     const { session, signOut, user } = useSession();
     const { colorScheme, setColorScheme } = useColorScheme();
+    const [themePreference, setThemePreference] = useState<'system' | 'light' | 'dark'>('system');
     const [language, setLanguage] = useState<'en' | 'ar'>('en');
 
-    // Theme toggle
-    const toggleTheme = () => {
-        setColorScheme(colorScheme === 'dark' ? 'light' : 'dark');
+    useEffect(() => {
+        const loadTheme = async () => {
+            const saved = await getTheme();
+            setThemePreference(saved);
+        };
+        loadTheme();
+    }, []);
+
+    const updateTheme = async (newTheme: 'system' | 'light' | 'dark') => {
+        setThemePreference(newTheme);
+        setColorScheme(newTheme);
+        await saveTheme(newTheme);
     };
 
     const handleSignOut = async () => {
@@ -111,16 +123,16 @@ export default function SettingsScreen() {
                                             title: 'Select Theme',
                                         },
                                         (buttonIndex) => {
-                                            if (buttonIndex === 0) setColorScheme('system');
-                                            if (buttonIndex === 1) setColorScheme('light');
-                                            if (buttonIndex === 2) setColorScheme('dark');
+                                            if (buttonIndex === 0) updateTheme('system');
+                                            if (buttonIndex === 1) updateTheme('light');
+                                            if (buttonIndex === 2) updateTheme('dark');
                                         }
                                     );
                                 } else {
                                     Alert.alert('Select Theme', undefined, [
-                                        { text: 'System Default', onPress: () => setColorScheme('system') },
-                                        { text: 'Light', onPress: () => setColorScheme('light') },
-                                        { text: 'Dark', onPress: () => setColorScheme('dark') },
+                                        { text: 'System Default', onPress: () => updateTheme('system') },
+                                        { text: 'Light', onPress: () => updateTheme('light') },
+                                        { text: 'Dark', onPress: () => updateTheme('dark') },
                                         { text: 'Cancel', style: 'cancel' },
                                     ]);
                                 }
@@ -129,16 +141,19 @@ export default function SettingsScreen() {
                         >
                             <View className="flex-row items-center">
                                 <View className="w-8 h-8 rounded-full bg-purple-100 dark:bg-purple-900/30 items-center justify-center mr-3">
-                                    {colorScheme === 'dark' ?
-                                        <Moon size={16} color="#a855f7" /> :
-                                        <Sun size={16} color="#a855f7" />
+                                    {themePreference === 'system' ?
+                                        <Smartphone size={16} color="#a855f7" /> :
+                                        (themePreference === 'dark' ?
+                                            <Moon size={16} color="#a855f7" /> :
+                                            <Sun size={16} color="#a855f7" />
+                                        )
                                     }
                                 </View>
                                 <ThemedText type="defaultSemiBold">Theme</ThemedText>
                             </View>
                             <View className="flex-row items-center">
                                 <ThemedText className="text-gray-500 mr-2 capitalize">
-                                    {(colorScheme as string) === 'system' ? 'System' : colorScheme}
+                                    {themePreference === 'system' ? 'System Default' : themePreference}
                                 </ThemedText>
                                 <ChevronRight size={16} color="#9ca3af" />
                             </View>

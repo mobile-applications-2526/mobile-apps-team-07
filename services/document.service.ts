@@ -1,8 +1,16 @@
+import * as FileSystem from 'expo-file-system/legacy';
+// import { FileSystemUploadType } from 'expo-file-system'; // This import was failing
 import { Platform } from 'react-native';
 import * as DocumentPicker from 'expo-document-picker';
 import { DocumentTypeCategory } from '@/types';
 import { API_URL } from './config';
 import { getToken } from './storage';
+
+// Define locally to avoid import definition issues at runtime
+const FileSystemUploadType = {
+  BINARY_CONTENT: 0,
+  MULTIPART: 1,
+};
 
 export const uploadDocument = async (
   vesselId: string,
@@ -14,8 +22,8 @@ export const uploadDocument = async (
   const uploadUrl = `${API_URL}/api/vessels/${vesselId}/documents/upload`;
 
   try {
-    // Dynamic import of expo-file-system/legacy to avoid module resolution issues
-    const FileSystem = await import('expo-file-system/legacy');
+    // Dynamic import usage was causing issues, try static import or mixed approach
+    // We already imported legacy as FileSystem above
 
     const token = await getToken();
     const headers: Record<string, string> = {
@@ -28,7 +36,7 @@ export const uploadDocument = async (
     const uploadResult = await FileSystem.uploadAsync(uploadUrl, uri, {
       fieldName: 'file',
       httpMethod: 'POST',
-      uploadType: FileSystem.FileSystemUploadType.MULTIPART,
+      uploadType: FileSystemUploadType.MULTIPART as any,
       parameters: {
         documentType: type as string,
         filename: fileName,

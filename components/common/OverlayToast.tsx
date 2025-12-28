@@ -7,7 +7,7 @@
 import React, { useEffect, useRef } from 'react';
 import { Animated, View, PanResponder } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
-import { CheckCircle } from 'lucide-react-native';
+import { CheckCircle, Wifi } from 'lucide-react-native';
 import { ThemedText } from './ThemedText';
 import { TOAST_DURATION, ANIMATION_DURATION } from '@/constants';
 
@@ -109,7 +109,7 @@ export function OverlayToast({ message, icon, onAnimationComplete }: OverlayToas
           elevation: 3,
         }}
       >
-        {icon ? icon : <CheckCircle size={16} color="#fff" />}
+        {icon ? icon : <Wifi size={16} color="#fff" />}
         <ThemedText className="text-white text-sm font-medium ml-2">
           {message}
         </ThemedText>
