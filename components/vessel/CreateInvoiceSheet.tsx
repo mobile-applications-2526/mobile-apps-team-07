@@ -238,7 +238,7 @@ export default function CreateInvoiceSheet({ visible, onClose, onSuccess, vessel
     };
 
     const showVoyageSelection = () => {
-        const options = vesselVoyages.map(v => `V${v.voyageNumber} - ${v.dischargePort ?? 'Unknown'}`);
+        const options = vesselVoyages.map(v => `V${v.voyageNumber}`);
         if (Platform.OS === 'ios') {
             ActionSheetIOS.showActionSheetWithOptions(
                 { options: [...options, 'Cancel'], cancelButtonIndex: options.length, title: 'Select Voyage' },
@@ -373,8 +373,15 @@ export default function CreateInvoiceSheet({ visible, onClose, onSuccess, vessel
                 <DateTimePicker value={value ?? new Date()} mode="date" display="default" onChange={handleDateChange} />
             )}
             {showDatePicker === pickerKey && Platform.OS === 'ios' && (
-                <View style={{ marginTop: 8, backgroundColor: isDark ? '#2C2C2E' : '#f2f2f7', borderRadius: 12, paddingVertical: 8, alignItems: 'center' }}>
-                    <DateTimePicker value={value ?? new Date()} mode="date" display="inline" onChange={(e, d) => handleDateChange(e, d)} themeVariant={isDark ? 'dark' : 'light'} style={{ alignSelf: 'center' }} />
+                <View style={[styles.datePickerContainer, isDark && { backgroundColor: '#2C2C2E' }]}>
+                    <DateTimePicker
+                        value={value ?? new Date()}
+                        mode="date"
+                        display="inline"
+                        onChange={(e, d) => handleDateChange(e, d)}
+                        themeVariant={isDark ? 'dark' : 'light'}
+                        style={styles.datePicker}
+                    />
                 </View>
             )}
         </View>
@@ -592,5 +599,18 @@ const styles = StyleSheet.create({
     addButtonText: { color: '#007AFF', fontSize: 16, marginLeft: 8, fontWeight: '500' },
     submitButton: { backgroundColor: '#fff', borderRadius: 30, paddingVertical: 12, width: '100%', alignItems: 'center', borderColor: '#fff', shadowOffset: { width: 0, height: 4 }, shadowOpacity: 0.3, shadowRadius: 8, elevation: 4 },
     submitButtonText: { color: '#000', fontSize: 16, fontWeight: '700' },
-    sumTitle: { fontSize: 14, fontWeight: '600', color: '#007AFF', marginTop: 8, textAlign: 'right' }
+    sumTitle: { fontSize: 14, fontWeight: '600', color: '#007AFF', marginTop: 8, textAlign: 'right' },
+    datePickerContainer: {
+        marginTop: 8,
+        backgroundColor: '#f2f2f7',
+        borderRadius: 12,
+        paddingVertical: 8,
+        overflow: 'hidden',
+        alignItems: 'center',
+        width: '100%'
+    },
+    datePicker: {
+        maxWidth: '100%',
+        alignSelf: 'center'
+    }
 });

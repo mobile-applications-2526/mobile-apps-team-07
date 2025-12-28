@@ -173,7 +173,7 @@ export default function EditInvoiceSheet({ invoice, onClose, onSave }: EditInvoi
                             <Calendar size={18} color={isDark ? '#999' : '#666'} />
                         </Pressable>
                         {showDatePickerFor === 'date' && (
-                            <View style={styles.datePickerContainer}>
+                            <View style={[styles.datePickerContainer, isDark && { backgroundColor: '#2C2C2E' }]}>
                                 <DateTimePicker
                                     value={formState.date ? new Date(formState.date) : new Date()}
                                     mode="date"
@@ -199,7 +199,7 @@ export default function EditInvoiceSheet({ invoice, onClose, onSave }: EditInvoi
                             <Calendar size={18} color={isDark ? '#999' : '#666'} />
                         </Pressable>
                         {showDatePickerFor === 'dueDate' && (
-                            <View style={styles.datePickerContainer}>
+                            <View style={[styles.datePickerContainer, isDark && { backgroundColor: '#2C2C2E' }]}>
                                 <DateTimePicker
                                     value={formState.dueDate ? new Date(formState.dueDate) : new Date()}
                                     mode="date"
@@ -330,7 +330,7 @@ const styles = StyleSheet.create({
         backgroundColor: '#E5E5EA',
         borderRadius: 8,
         padding: 2,
-        gap: 4,
+        height: 36, // Added fixed height to match CreateInvoiceSheet
     },
     segmentedControlDark: {
         backgroundColor: '#2C2C2E',
@@ -340,7 +340,7 @@ const styles = StyleSheet.create({
         borderRadius: 6,
         alignItems: 'center',
         justifyContent: 'center',
-        paddingVertical: 8,
+        // remove paddingVertical: 8 to rely on flex centering within fixed height container
     },
     segmentActiveDark: {
         backgroundColor: '#636366', // systemGray3
