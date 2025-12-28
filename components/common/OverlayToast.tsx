@@ -5,7 +5,7 @@
  */
 
 import React, { useEffect, useRef } from 'react';
-import { Animated, View } from 'react-native';
+import { Animated, View, PanResponder } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { CheckCircle } from 'lucide-react-native';
 import { ThemedText } from './ThemedText';
@@ -59,6 +59,35 @@ export function OverlayToast({ message, icon, onAnimationComplete }: OverlayToas
     return () => clearTimeout(timer);
   }, [fadeAnim, translateY, onAnimationComplete]);
 
+  // PanResponder for swipe-to-dismiss (swipe up)
+  const panResponder = React.useRef(
+    PanResponder.create({
+      onMoveShouldSetPanResponder: (_: any, gestureState: any) => {
+        // Detect upward swipe (negative dy)
+        return gestureState.dy < -10;
+      },
+      onPanResponderRelease: (_: any, gestureState: any) => {
+        if (gestureState.dy < -20) {
+          // Trigger dismiss animation
+          Animated.parallel([
+            Animated.timing(fadeAnim, {
+              toValue: 0,
+              duration: ANIMATION_DURATION.fast,
+              useNativeDriver: true,
+            }),
+            Animated.timing(translateY, {
+              toValue: -50, // Move further up
+              duration: ANIMATION_DURATION.fast,
+              useNativeDriver: true,
+            }),
+          ]).start(() => {
+            onAnimationComplete();
+          });
+        }
+      },
+    })
+  ).current;
+
   return (
     <Animated.View
       className="absolute left-0 right-0 items-center z-50"
@@ -67,7 +96,8 @@ export function OverlayToast({ message, icon, onAnimationComplete }: OverlayToas
         opacity: fadeAnim,
         transform: [{ translateY }],
       }}
-      pointerEvents="none"
+      pointerEvents="box-none"
+      {...panResponder.panHandlers}
     >
       <View
         className="flex-row items-center bg-green-500 rounded-full px-4 py-2.5"

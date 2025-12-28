@@ -1,5 +1,5 @@
 import React, { useState, useCallback, useEffect } from 'react';
-import { FlatList, TouchableOpacity, View } from 'react-native';
+import { FlatList, TouchableOpacity, View, RefreshControl } from 'react-native';
 import { Plus } from 'lucide-react-native';
 import { ThemedText, ThemedView, Loader } from '@/components/common';
 import { VesselCard, EmptyVesselList } from '@/components/vessel';
@@ -69,6 +69,13 @@ export default function Overview() {
           }}
           showsVerticalScrollIndicator={false}
           ListEmptyComponent={<EmptyVesselList />}
+          refreshControl={
+            <RefreshControl
+              refreshing={state.isLoading}
+              onRefresh={actions.onRefresh}
+              tintColor="#007AFF" // Optional: iOS spinner color
+            />
+          }
         />
 
 

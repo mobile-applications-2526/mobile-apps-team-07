@@ -28,7 +28,7 @@ interface VesselContextType {
 
   // Actions
   refreshVessels: () => Promise<void>;
-  refreshVesselsWithStatus: () => Promise<void>
+  refreshVesselsWithStatus: (isSilent?: boolean) => Promise<void>
   getVessel: (id: number) => Promise<Vessel | null>;
   getVesselWithStatus: (id: number) => Promise<VesselWithStatus | null>
   createVessel: (input: CreateVesselInput) => Promise<Vessel>;
@@ -137,9 +137,9 @@ export function VesselProvider({ children }: VesselProviderProps) {
   }, []);
 
   //Get All Vessels With Status
-  const refreshVesselsWithStatus = useCallback(async () => {
+  const refreshVesselsWithStatus = useCallback(async (isSilent = false) => {
     try {
-      setIsLoading(true);
+      if (!isSilent) setIsLoading(true);
       // Prefer network refresh; fall back to cache if network fails
       try {
         const fresh = await vesselService.fetchVesselsWithStatusNetwork();
@@ -158,7 +158,7 @@ export function VesselProvider({ children }: VesselProviderProps) {
       console.error('Failed to refresh vessels with Status:', err);
       setError(err instanceof Error ? err.message : 'Failed to refresh vessels with Status');
     } finally {
-      setIsLoading(false);
+      if (!isSilent) setIsLoading(false);
     }
   }, []);
 

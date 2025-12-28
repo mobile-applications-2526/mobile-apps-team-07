@@ -2,6 +2,7 @@ import { useState, useCallback, useEffect, useRef } from 'react';
 import { useFocusEffect, useRouter } from 'expo-router';
 import { Vessel, CreateVesselInput } from '@/types';
 import { useVessels } from '@/context/VesselContext';
+import { useNetworkStatus } from '@/context/NetworkStatusContext';
 import { useHaptics } from './useHaptics';
 import { useToast } from './useToast';
 
@@ -24,10 +25,10 @@ export function useFleetOverview() {
     // Polling logic
     useFocusEffect(
         useCallback(() => {
-            refreshVesselsWithStatus();
+            refreshVesselsWithStatus(true); // Initial load can be silent if we rely on initializing state, or non-silent if we want spinner
 
             const pollInterval = setInterval(() => {
-                refreshVesselsWithStatus();
+                refreshVesselsWithStatus(true); // Silent polling
             }, 15000);
 
             return () => { clearInterval(pollInterval); };
@@ -53,6 +54,7 @@ export function useFleetOverview() {
     // --- TOAST STATE ---
     // Removed local toast state in favor of global toast via NetworkStatusContext
     const { showToast } = useToast();
+    const { resetNetworkToast } = useNetworkStatus();
 
     // Helpers
     const hasActiveVoyage = useCallback((vesselId: number): boolean => {
@@ -164,6 +166,11 @@ export function useFleetOverview() {
         // No-op or remove if not needed by UI anymore (global toast handles its own animation)
     }, []);
 
+    const onRefresh = useCallback(async () => {
+        resetNetworkToast();
+        await refreshVesselsWithStatus(false); // Manual refresh: show spinner
+    }, [refreshVesselsWithStatus, resetNetworkToast]);
+
     return {
         state: {
             vesselsWithStatus,
@@ -194,7 +201,9 @@ export function useFleetOverview() {
             handleEditPress,
             handleCancelEdit,
             handleSaveEdit,
+            handleSaveEdit,
             handleToastAnimationComplete,
+            onRefresh,
         }
     };
 }

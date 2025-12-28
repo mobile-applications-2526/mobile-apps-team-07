@@ -5,6 +5,7 @@ import { WifiOff } from 'lucide-react-native';
 interface NetworkStatusContextType {
     isOffline: boolean;
     setIsOffline: (offline: boolean) => void;
+    resetNetworkToast: () => void;
 }
 
 const NetworkStatusContext = createContext<NetworkStatusContextType | null>(null);
@@ -27,16 +28,23 @@ export function NetworkStatusProvider({ children }: NetworkStatusProviderProps) 
     const hasShownOfflineToast = useRef(false);
     const prevOfflineRef = useRef<boolean>(false);
 
+    const [toastResetTrigger, setToastResetTrigger] = useState(0);
+
     const setIsOffline = useCallback((offline: boolean) => {
         setIsOfflineState(offline);
+    }, []);
+
+    const resetNetworkToast = useCallback(() => {
+        hasShownOfflineToast.current = false;
+        setToastResetTrigger(prev => prev + 1);
     }, []);
 
     // Watch for network status changes and trigger toast
     useEffect(() => {
         const prev = prevOfflineRef.current;
 
-        if (isOffline && !prev) {
-            // Going offline
+        if (isOffline) {
+            // Going offline or forced check while offline (via reset)
             if (!hasShownOfflineToast.current) {
                 showToast('Offline', <WifiOff size={16} color="#fff" />);
                 hasShownOfflineToast.current = true;
@@ -48,10 +56,10 @@ export function NetworkStatusProvider({ children }: NetworkStatusProviderProps) 
         }
 
         prevOfflineRef.current = isOffline;
-    }, [isOffline, showToast]);
+    }, [isOffline, showToast, toastResetTrigger]);
 
     return (
-        <NetworkStatusContext.Provider value={{ isOffline, setIsOffline }}>
+        <NetworkStatusContext.Provider value={{ isOffline, setIsOffline, resetNetworkToast }}>
             {children}
         </NetworkStatusContext.Provider>
     );
