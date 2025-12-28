@@ -1,58 +1,57 @@
-import * as FileSystem from 'expo-file-system/legacy';
-// import { FileSystemUploadType } from 'expo-file-system'; // This import was failing
 import { Platform } from 'react-native';
-import * as DocumentPicker from 'expo-document-picker';
 import { DocumentTypeCategory } from '@/types';
 import { API_URL } from './config';
 import { getToken } from './storage';
 
 // Define locally to avoid import definition issues at runtime
-const FileSystemUploadType = {
-  BINARY_CONTENT: 0,
-  MULTIPART: 1,
-};
-
+// Define locally to avoid import definition issues at runtime
 export const uploadDocument = async (
   vesselId: string,
   uri: string,
   type: DocumentTypeCategory,
   fileName: string,
+  mimeType: string,
   onProgress?: (progress: number) => void
 ): Promise<any> => {
   const uploadUrl = `${API_URL}/api/vessels/${vesselId}/documents/upload`;
 
   try {
-    // Dynamic import usage was causing issues, try static import or mixed approach
-    // We already imported legacy as FileSystem above
-
     const token = await getToken();
     const headers: Record<string, string> = {
       Accept: 'application/json',
+      'Content-Type': 'multipart/form-data',
     };
     if (token) {
       headers['Authorization'] = `Bearer ${token}`;
     }
 
-    const uploadResult = await FileSystem.uploadAsync(uploadUrl, uri, {
-      fieldName: 'file',
-      httpMethod: 'POST',
-      uploadType: FileSystemUploadType.MULTIPART as any,
-      parameters: {
-        documentType: type as string,
-        filename: fileName,
-      },
-      headers,
+    const formData = new FormData();
+    formData.append('file', {
+      uri,
+      name: fileName,
+      type: mimeType || 'application/pdf',
+    } as any);
+    formData.append('documentType', type as string);
+
+    // Use fetch instead of FileSystem.uploadAsync for better control over filename
+    const response = await fetch(uploadUrl, {
+      method: 'POST',
+      headers: headers as any, // TS Cast for headers compatible with fetch
+      body: formData,
     });
 
-    if (uploadResult.status >= 200 && uploadResult.status < 300) {
-      return JSON.parse(uploadResult.body);
+    const text = await response.text();
+    let data;
+    try {
+      data = JSON.parse(text);
+    } catch (e) {
+      data = null;
+    }
+
+    if (response.ok) {
+      return data;
     } else {
-      const text = uploadResult.body || '';
-      console.error('Upload failed', uploadResult.status, text, { uploadUrl, fileName, documentType: type });
-      const parsed = (() => {
-        try { return JSON.parse(text || '{}'); } catch { return null; }
-      })();
-      const message = parsed?.message || text || `Server returned ${uploadResult.status}`;
+      const message = data?.message || text || `Server returned ${response.status}`;
       throw new Error(message);
     }
   } catch (uploadErr: any) {

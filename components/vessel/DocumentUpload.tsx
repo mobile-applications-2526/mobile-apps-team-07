@@ -37,12 +37,12 @@ export const DocumentUpload: React.FC<Props> = ({
           <View style={{ flexDirection: 'row', alignItems: 'center', flex: 1, justifyContent: 'flex-end', minWidth: 0 }}>
             {doc && (
               <ThemedText
-                className="text-xs font-medium text-right mr-2"
+                className="text-xs font-medium text-right mr-2 text-gray-900 dark:text-gray-100"
                 numberOfLines={1}
                 ellipsizeMode="tail"
                 style={{ textAlign: 'right', maxWidth: 180 }}
               >
-                {doc.documentNumber || 'Document.pdf'}
+                {doc.documentName || doc.documentNumber || 'Document.pdf'}
               </ThemedText>
             )}
           </View>
@@ -59,10 +59,10 @@ export const DocumentUpload: React.FC<Props> = ({
               </ThemedText>
               <TouchableOpacity
                 onPress={() => onReplace(type)}
-                className="w-full px-3 py-2 border border-blue-500 rounded-lg items-center justify-center mb-2"
+                className="w-full px-3 py-2 border border-blue-500 dark:border-blue-400 rounded-lg items-center justify-center mb-2"
                 activeOpacity={0.7}
               >
-                <ThemedText className="text-[#fff] font-medium text-xs">Replace</ThemedText>
+                <ThemedText className="text-blue-500 dark:text-blue-400 font-medium text-xs">Replace</ThemedText>
               </TouchableOpacity>
               <TouchableOpacity
                 onPress={() => onDownload(doc)}

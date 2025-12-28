@@ -78,7 +78,7 @@ export const useVesselDocuments = () => {
       const name = asset.name || 'document.pdf';
       const uri = asset.uri;
       const lower = name.toLowerCase();
-      
+
       if (!lower.endsWith('.pdf')) {
         Alert.alert('File format error', 'Only PDF files are supported');
         return;
@@ -107,13 +107,13 @@ export const useVesselDocuments = () => {
           console.warn('Failed to delete documents cache:', cacheErr);
         }
 
-  await loadDocuments();
+        await loadDocuments();
 
-  // Notify other parts of the app (e.g. VesselDetailsProvider)
-  try { emit('documents:updated', { vesselId: vessel.id }); } catch (e) { /* no-op */ }
+        // Notify other parts of the app (e.g. VesselDetailsProvider)
+        try { emit('documents:updated', { vesselId: vessel.id }); } catch (e) { /* no-op */ }
 
-  setUploadState({ uploading: false, progress: 1, error: null });
-  Alert.alert('Upload successful', `${type} has been uploaded successfully.`);
+        setUploadState({ uploading: false, progress: 1, error: null });
+        Alert.alert('Upload successful', `${type} has been uploaded successfully.`);
       } catch (uploadErr: any) {
         setUploadState({ uploading: false, progress: 0, error: uploadErr?.message ?? 'Upload failed' });
         Alert.alert('Upload failed', uploadErr?.message ?? 'Network error during upload. Please try again.');

@@ -58,15 +58,7 @@ export default function VesselSpecs() {
         <Card className="mb-3">
           <View className="flex-row items-center mb-3">
             <Text
-              className="text-xs font-medium"
-              style={{
-                backgroundColor: '#F3F4F6',
-                color: '#6B7280',
-                borderRadius: 8,
-                paddingHorizontal: 10,
-                paddingVertical: 2,
-                overflow: 'hidden',
-              }}
+              className="text-xs font-medium bg-gray-100 dark:bg-gray-800 text-gray-500 dark:text-gray-400 py-1 px-2.5 rounded overflow-hidden"
             >
               Required
             </Text>
@@ -98,15 +90,7 @@ export default function VesselSpecs() {
         <Card className="mb-3">
           <View className="flex-row items-center mb-3">
             <Text
-              className="text-xs font-medium"
-              style={{
-                backgroundColor: '#F3F4F6',
-                color: '#6B7280',
-                borderRadius: 8,
-                paddingHorizontal: 10,
-                paddingVertical: 2,
-                overflow: 'hidden',
-              }}
+              className="text-xs font-medium bg-gray-100 dark:bg-gray-800 text-gray-500 dark:text-gray-400 py-1 px-2.5 rounded overflow-hidden"
             >
               Optional
             </Text>
