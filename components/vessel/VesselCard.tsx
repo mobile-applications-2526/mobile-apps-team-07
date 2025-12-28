@@ -4,11 +4,12 @@
  * Card component displaying vessel information in a list.
  */
 
-import React from 'react';
-import { TouchableOpacity, View } from 'react-native';
+import React, { useState } from 'react';
+import { TouchableOpacity, View, Image, Pressable } from 'react-native';
 import { Ship, Navigation, Pencil, Trash2, Anchor } from 'lucide-react-native';
 import { useRouter } from 'expo-router';
 import { ThemedText } from '@/components/common';
+import { ImageViewerModal } from '@/components/common/ImageViewerModal';
 import { useHaptics } from '@/hooks';
 import { Vessel, VesselStatus, Voyage } from '@/types';
 import { VESSEL_NAME_TRUNCATE_LENGTH } from '@/constants';
@@ -24,11 +25,12 @@ interface VesselCardProps {
 export function VesselCard({ vessel, voyage, status, onDeletePress, onEditPress }: VesselCardProps) {
   const router = useRouter();
   const { lightImpact, mediumImpact } = useHaptics();
-  
+  const [showImageViewer, setShowImageViewer] = useState(false);
+
 
   // Truncate vessel vesselName
-  const displayName = vessel.vesselName.length > VESSEL_NAME_TRUNCATE_LENGTH 
-    ? `${vessel.vesselName.substring(0, VESSEL_NAME_TRUNCATE_LENGTH)}...` 
+  const displayName = vessel.vesselName.length > VESSEL_NAME_TRUNCATE_LENGTH
+    ? `${vessel.vesselName.substring(0, VESSEL_NAME_TRUNCATE_LENGTH)}...`
     : vessel.vesselName;
 
   const hasActiveVoyage = voyage != null;
@@ -37,10 +39,10 @@ export function VesselCard({ vessel, voyage, status, onDeletePress, onEditPress 
     const hours = distanceToGoNm / averageSpeedKnots;
     const etaDate = new Date();
     etaDate.setHours(etaDate.getHours() + hours);
-    
+
     const monthAbbr = etaDate.toLocaleString('en-US', { month: 'short' });
     const day = etaDate.getDate();
-    
+
     return `${monthAbbr} ${day}`;
   };
 
@@ -83,8 +85,8 @@ export function VesselCard({ vessel, voyage, status, onDeletePress, onEditPress 
     const message = voyage.voyageStatus === 'Loading'
       ? `Ship is Loading at port ${voyage.loadRegion}`
       : voyage.voyageStatus === 'Discharging'
-      ? `Ship is Discharging at port ${voyage.dischargeRegion}`
-      : `Voyage ${voyage.voyageStatus}`;
+        ? `Ship is Discharging at port ${voyage.dischargeRegion}`
+        : `Voyage ${voyage.voyageStatus}`;
 
     return (
       <>
@@ -120,10 +122,23 @@ export function VesselCard({ vessel, voyage, status, onDeletePress, onEditPress 
       }}
     >
       <View className="flex-row items-start px-3 py-2.5">
-        {/* Ship Icon */}
-        <View className="w-10 h-10 rounded-lg mr-3 items-center justify-center bg-blue-50 dark:bg-blue-900/20">
-          <Ship size={20} color="#3b82f6" />
-        </View>
+        {/* Ship Icon or Image */}
+        <Pressable
+          onLongPress={() => vessel.vesselPictureUrl && setShowImageViewer(true)}
+          delayLongPress={300}
+        >
+          <View className="w-10 h-10 rounded-lg mr-3 items-center justify-center bg-blue-50 dark:bg-blue-900/20 overflow-hidden">
+            {vessel.vesselPictureUrl ? (
+              <Image
+                source={{ uri: vessel.vesselPictureUrl }}
+                className="w-full h-full"
+                resizeMode="cover"
+              />
+            ) : (
+              <Ship size={20} color="#3b82f6" />
+            )}
+          </View>
+        </Pressable>
 
         {/* Vessel Info */}
         <View className="flex-1 mr-2 justify-center h-10">
@@ -142,17 +157,17 @@ export function VesselCard({ vessel, voyage, status, onDeletePress, onEditPress 
 
         {/* Action Icons */}
         <View className="items-center justify-center h-10">
-          <TouchableOpacity 
-            className="p-1.5" 
-            activeOpacity={0.6} 
+          <TouchableOpacity
+            className="p-1.5"
+            activeOpacity={0.6}
             hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
             onPress={handleDeletePress}
           >
             <Trash2 size={16} color="#9ca3af" />
           </TouchableOpacity>
-          <TouchableOpacity 
-            className="p-1.5 mt-1" 
-            activeOpacity={0.6} 
+          <TouchableOpacity
+            className="p-1.5 mt-1"
+            activeOpacity={0.6}
             hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
             onPress={async () => { if (onEditPress) { await mediumImpact(); onEditPress(vessel); } }}
           >
@@ -165,6 +180,12 @@ export function VesselCard({ vessel, voyage, status, onDeletePress, onEditPress 
       <View className={`flex-row items-center px-3 py-1.5 ${hasActiveVoyage ? 'bg-blue-50 dark:bg-blue-900/10' : 'bg-gray-50 dark:bg-gray-800/50'}`}>
         {renderETAContent()}
       </View>
+
+      <ImageViewerModal
+        visible={showImageViewer}
+        imageUri={vessel.vesselPictureUrl ?? null}
+        onClose={() => setShowImageViewer(false)}
+      />
     </TouchableOpacity>
   );
 }

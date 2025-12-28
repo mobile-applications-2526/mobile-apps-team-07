@@ -95,7 +95,10 @@ export default function VesselVoyages() {
   if (isLoadingVessel) {
     return (
       <ThemedView className="flex-1 bg-gray-100 dark:bg-[#000]">
-        <VesselTopBar vesselName={vessel?.vesselName ?? ''} />
+        <VesselTopBar
+          vesselName={vessel?.vesselName ?? ''}
+          vesselImage={vessel?.vesselPictureUrl}
+        />
         <Loader text="Loading voyages..." />
       </ThemedView>
     );
@@ -106,6 +109,7 @@ export default function VesselVoyages() {
       {/* Top App Bar */}
       <VesselTopBar
         vesselName={vessel?.vesselName ?? ''}
+        vesselImage={vessel?.vesselPictureUrl}
         rightContent={
           <TouchableOpacity
             onPress={handleAddVoyage}

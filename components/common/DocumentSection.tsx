@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
-import { View, TouchableOpacity, ScrollView } from 'react-native';
-import { FileText, Plus, ChevronDown } from 'lucide-react-native';
+import { View, TouchableOpacity, ScrollView, Platform, ActionSheetIOS, Alert } from 'react-native';
+import { FileText, Plus, FileUp } from 'lucide-react-native';
 import { ThemedText } from '@/components/common';
 import { DocumentUpload } from '../vessel';
 import { Document, DocumentCategory, DocumentType } from '@/types';
@@ -25,87 +25,90 @@ export function DocumentsSection({
 }: DocumentsSectionProps) {
 
   const [selectedType, setSelectedType] = useState<DocumentType | null>(
-    ( category == 'vessels'? 'CharterParty'
-    : category == 'voyages'? 'NoonReport'
-    : category == 'cargoes'? 'CargoManifest': null )
+    (category == 'vessels' ? 'CharterParty'
+      : category == 'voyages' ? 'NoonReport'
+        : category == 'cargoes' ? 'CargoManifest' : null)
   );
-
-  const [showDropdown, setShowDropdown] = useState(false);
 
   // Filter documents by selected type
   const filteredDocs = documents.filter(doc => doc.documentType === selectedType);
 
   const docTypes = (
-      category == 'vessels' ? 
-        VESSEL_DOC_TYPES.filter(v => !['FormC', 'Q88'].includes(v.value))
-    : category == 'voyages' ? 
+    category == 'vessels' ?
+      VESSEL_DOC_TYPES.filter(v => !['FormC', 'Q88'].includes(v.value))
+      : category == 'voyages' ?
         VOYAGE_DOC_TYPES
-    : category == 'cargoes' ? 
-        CARGO_DOC_TYPES :  null);
-  
+        : category == 'cargoes' ?
+          CARGO_DOC_TYPES : null);
+
   // Get label for selected type
   const selectedLabel = docTypes?.find(t => t.value === selectedType)?.label || selectedType;
 
+  // Handle native action sheet for document type selection
+  const handleDocumentTypePress = () => {
+    if (!docTypes) return;
+
+    if (Platform.OS === 'ios') {
+      const options = [...docTypes.map(dt => dt.label), 'Cancel'];
+      ActionSheetIOS.showActionSheetWithOptions(
+        {
+          options,
+          cancelButtonIndex: options.length - 1,
+          title: 'Select Document Type',
+        },
+        (buttonIndex) => {
+          if (buttonIndex < docTypes.length) {
+            setSelectedType(docTypes[buttonIndex].value);
+          }
+        }
+      );
+    } else {
+      // Fallback for Android
+      const buttons: { text: string; onPress?: () => void; style?: 'cancel' | 'default' | 'destructive' }[] = docTypes.map(dt => ({
+        text: dt.label,
+        onPress: () => setSelectedType(dt.value),
+      }));
+      buttons.push({ text: 'Cancel', style: 'cancel' });
+
+      Alert.alert(
+        'Select Document Type',
+        '',
+        buttons
+      );
+    }
+  };
+
   return (
-    <View className="mb-4">
+    <View>
       {/* Header with Document Type Selector */}
-      <View className="bg-white dark:bg-[#1c1c1e] rounded-t-2xl p-6 pb-4">
-      {title && 
-        <View className="flex-row items-center justify-between mb-4">
-          <ThemedText className="text-xl font-bold">{title}</ThemedText>
-        </View>
-      }
+      <View className="mb-4">
+        {title && (
+          <View className="flex-row items-center justify-between mb-3">
+            {/* Title is usually handled by DataSection if used, but we keep it optional here */}
+          </View>
+        )}
 
-        {/* Document Type Dropdown */}
-        <View className="relative">
-          <TouchableOpacity
-            onPress={() => setShowDropdown(!showDropdown)}
-            className="flex-row items-center justify-between p-4 bg-gray-100 dark:bg-gray-800 rounded-xl"
+        {/* Document Type Button */}
+        <TouchableOpacity
+          onPress={handleDocumentTypePress}
+          className="flex-row items-center justify-between p-3 bg-[#F2F2F7] dark:bg-[#2C2C2E] rounded-xl"
+          activeOpacity={0.7}
+        >
+          <ThemedText
+            className="text-[17px] font-normal text-black dark:text-white flex-1 mr-2"
+            numberOfLines={1}
+            ellipsizeMode="tail"
           >
-            <ThemedText className="text-base font-medium">{selectedLabel}</ThemedText>
-            <ChevronDown 
-              size={20} 
-              color="#6b7280" 
-              style={{ transform: [{ rotate: showDropdown ? '180deg' : '0deg' }] }}
-            />
-          </TouchableOpacity>
-
-          {/* Dropdown Menu */}
-          {showDropdown && (
-            <View className="absolute top-full left-0 right-0 mt-2 bg-white dark:bg-[#1c1c1e] rounded-xl shadow-lg border border-gray-200 dark:border-gray-700 z-50 max-h-80">
-              <ScrollView>
-                {docTypes?.map((docType) => (
-                  <TouchableOpacity
-                    key={docType.value}
-                    onPress={() => {
-                      setSelectedType(docType.value);
-                      setShowDropdown(false);
-                    }}
-                    className={`p-4 border-b border-gray-100 dark:border-gray-800 ${
-                      selectedType === docType.value ? 'bg-blue-50 dark:bg-blue-900/20' : ''
-                    }`}
-                  >
-                    <ThemedText 
-                      className={`${
-                        selectedType === docType.value 
-                          ? 'text-blue-600 dark:text-blue-400 font-semibold' 
-                          : 'text-gray-800 dark:text-gray-200'
-                      }`}
-                    >
-                      {docType.label}
-                    </ThemedText>
-                  </TouchableOpacity>
-                ))}
-              </ScrollView>
-            </View>
-          )}
-        </View>
+            {selectedLabel}
+          </ThemedText>
+          <ThemedText className="text-[17px] text-[#007AFF]">Select</ThemedText>
+        </TouchableOpacity>
       </View>
 
       {/* Documents List */}
-      <View className="bg-white dark:bg-[#1c1c1e] p-6 pt-2">
+      <View>
         {filteredDocs.length > 0 ? (
-          <View className="gap-3">
+          <View>
             {filteredDocs.map((doc) => (
               <DocumentUpload
                 key={doc.id}
@@ -116,28 +119,39 @@ export function DocumentsSection({
                 onUpload={() => onUpload(selectedType!)}
                 onReplace={() => onReplace(selectedType!, doc.id)}
                 onDownload={() => onDownload(doc)}
+                hasBorder={false}
               />
             ))}
+
+            {/* Show Add Button even if docs exist (to add another of same type if supported, or just to match style if not) 
+                However for singular docs we might want to hide it. Assuming standard behavior for now. 
+                For strictly matching Q88 style which is 1 doc = filled, 0 doc = placeholder:
+            */}
+            {/* If we strictly want to mimic "Add new" as a placeholder card below the list: */}
+            {category !== 'vessels' && (
+              <TouchableOpacity
+                onPress={() => onUpload(selectedType!)}
+                activeOpacity={0.6}
+                className="w-full items-center justify-center border-2 border-dashed border-gray-300 dark:border-gray-700 rounded-xl py-4 bg-gray-50 dark:bg-gray-900/30 mt-2"
+              >
+                <View className="flex-row items-center justify-center gap-2">
+                  <Plus size={18} color="#6b7280" />
+                  <ThemedText className="text-sm font-medium text-gray-600 dark:text-gray-400">Add another {selectedLabel}</ThemedText>
+                </View>
+              </TouchableOpacity>
+            )}
           </View>
         ) : (
-          <View className="items-center py-8">
-            <FileText size={48} color="#9ca3af" />
-            <ThemedText className="text-center text-gray-500 dark:text-gray-400 mt-3">
-              No {selectedLabel!.toLowerCase()}s uploaded yet
-            </ThemedText>
-          </View>
-        )}
-
-        {/* Add New Document Button */}
-        {category !== 'vessels' && (
           <TouchableOpacity
-            onPress={()=>onUpload(selectedType!)}
-            className="flex-row items-center justify-center gap-2 p-4 mt-4 bg-blue-600 rounded-xl"
+            onPress={() => onUpload(selectedType!)}
+            activeOpacity={0.6}
+            className="w-full items-center justify-center border-2 border-dashed border-gray-300 dark:border-gray-700 rounded-xl py-4 bg-gray-50 dark:bg-gray-900/30"
           >
-            <Plus size={20} color="#fff" />
-            <ThemedText className="text-white font-semibold">
-              Add {selectedLabel}
-            </ThemedText>
+            <View className="w-10 h-10 bg-gray-200 dark:bg-gray-800 rounded-full items-center justify-center mb-2">
+              <FileUp size={18} color="#6b7280" />
+            </View>
+            <ThemedText className="text-sm font-medium mb-0.5">Upload {selectedLabel}</ThemedText>
+            <ThemedText className="text-xs text-gray-400">PDF only, max 25MB</ThemedText>
           </TouchableOpacity>
         )}
       </View>

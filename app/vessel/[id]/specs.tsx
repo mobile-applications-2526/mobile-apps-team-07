@@ -34,7 +34,13 @@ export default function VesselSpecs() {
 
   return (
     <ThemedView className="flex-1 bg-gray-100 dark:bg-[#000]">
-      <VesselTopBar vesselName={vessel?.vesselName ?? ''} />
+      <VesselTopBar
+        vesselName={vessel?.vesselName ?? ''}
+        vesselImage={vessel?.vesselPictureUrl}
+      />
+
+      {/* Verify if locked */}
+      {/* (Logic handled in parent layout, but good to be safe if viewed directly) */}
 
       <ScrollView contentContainerStyle={{ padding: 16 }} className="flex-1" showsVerticalScrollIndicator={false}>
         {/* Specification page: no global unlock banner (banner shown in layout on other pages) */}

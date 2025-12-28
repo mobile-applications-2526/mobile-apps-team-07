@@ -60,9 +60,9 @@ export function VoyageDetails({
   const [activeTab, setActiveTab] = React.useState<'reports' | 'cargo'>('reports');
   const [showAllPorts, setShowAllPorts] = React.useState(false);
 
-  useEffect(()=>{
+  useEffect(() => {
     loadDocuments();
-  },[]);
+  }, []);
 
   // Format dates
   const formatDate = (date: Date) => {
@@ -400,14 +400,16 @@ export function VoyageDetails({
         )}
 
         {/* Document Upload Section */}
-        <DocumentsSection
-          documents={documents}
-          category='voyages'
-          title='Voyage Documents'
-          onUpload={uploadDocument}
-          onReplace={replaceDocument}
-          onDownload={onDownload}
-        />
+        <DataSection title="Voyage Documents">
+          <DocumentsSection
+            documents={documents}
+            category='voyages'
+            // Title handled by DataSection now
+            onUpload={uploadDocument}
+            onReplace={replaceDocument}
+            onDownload={onDownload}
+          />
+        </DataSection>
       </View>
     </ScrollView>
   );
