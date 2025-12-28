@@ -65,4 +65,15 @@ export async function createTCInvoice(payload: any) {
   }
 }
 
+/**
+ * Create a new VC invoice
+ */
+export async function createVCInvoice(payload: any) {
+  try {
+    return await apiClient.post('/api/invoices/vc', payload);
+  } catch (err: any) {
+    throw new Error(`Failed to create VC invoice: ${err.message}`);
+  }
+}
+
 export default { getInvoicesByVessel, getInvoiceById, updateInvoiceStatus, deleteInvoice, updateInvoice, createTCInvoice };

@@ -5,7 +5,7 @@ import { Receipt, Download, Pencil, Trash2, Plus, FileText } from 'lucide-react-
 import { ThemedText, ThemedView, Card, Loader, LockedScreen } from '@/components/common';
 import { VesselTopBar, InvoiceCard } from '@/components/vessel';
 import { useVesselDetails, useInvoices } from '@/hooks';
-import TCInvoiceFormSheet from '@/components/vessel/TCInvoiceFormSheet';
+import CreateInvoiceSheet from '@/components/vessel/CreateInvoiceSheet';
 import EditInvoiceSheet from '@/components/vessel/EditInvoiceSheet';
 import { Invoice } from '@/types';
 import { mapBackendInvoice } from '@/lib/mappers';
@@ -37,7 +37,7 @@ export default function VesselInvoices() {
   // Date Picker state moved to EditInvoiceSheet
   const [tempDate, setTempDate] = React.useState<Date | null>(null);
 
-  const [showCreateTC, setShowCreateTC] = React.useState(false);
+  const [showCreateInvoice, setShowCreateInvoice] = React.useState(false);
 
   // Removed local bottomSheetRef for invoices
   const snapPoints = React.useMemo(() => ['60%', '90%'], []);
@@ -81,7 +81,7 @@ export default function VesselInvoices() {
         vesselName={vessel?.vesselName ?? ''}
         rightContent={
           <TouchableOpacity
-            onPress={() => setShowCreateTC(true)}
+            onPress={() => setShowCreateInvoice(true)}
             className="p-2 bg-blue-600 rounded-full"
           >
             <Plus size={20} color="#fff" />
@@ -112,12 +112,12 @@ export default function VesselInvoices() {
         )}
       </View>
 
-      <TCInvoiceFormSheet
-        visible={showCreateTC}
-        onClose={() => setShowCreateTC(false)}
+      <CreateInvoiceSheet
+        visible={showCreateInvoice}
+        onClose={() => setShowCreateInvoice(false)}
         onSuccess={(newInv) => {
           createInvoice(newInv);
-          setShowCreateTC(false);
+          setShowCreateInvoice(false);
           Alert.alert('Success', 'Invoice created successfully.');
         }}
         vesselId={String(vessel?.id || '')}
