@@ -5,6 +5,7 @@
  */
 import React from 'react';
 import { TouchableOpacity, View, ScrollView } from 'react-native';
+import { useColorScheme } from 'nativewind';
 import { ChevronLeft, ChevronRight, MapPin, Clock, FileText, Anchor, Eye, EyeOff } from 'lucide-react-native';
 import { ThemedText, DataSection, DataRow, Card } from '@/components/common';
 import { CharterParty, VesselStatus, Voyage, VoyagePort } from '@/types';
@@ -41,6 +42,9 @@ export function VoyageDetails({
   hasNoVoyages = false,
   onCreateFirstVoyage,
 }: VoyageDetailsProps) {
+
+  const { colorScheme } = useColorScheme();
+  const iconColor = colorScheme === 'dark' ? '#fff' : '#000';
 
   const {
     findDoc,
@@ -132,7 +136,7 @@ export function VoyageDetails({
               className={`p-2 rounded-full ${isFirstVoyage ? 'opacity-30' : 'active:bg-gray-200 dark:active:bg-gray-800'}`}
               disabled={isFirstVoyage}
             >
-              <ChevronLeft size={24} color="#000" className="dark:color-white" />
+              <ChevronLeft size={24} color={iconColor} />
             </TouchableOpacity>
 
             <ThemedText className="text-3xl font-bold">
@@ -144,7 +148,7 @@ export function VoyageDetails({
               className={`p-2 rounded-full ${isLastVoyage ? 'opacity-30' : 'active:bg-gray-200 dark:active:bg-gray-800'}`}
               disabled={isLastVoyage}
             >
-              <ChevronRight size={24} color="#000" className="dark:color-white" />
+              <ChevronRight size={24} color={iconColor} />
             </TouchableOpacity>
           </View>
         </View>

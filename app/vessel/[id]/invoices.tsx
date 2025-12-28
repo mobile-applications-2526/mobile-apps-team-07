@@ -1,7 +1,7 @@
 import React, { useMemo } from 'react';
 import { useColorScheme } from 'nativewind';
-import { View, FlatList, Pressable, Alert, Image } from 'react-native';
-import { Receipt, Download, Pencil, Trash2, PlusCircle, FileText } from 'lucide-react-native';
+import { View, FlatList, Pressable, Alert, Image, TouchableOpacity } from 'react-native';
+import { Receipt, Download, Pencil, Trash2, Plus, FileText } from 'lucide-react-native';
 import { ThemedText, ThemedView, Card, Loader, LockedScreen } from '@/components/common';
 import { VesselTopBar, InvoiceCard } from '@/components/vessel';
 import { useVesselDetails, useInvoices } from '@/hooks';
@@ -9,8 +9,6 @@ import TCInvoiceFormSheet from '@/components/vessel/TCInvoiceFormSheet';
 import EditInvoiceSheet from '@/components/vessel/EditInvoiceSheet';
 import { Invoice } from '@/types';
 import { mapBackendInvoice } from '@/lib/mappers';
-
-
 
 export default function VesselInvoices() {
   const { vessel, hasQ88, hasFormC } = useVesselDetails();
@@ -56,8 +54,6 @@ export default function VesselInvoices() {
     return <LockedScreen type={isGasCarrier ? 'gas' : 'standard'} />;
   }
 
-  // Form logic moved to EditInvoiceSheet
-
   function openEdit(inv: Invoice) {
     setEditingInvoice(inv);
   }
@@ -79,18 +75,17 @@ export default function VesselInvoices() {
     deleteInvoice(inv);
   }
 
-
   return (
     <ThemedView className="flex-1 bg-gray-100 dark:bg-[#000] p-0">
       <VesselTopBar
         vesselName={vessel?.vesselName ?? ''}
         rightContent={
-          <Pressable
+          <TouchableOpacity
             onPress={() => setShowCreateTC(true)}
-            className="bg-blue-50 dark:bg-blue-900/30 p-2 rounded-full"
+            className="p-2 bg-blue-600 rounded-full"
           >
-            <PlusCircle size={24} color="#2563eb" />
-          </Pressable>
+            <Plus size={20} color="#fff" />
+          </TouchableOpacity>
         }
       />
 
@@ -133,7 +128,6 @@ export default function VesselInvoices() {
         onClose={() => setEditingInvoice(null)}
         onSave={(inv, payload) => updateInvoice(inv, payload) as any}
       />
-    </ThemedView >
+    </ThemedView>
   );
 }
-
