@@ -137,28 +137,27 @@ export function VoyageDetails({
     <ScrollView className="flex-1 bg-gray-50 dark:bg-black">
       <View className="p-4">
         {/* Header */}
-        <View className="flex-row items-center justify-center mb-4">
-          <View className="flex-row items-center gap-3">
-            <TouchableOpacity
-              onPress={() => onCycleVoyage('previous')}
-              className={`p-2 rounded-full ${isFirstVoyage ? 'opacity-30' : 'active:bg-gray-200 dark:active:bg-gray-800'}`}
-              disabled={isFirstVoyage}
-            >
-              <ChevronLeft size={24} color={iconColor} />
-            </TouchableOpacity>
+        {/* Header */}
+        <View className="flex-row items-center justify-between mb-4 px-2">
+          <TouchableOpacity
+            onPress={() => onCycleVoyage('previous')}
+            className={`p-2 rounded-full ${isFirstVoyage ? 'opacity-30' : 'active:bg-gray-200 dark:active:bg-gray-800'}`}
+            disabled={isFirstVoyage}
+          >
+            <ChevronLeft size={24} color={isFirstVoyage ? "#9ca3af" : iconColor} />
+          </TouchableOpacity>
 
-            <ThemedText className="text-2xl font-bold">
-              {voyage.voyageNumber}
-            </ThemedText>
+          <ThemedText className="text-lg font-bold">
+            {voyage.voyageNumber}
+          </ThemedText>
 
-            <TouchableOpacity
-              onPress={() => onCycleVoyage('next')}
-              className={`p-2 rounded-full ${isLastVoyage ? 'opacity-30' : 'active:bg-gray-200 dark:active:bg-gray-800'}`}
-              disabled={isLastVoyage}
-            >
-              <ChevronRight size={24} color={iconColor} />
-            </TouchableOpacity>
-          </View>
+          <TouchableOpacity
+            onPress={() => onCycleVoyage('next')}
+            className={`p-2 rounded-full ${isLastVoyage ? 'opacity-30' : 'active:bg-gray-200 dark:active:bg-gray-800'}`}
+            disabled={isLastVoyage}
+          >
+            <ChevronRight size={24} color={isLastVoyage ? "#9ca3af" : iconColor} />
+          </TouchableOpacity>
         </View>
 
         {/* Route Visualization */}
@@ -172,7 +171,7 @@ export function VoyageDetails({
             </View>
           }
         >
-          <View>
+          <View className="mt-4">
             {/* Row 1: Circles and Lines */}
             <View className="flex-row items-center justify-between mb-2">
               {/* Load Ports */}
