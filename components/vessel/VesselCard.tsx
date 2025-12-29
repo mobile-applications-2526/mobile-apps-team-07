@@ -11,6 +11,7 @@ import { useRouter } from 'expo-router';
 import { ThemedText } from '@/components/common';
 import { ImageViewerModal } from '@/components/common/ImageViewerModal';
 import { useHaptics } from '@/hooks';
+import { usePrefetchVessel } from '@/hooks/queries';
 import { Vessel, VesselStatus, Voyage } from '@/types';
 import { VESSEL_NAME_TRUNCATE_LENGTH } from '@/constants';
 
@@ -26,6 +27,7 @@ export function VesselCard({ vessel, voyage, status, onDeletePress, onEditPress 
   const router = useRouter();
   const { lightImpact, mediumImpact } = useHaptics();
   const [showImageViewer, setShowImageViewer] = useState(false);
+  const prefetchVessel = usePrefetchVessel();
 
 
   // Truncate vessel vesselName
@@ -100,6 +102,8 @@ export function VesselCard({ vessel, voyage, status, onDeletePress, onEditPress 
 
   const handlePress = async () => {
     await lightImpact();
+    // Prefetch vessel data before navigation (don't await - fire and forget)
+    prefetchVessel(vessel.id);
     router.push(`/vessel/${vessel.id}` as any);
   };
 

@@ -11,6 +11,8 @@ import { vesselService } from '@/services';
 import { DOCUMENT_TYPES } from '@/constants';
 
 import { useNetworkStatus } from '@/context/NetworkStatusContext';
+import { queryClient } from '@/lib/queryClient';
+import { vesselKeys } from '@/hooks/queries';
 
 import { useSession } from './AuthContext';
 
@@ -194,15 +196,22 @@ export function VesselProvider({ children }: VesselProviderProps) {
     }
   }, []);
 
-  // Create new vessel
+  // Create new vessel - add to state after successful API call
   const createVessel = useCallback(async (input: CreateVesselInput): Promise<Vessel> => {
     const newVessel = await vesselService.createVessel(input);
+    // Add to state immediately after success
     setVessels(prev => [newVessel, ...prev]);
+    // Invalidate React Query cache so vessel detail pages get fresh data
+    queryClient.invalidateQueries({ queryKey: vesselKeys.all });
     return newVessel;
   }, []);
 
-  // Update existing vessel
+  // Update existing vessel - already optimistic
   const updateVessel = useCallback(async (input: Vessel): Promise<Vessel | null> => {
+    // Save previous state for rollback
+    const previousVessels = [...vessels];
+    const previousWithStatus = [...vesselsWithStatus];
+
     // Optimistic update: apply change locally immediately so UI reflects the edit
     setVessels(prev => prev.map(v => v.id === input.id ? input : v));
     setVesselsWithStatus(prev => prev.map(vws => vws.vessel.id === input.id ? { ...vws, vessel: input } : vws));
@@ -213,28 +222,46 @@ export function VesselProvider({ children }: VesselProviderProps) {
         // Replace with authoritative response
         setVessels(prev => prev.map(v => v.id === input.id ? updatedVessel : v));
         setVesselsWithStatus(prev => prev.map(vws => vws.vessel.id === input.id ? { ...vws, vessel: updatedVessel } : vws));
+        // Invalidate React Query cache so vessel detail pages get fresh data
+        queryClient.invalidateQueries({ queryKey: vesselKeys.detail(input.id) });
         return updatedVessel;
       }
       // If backend not implemented yet, keep optimistic result
       return input;
     } catch (err) {
       console.error('Failed to update vessel in service:', err);
-      // On error, keep optimistic change (could also revert) and return null to signal failure
+      // Rollback on error
+      setVessels(previousVessels);
+      setVesselsWithStatus(previousWithStatus);
       return null;
     }
-  }, []);
+  }, [vessels, vesselsWithStatus]);
 
-  // Delete vessel
+  // Delete vessel - optimistic update
   const deleteVessel = useCallback(async (id: number): Promise<boolean> => {
-    const success = await vesselService.deleteVessel(id);
+    // Save previous state for rollback
+    const previousVessels = [...vessels];
+    const previousWithStatus = [...vesselsWithStatus];
 
-    if (success) {
-      setVesselsWithStatus(prev => prev.filter(v => v.vessel.id !== id));
-      setVessels(prev => prev.filter(v => v.id !== id));
+    // Optimistic: remove from UI immediately
+    setVesselsWithStatus(prev => prev.filter(v => v.vessel.id !== id));
+    setVessels(prev => prev.filter(v => v.id !== id));
+
+    try {
+      const success = await vesselService.deleteVessel(id);
+      if (!success) {
+        // Rollback if delete failed
+        setVessels(previousVessels);
+        setVesselsWithStatus(previousWithStatus);
+      }
+      return success;
+    } catch (err) {
+      // Rollback on error
+      setVessels(previousVessels);
+      setVesselsWithStatus(previousWithStatus);
+      return false;
     }
-
-    return success;
-  }, []);
+  }, [vessels, vesselsWithStatus]);
 
   // Check if IMO exists
   const imoExists = useCallback(async (imo: string): Promise<boolean> => {

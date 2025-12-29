@@ -1,72 +1,68 @@
 import { voyageService } from "@/services";
 import { Document, VoyageWithDetails } from "@/types";
-import { useCallback, useEffect, useState } from "react";
+import { useCallback } from "react";
+import { useQuery, useQueryClient } from '@tanstack/react-query';
+import { voyageDetailKeys } from './queries';
+import * as db from '@/lib/database';
 
 export function useVoyageDetails(id: number | undefined) {
-  const [voyageWithDetails, setVoyageData] = useState<VoyageWithDetails | null>(null);
-  const [documents, setDocuments] = useState<Document[]>([]);
-  const [isLoading, setIsLoading] = useState(false);
-  const [error, setError] = useState<Error | null>(null);
+  const queryClient = useQueryClient();
 
-  const loadVoyageDetails = useCallback(async () => {
-    if (!id) return;
-
-    try {
-      setIsLoading(true);
-      setError(null);
-
-      // Network First
+  // Use React Query for voyage details - persists across navigation
+  const { data: voyageWithDetails, isLoading, error, refetch } = useQuery({
+    queryKey: voyageDetailKeys.detail(id!),
+    queryFn: async (): Promise<VoyageWithDetails | null> => {
       try {
-        const data = await voyageService.fetchVoyageDetailsByIdNetwork(id);
-        if (data) {
-          setVoyageData(data);
-        }
-
-        const docsData = await voyageService.fetchVoyageDocumentsNetwork(id);
-        if(docsData){
-          setDocuments(docsData);
-        }
-      } catch (networkErr) {
-        console.warn('Network failed for voyageWithDetails details, falling back to cache', networkErr);
-
-        // Cache Fallback
-        const cachedData = await voyageService.getVoyageDetailsById(id);
-        if (cachedData) {
-          setVoyageData(cachedData);
-        } else {
-          // No cache available, set error
-          setError(networkErr instanceof Error ? networkErr : new Error('Network failed and no cache available'));
-        }
+        return await voyageService.fetchVoyageDetailsByIdNetwork(id!);
+      } catch (err) {
+        console.warn('Network failed for voyage details, using cache:', err);
+        const cached = await db.getCacheValue<VoyageWithDetails>(db.CACHE_KEYS.VOYAGE_DETAILS_BY_ID(id!));
+        if (cached) return cached;
+        throw err;
       }
-    } catch (err) {
-      console.error('Failed to load voyageWithDetails details:', err);
-      setError(err instanceof Error ? err : new Error('Unknown error occurred'));
-    } finally {
-      setIsLoading(false);
-    }
-  }, [id]);
+    },
+    enabled: !!id,
+    placeholderData: () => queryClient.getQueryData(voyageDetailKeys.detail(id!)),
+  });
+
+  // Use React Query for voyage documents
+  const { data: documents = [] } = useQuery({
+    queryKey: voyageDetailKeys.documents(id!),
+    queryFn: async (): Promise<Document[]> => {
+      try {
+        return await voyageService.fetchVoyageDocumentsNetwork(id!);
+      } catch (err) {
+        console.warn('Network failed for voyage documents, using cache:', err);
+        const cached = await db.getCacheValue<Document[]>(db.CACHE_KEYS.DOCUMENTS_BY_VOYAGE(id!));
+        if (cached) return cached;
+        throw err;
+      }
+    },
+    enabled: !!id,
+    placeholderData: () => queryClient.getQueryData(voyageDetailKeys.documents(id!)),
+  });
 
   const getDocuments = useCallback(async (): Promise<Document[]> => {
-    if(!id) return [];
-    return await voyageService.getVoyageDocuments(id);
-  }, [id])
+    return documents;
+  }, [documents]);
 
-  useEffect(() => {
-    loadVoyageDetails();
-  }, [loadVoyageDetails]);
+  const loadVoyageDetails = useCallback(async () => {
+    await refetch();
+  }, [refetch]);
 
   const updateVoyageLocal = useCallback((updatedVoyage: VoyageWithDetails) => {
-    setVoyageData(updatedVoyage);
-  }, []);
+    queryClient.invalidateQueries({ queryKey: voyageDetailKeys.detail(id!) });
+  }, [id, queryClient]);
 
   return {
-    voyageWithDetails,
+    voyageWithDetails: voyageWithDetails ?? null,
     documents,
     isLoading,
-    error,
+    error: error as Error | null,
 
     getDocuments,
     refresh: loadVoyageDetails,
     updateLocal: updateVoyageLocal,
   };
 }
+

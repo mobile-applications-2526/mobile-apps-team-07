@@ -1,64 +1,60 @@
-import { useState, useCallback, useEffect, useMemo } from 'react';
+import { useState, useCallback, useMemo } from 'react';
 import { Alert, Linking } from 'react-native';
 import { Invoice } from '@/types';
 import { invoiceService } from '@/services';
 import { mapBackendInvoice } from '@/services';
+import { useQuery, useQueryClient } from '@tanstack/react-query';
+import { invoiceKeys } from './queries';
+import * as db from '@/lib/database';
 
 export function useInvoices(vesselId: number | undefined) {
-    const [invoices, setInvoices] = useState<Invoice[]>([]);
-    const [isLoading, setIsLoading] = useState(false);
+    const queryClient = useQueryClient();
     const [processingMap, setProcessingMap] = useState<Record<string, boolean>>({});
 
-    const loadInvoices = useCallback(async () => {
-        if (!vesselId) return;
-        try {
-            setIsLoading(true);
-
-            // Network First
+    // Use React Query for invoices - persists across navigation
+    const { data: invoicesData, isLoading, refetch } = useQuery({
+        queryKey: invoiceKeys.byVessel(vesselId!),
+        queryFn: async (): Promise<Invoice[]> => {
             try {
-                const raw = await invoiceService.fetchInvoicesByVesselNetwork(vesselId);
-                const mapped = (raw || []).map(mapBackendInvoice);
-                setInvoices(mapped);
-            } catch (networkErr) {
-                console.warn('Network failed for invoices, falling back to cache');
-                // Cache Fallback
-                const cachedRaw = await invoiceService.getInvoicesByVessel(vesselId);
-                // Note: getInvoicesByVessel logic is "check cache, if present return it (and bg update), else fetch network".
-                // Since we already failed network, getInvoicesByVessel might retry generic fetch or return cache.
-                // However, my implementation of getInvoicesByVessel was: "if cache, return cache (trigger bg), else fetch network".
-                // If we are offline, fetch network inside getInvoicesByVessel will fail too.
-                // So checking getInvoicesByVessel is safe: if it has cache it returns it. If not it fails.
-
-                // EXCEPT: I need to be careful not to trigger double network requests if I just failed.
-                // But getInvoicesByVessel does not take an "onlyCache" param. 
-                // However, standard "get...()" usually implies "get best available".
-
-                // Let's rely on getInvoicesByVessel() correctly returning cache if present.
-                const mapped = (cachedRaw || []).map(mapBackendInvoice);
-                setInvoices(mapped);
+                const raw = await invoiceService.fetchInvoicesByVesselNetwork(vesselId!);
+                return (raw || []).map(mapBackendInvoice);
+            } catch (err) {
+                console.warn('Network failed for invoices, using cache:', err);
+                const cachedRaw = await db.getCacheValue<any[]>(db.CACHE_KEYS.INVOICES_BY_VESSEL(vesselId!));
+                if (cachedRaw) return cachedRaw.map(mapBackendInvoice);
+                throw err;
             }
-        } catch (err) {
-            console.error('Failed to load invoices:', err);
-        } finally {
-            setIsLoading(false);
-        }
-    }, [vesselId]);
+        },
+        enabled: !!vesselId,
+        placeholderData: () => queryClient.getQueryData(invoiceKeys.byVessel(vesselId!)),
+    });
 
-    useEffect(() => {
-        loadInvoices();
-    }, [loadInvoices]);
+    const invoices = invoicesData ?? [];
+
+    const loadInvoices = useCallback(async () => {
+        await refetch();
+    }, [refetch]);
 
     const setProcessing = (id: string, value: boolean) => {
         setProcessingMap(prev => ({ ...prev, [id]: value }));
     };
 
-    const createInvoice = useCallback((newInv: Invoice) => {
-        setInvoices(prev => [newInv, ...prev]);
-    }, []);
+    // Optimistic update helper
+    const optimisticUpdate = useCallback((updater: (prev: Invoice[]) => Invoice[]) => {
+        queryClient.setQueryData<Invoice[]>(invoiceKeys.byVessel(vesselId!), (old) => updater(old ?? []));
+    }, [vesselId, queryClient]);
 
+    // Optimistic create - instantly add to UI
+    const createInvoice = useCallback((newInv: Invoice) => {
+        optimisticUpdate(prev => [newInv, ...prev]);
+        // Background refetch to sync with server
+        queryClient.invalidateQueries({ queryKey: invoiceKeys.byVessel(vesselId!) });
+    }, [vesselId, queryClient, optimisticUpdate]);
+
+    // Optimistic update - instantly show changes in UI
     const updateInvoiceLocal = useCallback((updatedInv: Invoice) => {
-        setInvoices(prev => prev.map(i => i.id === updatedInv.id ? updatedInv : i));
-    }, []);
+        optimisticUpdate(prev => prev.map(i => i.id === updatedInv.id ? updatedInv : i));
+    }, [optimisticUpdate]);
 
     const downloadPdf = useCallback(async (inv: Invoice) => {
         try {
@@ -71,7 +67,8 @@ export function useInvoices(vesselId: number | undefined) {
             const fresh = await invoiceService.getInvoiceById(Number(inv.id));
             const pdf = fresh?.fileUrl ?? fresh?.pdfUrl ?? null;
             if (pdf) {
-                setInvoices(prev => prev.map(i => i.id === inv.id ? { ...i, pdfUrl: pdf, pdfReady: true } : i));
+                // Invalidate to update cache with PDF URL
+                queryClient.invalidateQueries({ queryKey: invoiceKeys.byVessel(vesselId!) });
                 await Linking.openURL(pdf);
             } else {
                 Alert.alert('PDF not available', 'PDF is still being generated. Please try again later.');
@@ -82,7 +79,7 @@ export function useInvoices(vesselId: number | undefined) {
         } finally {
             setProcessing(inv.id, false);
         }
-    }, []);
+    }, [vesselId, queryClient]);
 
     const deleteInvoice = useCallback(async (inv: Invoice) => {
         Alert.alert(
@@ -92,13 +89,20 @@ export function useInvoices(vesselId: number | undefined) {
                 { text: 'Cancel', style: 'cancel' },
                 {
                     text: 'Delete', style: 'destructive', onPress: async () => {
+                        // Optimistic delete - remove from UI immediately
+                        const previousData = queryClient.getQueryData<Invoice[]>(invoiceKeys.byVessel(vesselId!));
+                        optimisticUpdate(prev => prev.filter(i => i.id !== inv.id));
+
                         try {
                             setProcessing(inv.id, true);
                             await invoiceService.deleteInvoice(Number(inv.id));
-                            setInvoices(prev => prev.filter(i => i.id !== inv.id));
                             Alert.alert('Deleted', `${inv.number} has been deleted.`);
                         } catch (err) {
                             console.error('Delete failed', err);
+                            // Rollback on error
+                            if (previousData) {
+                                queryClient.setQueryData(invoiceKeys.byVessel(vesselId!), previousData);
+                            }
                             Alert.alert('Delete failed', 'Could not delete invoice.');
                         } finally {
                             setProcessing(inv.id, false);
@@ -107,21 +111,27 @@ export function useInvoices(vesselId: number | undefined) {
                 }
             ]
         );
-    }, []);
+    }, [vesselId, queryClient, optimisticUpdate]);
 
     const changeStatus = useCallback(async (inv: Invoice, newStatus: Invoice['status']) => {
+        // Optimistic status change - show new status immediately
+        const previousData = queryClient.getQueryData<Invoice[]>(invoiceKeys.byVessel(vesselId!));
+        optimisticUpdate(prev => prev.map(i => i.id === inv.id ? { ...i, status: newStatus } : i));
+
         try {
             setProcessing(inv.id, true);
-            const updated = await invoiceService.updateInvoiceStatus(Number(inv.id), newStatus);
-            const mapped = mapBackendInvoice(updated);
-            setInvoices(prev => prev.map(i => i.id === inv.id ? mapped : i));
+            await invoiceService.updateInvoiceStatus(Number(inv.id), newStatus);
         } catch (err) {
             console.error('Failed to update status', err);
+            // Rollback on error
+            if (previousData) {
+                queryClient.setQueryData(invoiceKeys.byVessel(vesselId!), previousData);
+            }
             Alert.alert('Update failed', 'Could not update invoice status.');
         } finally {
             setProcessing(inv.id, false);
         }
-    }, []);
+    }, [vesselId, queryClient, optimisticUpdate]);
 
     // Update invoice (full edit)
     const updateInvoice = useCallback(async (original: Invoice, payload: any) => {
@@ -133,7 +143,8 @@ export function useInvoices(vesselId: number | undefined) {
             const fresh = await invoiceService.getInvoiceById(Number(original.id));
             const newDetails = mapBackendInvoice(fresh || updated);
 
-            setInvoices(prev => prev.map(i => i.id === original.id ? newDetails : i));
+            // Invalidate to show updated invoice
+            queryClient.invalidateQueries({ queryKey: invoiceKeys.byVessel(vesselId!) });
             return true;
         } catch (err) {
             console.error('Failed to update invoice', err);
@@ -142,7 +153,7 @@ export function useInvoices(vesselId: number | undefined) {
         } finally {
             setProcessing(original.id, false);
         }
-    }, []);
+    }, [vesselId, queryClient]);
 
     const sortedInvoices = useMemo(() =>
         [...invoices].sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime()),
@@ -163,3 +174,4 @@ export function useInvoices(vesselId: number | undefined) {
         }
     };
 }
+

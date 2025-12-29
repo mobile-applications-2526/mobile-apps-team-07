@@ -102,7 +102,25 @@ export const useVesselDocuments = () => {
         });
         console.log('Upload response:', uploadResp);
 
-        // Invalidate documents cache so loadDocuments fetches fresh data
+        // Optimistic: add document to local state immediately
+        const newDoc: DocType = {
+          id: uploadResp?.id ?? Date.now(),
+          documentType: type,
+          fileUrl: uploadResp?.fileUrl ?? uri,
+          documentName: name,
+          documentDate: new Date(),
+          remarks: '',
+        };
+        setDocuments(prev => {
+          // Replace existing doc of same type, or add new one
+          const exists = prev.some(d => d.documentType === type);
+          if (exists) {
+            return prev.map(d => d.documentType === type ? newDoc : d);
+          }
+          return [...prev, newDoc];
+        });
+
+        // Invalidate documents cache for background sync
         try {
           if (vessel && typeof vessel.id === 'number') {
             await db.deleteCacheValue(db.CACHE_KEYS.DOCUMENTS_BY_VESSEL(vessel.id));
@@ -110,8 +128,6 @@ export const useVesselDocuments = () => {
         } catch (cacheErr) {
           console.warn('Failed to delete documents cache:', cacheErr);
         }
-
-        await loadDocuments();
 
         // Notify other parts of the app (e.g. VesselDetailsProvider)
         try { emit('documents:updated', { vesselId: vessel.id }); } catch (e) { /* no-op */ }

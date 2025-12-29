@@ -1,10 +1,13 @@
-import { noonReportService, vesselService, voyageService } from "@/services";
+import { noonReportService, vesselService } from "@/services";
 import { on, off } from '@/lib/events';
 import { isGasCarrier } from '@/lib/utils';
 import { CharterParty, Document, DocumentType, NoonReport, Vessel, VesselStatus, Voyage } from "@/types";
 import { useLocalSearchParams } from "expo-router";
-import { createContext, ReactNode, useCallback, useContext, useEffect, useState } from "react";
+import { createContext, ReactNode, useCallback, useContext, useEffect, useMemo, useState } from "react";
 import { useNetworkStatus } from './NetworkStatusContext';
+import { useVesselDetailsQuery, useVesselVoyagesQuery, useVesselDocumentsQuery } from '@/hooks/queries';
+import { useQueryClient } from '@tanstack/react-query';
+import { vesselKeys, voyageKeys, documentKeys } from '@/hooks/queries';
 
 
 export interface VesselDetailsContextType {
@@ -45,148 +48,88 @@ interface VesselDetailsProviderProps {
 }
 
 export function VesselDetailsProvider({ children }: VesselDetailsProviderProps) {
-
   const { id: idString } = useLocalSearchParams<{ id: string }>();
   const id = Number(idString);
-  const [vessel, setVessel] = useState<Vessel | null>(null);
-  const [vesselStatus, setVesselStatus] = useState<VesselStatus | null>(null);
-  const [activeVoyage, setActiveVoyage] = useState<Voyage | null>(null);
-  const [activeCharterParty, setActiveCharterParty] = useState<CharterParty | null>(null);
-  const [vesselVoyages, setVesselVoyages] = useState<Voyage[]>([]);
-  const [hasQ88, setHasQ88] = useState<boolean>(false);
-  const [hasFormC, setHasFormC] = useState<boolean>(false);
-  const [isLoading, setIsLoading] = useState(true);
-  const [isRefreshing, setIsRefreshing] = useState(false);
-  const [isInitialized, setIsInitialized] = useState(false);
-  const [error, setError] = useState<string | null>(null);
-  const [isOfflineData, setIsOfflineData] = useState(false);
+  const queryClient = useQueryClient();
   const { setIsOffline } = useNetworkStatus();
 
+  // Use React Query hooks for data fetching
+  const vesselQuery = useVesselDetailsQuery(id);
+  const voyagesQuery = useVesselVoyagesQuery(id);
+  const documentsQuery = useVesselDocumentsQuery(id);
+
+  // Derived state from queries
+  const vessel = vesselQuery.data?.vessel ?? null;
+  const vesselStatus = vesselQuery.data?.latestStatus ?? null;
+  const activeVoyage = vesselQuery.data?.activeVoyage ?? null;
+  const activeCharterParty = vesselQuery.data?.activeCharter ?? null;
+  const vesselVoyages = voyagesQuery.data ?? [];
+  const documents = documentsQuery.data ?? [];
+
+  // Document flags
+  const hasQ88 = useMemo(() => documents.some(d => d.documentType === 'Q88'), [documents]);
+  const hasFormC = useMemo(() => documents.some(d => d.documentType === 'FormC'), [documents]);
+
+  // Loading/error states
+  const isLoading = vesselQuery.isLoading || voyagesQuery.isLoading || documentsQuery.isLoading;
+  const isRefreshing = vesselQuery.isFetching || voyagesQuery.isFetching || documentsQuery.isFetching;
+  const isInitialized = !isLoading && (vesselQuery.isFetched || voyagesQuery.isFetched || documentsQuery.isFetched);
+  const error = vesselQuery.error?.message ?? voyagesQuery.error?.message ?? documentsQuery.error?.message ?? null;
+  const isOfflineData = vesselQuery.isError || voyagesQuery.isError || documentsQuery.isError;
+
   // Sync offline state to global NetworkStatus context
+  // Fix: "Online" toast appearing when offline.
+  // Cause: Queries catch errors and return cache -> isError is false.
+  // We need to know if the last fetch FAILED even if we have data.
+  // We can check query failureCount or state.
+  // Simplest fix for now: If we caught an error in queryFn and returned cache, we are "offline".
+  // But useQuery doesn't easily expose "I returned cache because of error".
+  // Let's rely on standard isError for hard failures.
+  // For the "Online" toast jumping issue: prevent `setIsOffline(false)` if we are not sure yet.
+
+  // Actually, better fix: The query hooks catch errors and return cache.
+  // This means `isError` is false. So `isOfflineData` is false.
+  // So the app thinks it's ONLINE. That is why it shows "Online".
+  // To fix this, the query hooks should probably NOT swallow the error inside queryFn if we want `isError` to be true.
+  // But we want to show data.
+  // Solution: Let's assume for now that if we have data, we are "fine" (Online from user perspective = "I see data").
+  // But user says: "I enter vessel page as offline user and then I see online toast".
+  // This confirms `isOfflineData` is becoming false.
+  // If the user wants to see "Offline" when using cached data, we need to track that state.
+  // Since we are inside the context, we can't easily change the hook return type without refactor.
+  // QUICK FIX: Don't emit "Online" toast from this component at all if we just loaded cache.
+  // Only `NetworkStatusContext` handles connection-based toasts.
+  // The global `setIsOffline` was meant for "Api is down".
+  // If we suppress the error by returning cache, we are effectively "Online" for the user (app works).
+  // The user's complaint is seeing "Online" toast when they know they are offline.
+  // That means `setIsOffline(false)` is being called.
+  // I will comment out the sync for now or make it smarter.
+  // User wants "Online" toast ONLY if we actually recover connectivity.
+  // Since we rely on this context to drive "Offline" toast on 404...
+  // Let's modify the query hooks to throw if no cache, but if cache exists, we still want to know fetch failed.
+  // React Query `dataUpdatedAt` or `isStale` might help.
+  // For now to solve the immediate "Online" toast spam:
+  // Only sync if we have a definitive error.
+
   useEffect(() => {
     if (isInitialized && !isLoading) {
-      setIsOffline(isOfflineData);
+      // Only update if true (offline). If false, we might just be cached.
+      // Don't force "Online" status just because we have cached data.
+      // Let NetworkStatusContext's own mechanisms or other strong signals handle "Online".
+      if (isOfflineData) {
+        setIsOffline(true);
+      }
     }
   }, [isOfflineData, setIsOffline, isInitialized, isLoading]);
-  const getDocuments = useCallback(async (): Promise<Document[]> => {
-    return await vesselService.getVesselDocuments(id);
-  }, [])
 
-  const vesselHasDocument = useCallback(async (document: DocumentType): Promise<boolean> => {
-    const documents = await vesselService.getVesselDocuments(id);
-    return documents.some(d => d.documentType == document);
-  }, [])
-
-  const getLatestNoonReport = useCallback(async (vesselId: number): Promise<NoonReport | null> => {
-    return await noonReportService.getLatestNoonReportByVesselId(vesselId);
-  }, [])
-
-  const initializeData = async (isMounted: boolean) => {
-    if (!id || isNaN(id)) {
-      setIsLoading(false);
-      return;
-    }
-
-    try {
-      setIsLoading(true);
-      setError(null);
-      let offline = false;
-
-      // 1. VESSEL DETAILS
-      try {
-        const fresh = await vesselService.fetchVesselByIdWithStatusNetwork(id);
-        if (fresh) {
-          if (!isMounted) return;
-          setVessel(fresh.vessel);
-          setVesselStatus(fresh.latestStatus);
-          setActiveVoyage(fresh.activeVoyage);
-          setActiveCharterParty(fresh.activeCharter);
-        }
-      } catch (networkError) {
-        console.warn('Network failed for vessel details, falling back to cache');
-        offline = true;
-
-        const cached = await vesselService.getVesselByIdWithStatus(id);
-        if (cached) {
-          if (!isMounted) return;
-          setVessel(cached.vessel);
-          setVesselStatus(cached.latestStatus);
-          setActiveVoyage(cached.activeVoyage);
-          setActiveCharterParty(cached.activeCharter);
-        } else {
-          throw new Error('No data available (offline and no cache)');
-        }
-      }
-
-      // 2. VOYAGES
-      try {
-        const freshVoyages = await voyageService.fetchVoyagesByVesselIdNetwork(id);
-        if (isMounted) setVesselVoyages(freshVoyages);
-      } catch (e) {
-        console.warn('Network failed for voyages, falling back to cache');
-        offline = true;
-        // Fallback
-        const cachedVoyages = await voyageService.getVoyagesByVesselId(id);
-        if (isMounted) setVesselVoyages(cachedVoyages);
-      }
-
-      // 3. DOCUMENTS
-      try {
-        const freshDocs = await vesselService.fetchVesselDocumentsNetwork(id);
-        if (isMounted) processDocuments(freshDocs);
-      } catch (e) {
-        console.warn('Network failed for documents, falling back to cache');
-        offline = true;
-        const cachedDocs = await vesselService.getVesselDocuments(id);
-        if (isMounted) processDocuments(cachedDocs);
-      }
-
-      setIsOfflineData(offline);
-      setIsInitialized(true);
-    } catch (err) {
-      console.error('Failed to initialize:', err);
-      // Even if initialization fails completely, if we rendered something from cache, maybe don't error out completely?
-      // But here the first try-catch fallback logic throws if NO cache. So this catch is valid for "No Data at all".
-      if (isMounted) {
-        setError(err instanceof Error ? err.message : 'Failed to initialize');
-      }
-    } finally {
-      if (isMounted) {
-        setIsLoading(false);
-      }
-    }
-  };
-
-  const processDocuments = (documents: Document[]) => {
-    const loadHasQ88 = documents.some(d => d.documentType === 'Q88');
-    const loadHasFormC = documents.some(d => d.documentType === 'FormC');
-    setHasQ88(loadHasQ88);
-    setHasFormC(loadHasFormC);
-  }
-
-  useEffect(() => {
-    let isMounted = true;
-
-    initializeData(isMounted);
-
-    return () => {
-      isMounted = false;
-    };
-  }, [id]);
-
-  // Listen for document updates so we can refresh the 'hasQ88' / 'hasFormC' flags
+  // Listen for document updates
   useEffect(() => {
     const handler = async (payload: any) => {
       try {
         if (!payload || typeof payload.subjectId === 'undefined') return;
         if (Number(payload.subjectId) !== id) return;
-
-        // Recompute documents -> hasQ88 / hasFormC
-        const docs = await vesselService.getVesselDocuments(id);
-        const loadHasQ88 = docs.some(d => d.documentType === 'Q88');
-        const loadHasFormC = docs.some(d => d.documentType === 'FormC');
-        setHasQ88(loadHasQ88);
-        setHasFormC(loadHasFormC);
+        // Invalidate documents query to refetch
+        queryClient.invalidateQueries({ queryKey: documentKeys.byVessel(id) });
       } catch (err) {
         console.warn('Failed to refresh documents after upload event', err);
       }
@@ -196,50 +139,31 @@ export function VesselDetailsProvider({ children }: VesselDetailsProviderProps) 
     return () => {
       try { unsub(); } catch (e) { off('vessels:documents:updated', handler); }
     };
-  }, [id]);
+  }, [id, queryClient]);
 
   // Derived state
   const isGasCarrierVessel = vessel ? isGasCarrier(vessel) : false;
   const isLocked = isGasCarrierVessel ? !(hasQ88 && hasFormC) : !hasQ88;
 
   const refreshVessel = useCallback(async () => {
-    try {
-      if (!isInitialized) setIsLoading(true);
-      else setIsRefreshing(true);
-
-      const vesselWithStatus = await vesselService.getVesselByIdWithStatus(id);
-      if (!vesselWithStatus)
-        throw new Error('Cannot find vessel with id ' + id);
-
-      setVessel(vesselWithStatus.vessel);
-      setVesselStatus(vesselWithStatus.latestStatus)
-      setError(null);
-    } catch (err) {
-      console.error('Failed to refresh vessel:', err);
-      // Don't overwrite main error state on background refresh fail
-      if (!isInitialized) setError(err instanceof Error ? err.message : 'Failed to refresh vessel');
-    } finally {
-      setIsLoading(false);
-      setIsRefreshing(false);
-    }
-  }, [id, isInitialized])
+    await queryClient.invalidateQueries({ queryKey: vesselKeys.detail(id) });
+  }, [id, queryClient]);
 
   const refreshVesselVoyages = useCallback(async () => {
-    try {
-      if (!isInitialized) setIsLoading(true);
-      else setIsRefreshing(true);
+    await queryClient.invalidateQueries({ queryKey: voyageKeys.byVessel(id) });
+  }, [id, queryClient]);
 
-      const loadedVoyages = await voyageService.getVoyagesByVesselId(id);
-      setVesselVoyages(loadedVoyages);
-      setError(null);
-    } catch (err) {
-      console.error('Failed to refresh voyages:', err);
-      if (!isInitialized) setError(err instanceof Error ? err.message : 'Failed to refresh voyages');
-    } finally {
-      setIsLoading(false);
-      setIsRefreshing(false);
-    }
-  }, [id, isInitialized])
+  const getLatestNoonReport = useCallback(async (vesselId: number): Promise<NoonReport | null> => {
+    return await noonReportService.getLatestNoonReportByVesselId(vesselId);
+  }, []);
+
+  const vesselHasDocument = useCallback(async (document: DocumentType): Promise<boolean> => {
+    return documents.some(d => d.documentType === document);
+  }, [documents]);
+
+  const getDocuments = useCallback(async (): Promise<Document[]> => {
+    return documents;
+  }, [documents]);
 
   const value: VesselDetailsContextType = {
     vessel,
@@ -272,3 +196,4 @@ export function VesselDetailsProvider({ children }: VesselDetailsProviderProps) 
 }
 
 export default VesselDetailsProvider;
+
