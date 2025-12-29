@@ -163,7 +163,7 @@ export const CACHE_KEYS = {
   VOYAGE_BY_ID: (id: number) => `voyages:${id}`,
 
   // Cargo caches
-
+  CARGOES_BY_VOYAGE: (voyageId: number) => `cargoes:voyage:${voyageId}`,
   CARGO_BY_ID: (id: number) => `cargoes:${id}`,
 
   // Document caches

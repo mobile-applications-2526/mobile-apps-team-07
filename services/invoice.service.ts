@@ -1,5 +1,6 @@
 import { apiClient } from './api-client.service';
 import * as db from '@/lib/database';
+import { Invoice } from '@/types';
 
 export type RawInvoice = any;
 
@@ -28,15 +29,15 @@ export async function fetchInvoicesByVesselNetwork(vesselId: number): Promise<Ra
 /**
  * Fetch a single invoice by id
  */
-export async function getInvoiceById(id: number) {
-  return await apiClient.get(`/api/invoices/${id}`);
+export async function getInvoiceById(id: number): Promise<Invoice> {
+  return await apiClient.get<Invoice>(`/api/invoices/${id}`);
 }
 
 /**
  * Update the payment status for an invoice
  */
-export async function updateInvoiceStatus(id: number, status: string) {
-  return await apiClient.put(`/api/invoices/${id}/status`, { status });
+export async function updateInvoiceStatus(id: number, status: string): Promise<Invoice> {
+  return await apiClient.put<Invoice>(`/api/invoices/${id}/status`, { status });
 }
 
 /**

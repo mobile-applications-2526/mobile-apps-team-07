@@ -1,4 +1,4 @@
-import { useState, useCallback } from 'react';
+import { useState, useCallback, useEffect } from 'react';
 import { Alert, Linking } from 'react-native';
 import { API_URL } from '@/services';
 import * as db from '@/lib/database';
@@ -17,7 +17,7 @@ type UploadState = {
 };
 
 export const useVesselDocuments = () => {
-  const { vessel, getVesselDocuments } = useVesselDetails();
+  const { vessel, getDocuments } = useVesselDetails();
   const [documents, setDocuments] = useState<DocType[]>([]);
   const [uploadState, setUploadState] = useState<UploadState>({ uploading: false, progress: 0, error: null });
   const [refreshing, setRefreshing] = useState(false);
@@ -26,14 +26,18 @@ export const useVesselDocuments = () => {
     if (!vessel) return;
     try {
       setRefreshing(true);
-      const docs = await getVesselDocuments(vessel.id);
+      const docs = await getDocuments();
       setDocuments(docs || []);
     } catch (err) {
       console.error('Failed to load documents', err);
     } finally {
       setRefreshing(false);
     }
-  }, [vessel, getVesselDocuments]);
+  }, [vessel, getDocuments]);
+
+  useEffect(() => {
+    loadDocuments();
+  }, [loadDocuments]);
 
   const findDoc = (type: DocumentTypeCategory) => documents.find(d => d.documentType === type);
 

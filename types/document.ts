@@ -52,3 +52,6 @@ export type CargoDocumentType =
   | 'PackingList'
   | 'UllageReport'
   | 'CommercialInvoice';
+
+// Type alias for backward compatibility
+export type DocumentTypeCategory = DocumentType;

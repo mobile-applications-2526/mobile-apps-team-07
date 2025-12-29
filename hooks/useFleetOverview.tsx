@@ -1,4 +1,4 @@
-import { useState, useCallback, useEffect, useRef, createElement } from 'react';
+import { useState, useCallback, useEffect, useRef } from 'react';
 import { useFocusEffect, useRouter } from 'expo-router';
 import { Vessel, CreateVesselInput } from '@/types';
 import { useVessels } from '@/context/VesselContext';
@@ -153,7 +153,7 @@ export function useFleetOverview() {
             await refreshVesselsWithStatus();
             setEditModalVisible(false);
             setVesselToEdit(null);
-            showToast('Vessel updated', createElement(CircleCheckBig, { size: 20, color: 'white' }));
+            showToast('Vessel updated', <CircleCheckBig size={20} color="white" />);
             await haptics.successNotification();
         } catch (err) {
             console.error('Failed to update vessel', err);
@@ -201,6 +201,7 @@ export function useFleetOverview() {
             handleCreateVessel,
             handleEditPress,
             handleCancelEdit,
+            handleSaveEdit,
             handleSaveEdit,
             handleToastAnimationComplete,
             onRefresh,

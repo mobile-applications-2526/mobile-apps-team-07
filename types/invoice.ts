@@ -8,5 +8,6 @@ export interface Invoice {
     currency: string;
     status: 'Paid' | 'Pending' | 'Overdue';
     pdfUrl?: string | null;
+    fileUrl?: string | null;  // Alternative field name for PDF URL
     pdfReady?: boolean;
 }

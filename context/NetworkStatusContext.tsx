@@ -1,6 +1,6 @@
 import React, { createContext, useCallback, useContext, useState, ReactNode, useEffect, useRef } from 'react';
 import { useToast } from '@/hooks/useToast';
-import { WifiOff } from 'lucide-react-native';
+import { WifiOff, Wifi } from 'lucide-react-native';
 
 interface NetworkStatusContextType {
     isOffline: boolean;
@@ -25,38 +25,45 @@ interface NetworkStatusProviderProps {
 export function NetworkStatusProvider({ children }: NetworkStatusProviderProps) {
     const [isOffline, setIsOfflineState] = useState(false);
     const { showToast } = useToast();
-    const hasShownOfflineToast = useRef(false);
-    const prevOfflineRef = useRef<boolean>(false);
-
-    const [toastResetTrigger, setToastResetTrigger] = useState(0);
+    const prevOfflineRef = useRef<boolean | null>(null);
+    const hasShownInitialRef = useRef(false);
 
     const setIsOffline = useCallback((offline: boolean) => {
         setIsOfflineState(offline);
     }, []);
 
     const resetNetworkToast = useCallback(() => {
-        hasShownOfflineToast.current = false;
-        setToastResetTrigger(prev => prev + 1);
-    }, []);
+        // Force show current status on manual refresh
+        // Only show offline toast if offline, don't show "online" on successful refresh
+        if (isOffline) {
+            showToast('Offline', <WifiOff size={16} color="#fff" />);
+        }
+        // Reset prev so next change can trigger toast
+        prevOfflineRef.current = isOffline;
+    }, [isOffline, showToast]);
 
-    // Watch for network status changes and trigger toast
+    // Watch for offline state changes (set by contexts based on API failures)
     useEffect(() => {
         const prev = prevOfflineRef.current;
 
-        if (isOffline) {
-            // Going offline or forced check while offline (via reset)
-            if (!hasShownOfflineToast.current) {
+        // Skip first render to avoid toast on app load
+        if (!hasShownInitialRef.current) {
+            hasShownInitialRef.current = true;
+            prevOfflineRef.current = isOffline;
+            return;
+        }
+
+        // Only show toast if status actually changed
+        if (prev !== null && prev !== isOffline) {
+            if (isOffline) {
                 showToast('Offline', <WifiOff size={16} color="#fff" />);
-                hasShownOfflineToast.current = true;
+            } else {
+                showToast('Online', <Wifi size={16} color="#fff" />);
             }
-        } else if (!isOffline && prev) {
-            // Going online
-            showToast('Online');
-            hasShownOfflineToast.current = false;
         }
 
         prevOfflineRef.current = isOffline;
-    }, [isOffline, showToast, toastResetTrigger]);
+    }, [isOffline, showToast]);
 
     return (
         <NetworkStatusContext.Provider value={{ isOffline, setIsOffline, resetNetworkToast }}>

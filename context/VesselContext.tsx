@@ -9,7 +9,9 @@ import React, { createContext, useContext, useEffect, useCallback, useState, Rea
 import { Vessel, VesselWithStatus, CreateVesselInput, Document, DocumentTypeCategory } from '@/types';
 import { vesselService } from '@/services';
 import { DOCUMENT_TYPES } from '@/constants';
-import { useNetworkStatus } from './NetworkStatusContext';
+
+import { useNetworkStatus } from '@/context/NetworkStatusContext';
+
 import { useSession } from './AuthContext';
 
 // ============================================
@@ -75,16 +77,15 @@ export function VesselProvider({ children }: VesselProviderProps) {
   const [isInitialized, setIsInitialized] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [isOfflineData, setIsOfflineData] = useState(false);
-  const { setIsOffline } = useNetworkStatus();
   const { session, isLoading: isAuthLoading } = useSession();
+  const { setIsOffline } = useNetworkStatus();
 
-  // Sync offline state to global NetworkStatus
+  // Sync offline state to global NetworkStatus context
   useEffect(() => {
     if (isInitialized && !isLoading) {
       setIsOffline(isOfflineData);
     }
   }, [isOfflineData, setIsOffline, isInitialized, isLoading]);
-
   // Clear data on logout
   useEffect(() => {
     if (!session) {

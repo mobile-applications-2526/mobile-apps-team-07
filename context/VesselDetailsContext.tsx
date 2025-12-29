@@ -6,6 +6,7 @@ import { useLocalSearchParams } from "expo-router";
 import { createContext, ReactNode, useCallback, useContext, useEffect, useState } from "react";
 import { useNetworkStatus } from './NetworkStatusContext';
 
+
 export interface VesselDetailsContextType {
   vessel: Vessel | null,
   vesselStatus: VesselStatus | null,
@@ -61,15 +62,12 @@ export function VesselDetailsProvider({ children }: VesselDetailsProviderProps) 
   const [isOfflineData, setIsOfflineData] = useState(false);
   const { setIsOffline } = useNetworkStatus();
 
-  // Sync offline state to global NetworkStatus
+  // Sync offline state to global NetworkStatus context
   useEffect(() => {
-    // Only update global status when we have actually determined our local status
-    // This prevents default 'false' state during loading from flipping the global state
     if (isInitialized && !isLoading) {
       setIsOffline(isOfflineData);
     }
   }, [isOfflineData, setIsOffline, isInitialized, isLoading]);
-
   const getDocuments = useCallback(async (): Promise<Document[]> => {
     return await vesselService.getVesselDocuments(id);
   }, [])
