@@ -49,7 +49,7 @@ export function useVoyageDetails(id: number | undefined) {
   const getDocuments = useCallback(async (): Promise<Document[]> => {
     if(!id) return [];
     return await voyageService.getVoyageDocuments(id);
-  }, [])
+  }, [id])
 
   useEffect(() => {
     loadVoyageDetails();

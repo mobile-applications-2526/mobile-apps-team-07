@@ -1,14 +1,11 @@
-import { useState, useCallback } from 'react';
-import { Alert, Linking } from 'react-native';
+import { useState, useCallback, useEffect } from 'react';
+import { Alert } from 'react-native';
 import { API_URL } from '@/services/config';
 import * as db from '@/lib/database';
 import { Document, DocumentType, DocumentCategory } from '@/types';
-import { useVesselDetails } from '@/context/VesselDetailsContext';
 import { documentService } from '@/services';
 import { emit } from '@/lib/events';
 import { MAX_FILE_SIZE, SUPPORTED_EXTENSIONS, SUPPORTED_FORMATS } from '@/constants';
-import { useVoyageDetails } from './useVoyageDetails';
-import { useCargoDetails } from './useCargoDetails';
 
 type UploadState = {
   uploading: boolean;
@@ -18,30 +15,14 @@ type UploadState = {
 
 export const useDocuments = (
   category: DocumentCategory, 
-  subjectId: number | undefined
+  subjectId: number | undefined,
+  getDocuments: ()=>Promise<Document[]>
 ) => {
 
   const [documents, setDocuments] = useState<Document[]>([]);
   const [uploadState, setUploadState] = useState<UploadState>({ uploading: false, progress: 0, error: null });
   const [refreshing, setRefreshing] = useState(false);
 
-  const vesselDetails = useVesselDetails();
-  const voyageDetails = useVoyageDetails(subjectId);
-  const cargoDetails = useCargoDetails(subjectId);
-
-  // Select the right details object based on category
-  const details = 
-    category === 'vessels' ? vesselDetails :
-    category === 'voyages' ? voyageDetails :
-    category === 'cargoes' ? cargoDetails : 
-    null;
-  
-  if (!details) {
-    throw new Error(`Invalid document category: ${category}`);
-  }
-
-  const getDocuments = details.getDocuments;
- 
   const loadDocuments = useCallback(async () => {
     if(!subjectId) return;
 
@@ -54,7 +35,11 @@ export const useDocuments = (
     } finally {
       setRefreshing(false);
     }
-  }, []);
+  }, [subjectId, getDocuments]);
+
+  useEffect(()=>{
+    loadDocuments();
+  },[subjectId, loadDocuments]);
 
   const findDoc = (type: DocumentType) => documents.find(d => d.documentType === type);
 

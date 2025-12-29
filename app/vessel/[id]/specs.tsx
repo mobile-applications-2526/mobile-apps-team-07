@@ -10,7 +10,7 @@ import { useVesselDetails, useDocuments } from '@/hooks';
 import { DocumentsSection } from '@/components/common/DocumentSection';
 
 export default function VesselSpecs() {
-  const { vessel } = useVesselDetails();
+  const { vessel, getDocuments } = useVesselDetails();
 
   const {
     documents,
@@ -20,11 +20,7 @@ export default function VesselSpecs() {
     onDownload,
     uploadDocument,
     replaceDocument,
-  } = useDocuments('vessels', vessel?.id);
-
-  useEffect(() => {
-    loadDocuments();
-  }, [loadDocuments]);
+  } = useDocuments('vessels', vessel?.id, getDocuments);
 
   // Robust detection of gas carrier: accept different field names and casing
   const vesselTypeRaw = (

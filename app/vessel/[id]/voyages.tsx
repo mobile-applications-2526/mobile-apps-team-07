@@ -52,6 +52,7 @@ export default function VesselVoyages() {
   const currentVoyageId = vesselVoyages?.[index]?.id;
   const {
     voyageWithDetails,
+    getDocuments,
     isLoading: isLoadingVoyage,
     error: voyageError,
     refresh,
@@ -63,13 +64,6 @@ export default function VesselVoyages() {
       setIndex(0);
     }
   }, [vesselVoyages.length, index]);
-
-  // Refresh voyage details when cycling
-  useEffect(() => {
-    if (currentVoyageId) {
-      refresh();
-    }
-  }, [currentVoyageId]);
 
   const handleCycleVoyage = (direction: 'next' | 'previous') => {
     haptics.lightImpact();
@@ -92,7 +86,7 @@ export default function VesselVoyages() {
     refresh();
   };
 
-  if (isLoadingVessel) {
+  if (isLoadingVessel || isLoadingVoyage) {
     return (
       <ThemedView className="flex-1 bg-gray-100 dark:bg-[#000]">
         <VesselTopBar
@@ -142,12 +136,14 @@ export default function VesselVoyages() {
             </ThemedView>
           ) : voyageWithDetails ? (
             <VoyageDetails
+              key={currentVoyageId}
               voyage={voyageWithDetails.voyage}
               status={voyageWithDetails.noonReports[0] ?? null}
               noonReports={voyageWithDetails.noonReports}
               cargoes={voyageWithDetails.cargoes}
               ports={voyageWithDetails.ports}
               charterParty={voyageWithDetails.charter}
+              getDocuments={getDocuments}
               onCycleVoyage={handleCycleVoyage}
               onAdd={handleAddVoyage}
               onRefresh={handleRefresh}

@@ -3,12 +3,12 @@
  * 
  * Card component displaying vessel information in a list.
  */
-import React, { useEffect } from 'react';
+import React from 'react';
 import { TouchableOpacity, View, ScrollView } from 'react-native';
 import { useColorScheme } from 'nativewind';
-import { ChevronLeft, ChevronRight, MapPin, Clock, FileText, Anchor, Eye, EyeOff } from 'lucide-react-native';
+import { ChevronLeft, ChevronRight, Anchor, Eye, EyeOff } from 'lucide-react-native';
 import { ThemedText, DataSection, DataRow, Card } from '@/components/common';
-import { CharterParty, VesselStatus, Voyage, VoyagePort } from '@/types';
+import { CharterParty, Document, VesselStatus, Voyage, VoyagePort } from '@/types';
 import { Cargo } from '@/types/cargo';
 import { useDocuments } from '@/hooks';
 import { DocumentsSection } from '../common/DocumentSection';
@@ -20,6 +20,7 @@ interface VoyageDetailsProps {
   cargoes: Cargo[];
   ports: VoyagePort[];
   charterParty: CharterParty | null;
+  getDocuments: ()=>Promise<Document[]>;
   onCycleVoyage: (direction: 'next' | 'previous') => void;
   onAdd: () => void;
   onRefresh: () => void;
@@ -37,6 +38,7 @@ export function VoyageDetails({
   cargoes,
   ports,
   charterParty,
+  getDocuments,
   onCycleVoyage,
   onAdd,
   isFirstVoyage = false,
@@ -50,19 +52,13 @@ export function VoyageDetails({
 
   const {
     documents,
-    loadDocuments,
-    findDoc,
     onDownload,
     uploadDocument,
     replaceDocument,
-  } = useDocuments('voyages', voyage.id);
+  } = useDocuments('voyages', voyage.id, getDocuments);
 
   const [activeTab, setActiveTab] = React.useState<'reports' | 'cargo'>('reports');
   const [showAllPorts, setShowAllPorts] = React.useState(false);
-
-  useEffect(() => {
-    loadDocuments();
-  }, []);
 
   // Format dates
   const formatDate = (date: Date) => {
