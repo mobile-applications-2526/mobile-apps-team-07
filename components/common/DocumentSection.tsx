@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
-import { View, TouchableOpacity, ScrollView, Platform, ActionSheetIOS, Alert } from 'react-native';
+import { Picker } from '@react-native-picker/picker'
+import { View, TouchableOpacity, ScrollView, Platform, ActionSheetIOS, Alert, Modal } from 'react-native';
 import { FileText, Plus, FileUp } from 'lucide-react-native';
 import { ThemedText } from '@/components/common';
 import { DocumentUpload } from '../vessel';
@@ -24,11 +25,13 @@ export function DocumentsSection({
   onDownload,
 }: DocumentsSectionProps) {
 
+  const IOS = Platform.OS == 'ios';
   const [selectedType, setSelectedType] = useState<DocumentType | null>(
     (category == 'vessels' ? 'CharterParty'
       : category == 'voyages' ? 'NoonReport'
         : category == 'cargoes' ? 'CargoManifest' : null)
   );
+  const [pickerVisible, setPickerVisible] = useState<boolean>(false);
 
   // Filter documents by selected type
   const filteredDocs = documents.filter(doc => doc.documentType === selectedType);
@@ -39,16 +42,16 @@ export function DocumentsSection({
       : category == 'voyages' ?
         VOYAGE_DOC_TYPES
         : category == 'cargoes' ?
-          CARGO_DOC_TYPES : null);
+          CARGO_DOC_TYPES : []);
 
   // Get label for selected type
   const selectedLabel = docTypes?.find(t => t.value === selectedType)?.label || selectedType;
 
-  // Handle native action sheet for document type selection
+  // Handle IOS native action sheet for document type selection
   const handleDocumentTypePress = () => {
     if (!docTypes) return;
-
-    if (Platform.OS === 'ios') {
+    
+    if (IOS) {
       const options = [...docTypes.map(dt => dt.label), 'Cancel'];
       ActionSheetIOS.showActionSheetWithOptions(
         {
@@ -62,20 +65,7 @@ export function DocumentsSection({
           }
         }
       );
-    } else {
-      // Fallback for Android
-      const buttons: { text: string; onPress?: () => void; style?: 'cancel' | 'default' | 'destructive' }[] = docTypes.map(dt => ({
-        text: dt.label,
-        onPress: () => setSelectedType(dt.value),
-      }));
-      buttons.push({ text: 'Cancel', style: 'cancel' });
-
-      Alert.alert(
-        'Select Document Type',
-        '',
-        buttons
-      );
-    }
+    }   
   };
 
   return (
@@ -89,20 +79,36 @@ export function DocumentsSection({
         )}
 
         {/* Document Type Button */}
-        <TouchableOpacity
-          onPress={handleDocumentTypePress}
-          className="flex-row items-center justify-between p-3 bg-[#F2F2F7] dark:bg-[#2C2C2E] rounded-xl"
-          activeOpacity={0.7}
-        >
-          <ThemedText
-            className="text-[17px] font-normal text-black dark:text-white flex-1 mr-2"
-            numberOfLines={1}
-            ellipsizeMode="tail"
+        {IOS?(
+          <TouchableOpacity
+            onPress={handleDocumentTypePress}
+            className="flex-row items-center justify-between p-3 bg-[#F2F2F7] dark:bg-[#2C2C2E] rounded-xl"
+            activeOpacity={0.7}
           >
-            {selectedLabel}
-          </ThemedText>
-          <ThemedText className="text-[17px] text-[#007AFF]">Select</ThemedText>
-        </TouchableOpacity>
+            <ThemedText
+              className="text-[17px] font-normal text-black dark:text-white flex-1 mr-2"
+              numberOfLines={1}
+              ellipsizeMode="tail"
+            >
+              {selectedLabel}
+            </ThemedText>
+            <ThemedText className="text-[17px] text-[#007AFF]">Select</ThemedText>
+          </TouchableOpacity>
+        ):(
+          <Picker
+            selectedValue={selectedType}
+            onValueChange={(value) => setSelectedType(value)}
+            className="w-full"
+          >
+            {docTypes.map(dt => (
+              <Picker.Item 
+                key={dt.value} 
+                label={dt.label} 
+                value={dt.value} 
+              />
+            ))}
+          </Picker>
+        )}
       </View>
 
       {/* Documents List */}
@@ -154,6 +160,7 @@ export function DocumentsSection({
             <ThemedText className="text-xs text-gray-400">PDF only, max 25MB</ThemedText>
           </TouchableOpacity>
         )}
+
       </View>
     </View>
   );
