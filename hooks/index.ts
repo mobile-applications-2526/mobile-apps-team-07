@@ -11,6 +11,8 @@ export { useHaptics } from './useHaptics';
 export { useDocuments } from './useDocuments';
 export { useVoyageDetails } from './useVoyageDetails';
 export { useVesselDetails } from '@/context/VesselDetailsContext';
+export { useVesselOverviewScreen } from './useVesselOverviewScreen';
+export { useVesselVoyagesScreen } from './useVesselVoyagesScreen';
 export * from './useFleetOverview';
 export * from './useInvoices';
 

@@ -3,7 +3,7 @@ import { Picker } from '@react-native-picker/picker'
 import { View, TouchableOpacity, ScrollView, Platform, ActionSheetIOS, Alert, Modal } from 'react-native';
 import { FileText, Plus, FileUp } from 'lucide-react-native';
 import { ThemedText } from '@/components/common';
-import { DocumentUpload } from '../vessel';
+import { DocumentUpload } from '@/components/vessel';
 import { Document, DocumentCategory, DocumentType } from '@/types';
 import { CARGO_DOC_TYPES, VESSEL_DOC_TYPES, VOYAGE_DOC_TYPES } from '@/constants';
 

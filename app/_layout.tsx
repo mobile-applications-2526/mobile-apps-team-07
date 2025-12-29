@@ -2,7 +2,7 @@ import { BottomSheetModalProvider } from '@gorhom/bottom-sheet';
 import '@/global.css';
 
 import { NAV_THEME } from '@/lib/theme';
-import { getTheme } from '@/services/storage';
+import { StorageService } from '@/services';
 import { ThemeProvider } from '@react-navigation/native';
 import { PortalHost } from '@rn-primitives/portal';
 import { Stack } from 'expo-router';
@@ -39,7 +39,7 @@ export default function RootLayout() {
     });
 
     // Theme init
-    getTheme().then(theme => {
+    StorageService.getTheme().then((theme: 'system' | 'light' | 'dark') => {
       setColorScheme(theme);
     });
   }, []);

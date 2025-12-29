@@ -1,12 +1,10 @@
-import React, { useState, useEffect, useCallback } from 'react';
+import React from 'react';
 import { View, StyleSheet } from 'react-native';
 import { ThemedText, ThemedView } from '@/components/common';
 import { VesselTopBar, VesselOverviewSheet, VesselMap } from '@/components/vessel';
 import { useColorScheme } from 'nativewind';
-import { VesselKPIs } from '@/types';
-import { useVesselDetails } from '@/hooks';
+import { useVesselOverviewScreen } from '@/hooks';
 import { Redirect } from 'expo-router';
-import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 // ============================================
 // MAIN COMPONENT
@@ -15,32 +13,17 @@ export default function VesselOverview() {
   const {
     vessel,
     vesselStatus,
-    refreshVessel,
-    isLocked: missingDocs
-  } = useVesselDetails();
+    kpis,
+    refreshing,
+    isLocked,
+    onRefresh,
+  } = useVesselOverviewScreen();
   
   const { colorScheme } = useColorScheme();
   const isDark = colorScheme === 'dark';
-  const [refreshing, setRefreshing] = useState(false);
-  const [kpis, setKPIs] = useState<VesselKPIs | null>(null);
-  const insets = useSafeAreaInsets();
-
-  useEffect(() => {
-    const pollInterval = setInterval(() => {
-      refreshVessel();
-    }, 30000);
-    
-    return () => clearInterval(pollInterval);
-  }, [vessel?.id, refreshVessel]);
-
-  const onRefresh = useCallback(async () => {
-    setRefreshing(true);
-    await refreshVessel();
-    setRefreshing(false);
-  }, [refreshVessel]);
 
   // If required documents are missing, automatically redirect to specs
-  if (missingDocs) {
+  if (isLocked) {
     return <Redirect href={`/vessel/${vessel?.id}/specs`} />;
   }
 

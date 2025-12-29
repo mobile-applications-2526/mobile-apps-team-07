@@ -12,6 +12,15 @@ export * as documentService from './document.service';
 export * as invoiceService from './invoice.service';
 export * as cargoService from './cargo.service';
 
+// Export service objects
+export { AuthService } from './auth.service';
+export { StorageService } from './storage.service';
+export { apiClient } from './api-client.service';
+
+// Export mappers
+export { mapBackendInvoice } from './mappers';
+
 // Re-export config
-export { API_URL } from './config';
+export { API_URL } from './config.service';
+
 

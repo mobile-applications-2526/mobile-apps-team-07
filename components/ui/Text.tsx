@@ -34,6 +34,11 @@ const textVariants = cva(
         large: 'text-lg font-semibold',
         small: 'text-sm font-medium leading-none',
         muted: 'text-sm text-muted-foreground',
+        // Legacy ThemedText variants for backward compatibility
+        title: 'text-[32px] font-bold leading-8',
+        defaultSemiBold: 'text-base leading-6 font-semibold',
+        subtitle: 'text-xl font-bold',
+        link: 'text-base leading-[30px] text-[#0a7ea4]',
       },
     },
     defaultVariants: {

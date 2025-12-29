@@ -7,7 +7,7 @@
  */
 
 import { Document, Voyage, VoyageWithDetails } from "@/types";
-import { apiClient } from "./api.client";
+import { apiClient } from "./api-client.service";
 import * as db from '@/lib/database';
 
 /**

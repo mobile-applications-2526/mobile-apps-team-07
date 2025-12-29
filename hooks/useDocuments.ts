@@ -1,6 +1,6 @@
 import { useState, useCallback, useEffect } from 'react';
 import { Alert } from 'react-native';
-import { API_URL } from '@/services/config';
+import { API_URL } from '@/services';
 import * as db from '@/lib/database';
 import { Document, DocumentType, DocumentCategory } from '@/types';
 import { documentService } from '@/services';

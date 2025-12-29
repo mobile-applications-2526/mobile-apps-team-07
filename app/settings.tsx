@@ -4,7 +4,7 @@ import { useRouter } from 'expo-router';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { ThemedText, ThemedView } from '@/components/common';
 import { useSession } from '@/context/AuthContext';
-import { saveTheme, getTheme } from '@/services/storage';
+import { StorageService } from '@/services';
 import { ChevronLeft, LogOut, User, Mail, Shield, Globe, Moon, Sun, Check, ChevronRight, Smartphone } from 'lucide-react-native';
 import { useColorScheme } from 'nativewind';
 import { useEffect } from 'react';
@@ -19,7 +19,7 @@ export default function SettingsScreen() {
 
     useEffect(() => {
         const loadTheme = async () => {
-            const saved = await getTheme();
+            const saved = await StorageService.getTheme();
             setThemePreference(saved);
         };
         loadTheme();
@@ -28,7 +28,7 @@ export default function SettingsScreen() {
     const updateTheme = async (newTheme: 'system' | 'light' | 'dark') => {
         setThemePreference(newTheme);
         setColorScheme(newTheme);
-        await saveTheme(newTheme);
+        await StorageService.saveTheme(newTheme);
     };
 
     const handleSignOut = async () => {

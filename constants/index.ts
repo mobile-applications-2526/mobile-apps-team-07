@@ -6,4 +6,4 @@
 
 export * from './app';
 export * from './vessel';
-export * from './Document';
+export * from './document';

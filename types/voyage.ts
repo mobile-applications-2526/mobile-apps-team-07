@@ -6,7 +6,7 @@
 
 import { Cargo } from "./cargo";
 import { CharterParty } from "./charter";
-import { VoyagePort } from "./Port";
+import { VoyagePort } from "./port";
 import { Vessel, VesselStatus } from "./vessel";
 
 // Voyage data

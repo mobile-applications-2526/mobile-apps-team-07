@@ -2,7 +2,7 @@ import { useState, useCallback, useEffect, useMemo } from 'react';
 import { Alert, Linking } from 'react-native';
 import { Invoice } from '@/types';
 import { invoiceService } from '@/services';
-import { mapBackendInvoice } from '@/lib/mappers';
+import { mapBackendInvoice } from '@/services';
 
 export function useInvoices(vesselId: number | undefined) {
     const [invoices, setInvoices] = useState<Invoice[]>([]);

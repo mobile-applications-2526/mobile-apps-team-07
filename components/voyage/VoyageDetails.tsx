@@ -11,7 +11,7 @@ import { ThemedText, DataSection, DataRow, Card } from '@/components/common';
 import { CharterParty, Document, VesselStatus, Voyage, VoyagePort } from '@/types';
 import { Cargo } from '@/types/cargo';
 import { useDocuments } from '@/hooks';
-import { DocumentsSection } from '../common/DocumentSection';
+import { DocumentsSection } from '@/components/common/DocumentSection';
 
 interface VoyageDetailsProps {
   voyage: Voyage;

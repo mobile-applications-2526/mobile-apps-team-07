@@ -8,7 +8,7 @@ import { useVesselDetails, useInvoices } from '@/hooks';
 import CreateInvoiceSheet from '@/components/vessel/CreateInvoiceSheet';
 import EditInvoiceSheet from '@/components/vessel/EditInvoiceSheet';
 import { Invoice } from '@/types';
-import { mapBackendInvoice } from '@/lib/mappers';
+import { mapBackendInvoice } from '@/services';
 
 export default function VesselInvoices() {
   const { vessel, hasQ88, hasFormC } = useVesselDetails();

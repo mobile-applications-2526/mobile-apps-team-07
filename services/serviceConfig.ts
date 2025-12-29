@@ -5,12 +5,12 @@
  * Separated to avoid circular dependencies.
  */
 
-import { getToken } from '@/services/storage';
+import { StorageService } from './storageService';
 
 export const API_URL = process.env.EXPO_PUBLIC_API_URL;
 
 export const getAuthHeaders = async () => {
-    const token = await getToken();
+    const token = await StorageService.getToken();
     return {
         'Content-Type': 'application/json',
         'Authorization': token ? `Bearer ${token}` : '',

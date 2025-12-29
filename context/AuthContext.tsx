@@ -1,5 +1,5 @@
-import { getToken, saveToken, deleteToken, saveUser, getUser, deleteUser } from '@/services/storage';
-import { login, LoginCredentials } from '@/services/auth';
+import { StorageService, AuthService } from '@/services';
+import type { LoginCredentials } from '@/services/auth.service';
 import React, { createContext, useContext, useState, PropsWithChildren, useEffect } from 'react';
 
 // Basic Base64 decode for JWT
@@ -64,10 +64,10 @@ export function AuthProvider({ children }: PropsWithChildren) {
             }
 
             try {
-                const token = await getToken();
+                const token = await StorageService.getToken();
                 if (token) {
                     setSession(token);
-                    const savedUser = await getUser();
+                    const savedUser = await StorageService.getUser();
 
                     if (savedUser) {
                         setUser(savedUser);
@@ -81,7 +81,7 @@ export function AuthProvider({ children }: PropsWithChildren) {
                                 if (payload.sub) {
                                     const derivedUser = { email: payload.sub };
                                     setUser(derivedUser);
-                                    saveUser(derivedUser); // Save for next time
+                                    StorageService.saveUser(derivedUser); // Save for next time
                                 }
                             }
                         } catch (e) {
@@ -102,15 +102,15 @@ export function AuthProvider({ children }: PropsWithChildren) {
     const handleSignIn = async (credentials: LoginCredentials) => {
         setIsLoading(true);
         try {
-            const response = await login(credentials);
+            const response = await AuthService.login(credentials);
             console.log('Login response:', JSON.stringify(response, null, 2));
 
             if (response.token) {
-                await saveToken(response.token);
+                await StorageService.saveToken(response.token);
                 setSession(response.token);
 
                 if (response.user) {
-                    await saveUser(response.user);
+                    await StorageService.saveUser(response.user);
                     setUser(response.user);
                 } else {
                     console.warn('Login response missing user object, decoding token');
@@ -121,7 +121,7 @@ export function AuthProvider({ children }: PropsWithChildren) {
                             if (payload.sub) {
                                 const derivedUser = { email: payload.sub };
                                 setUser(derivedUser);
-                                await saveUser(derivedUser);
+                                await StorageService.saveUser(derivedUser);
                             }
                         }
                     } catch (e) {
@@ -139,8 +139,8 @@ export function AuthProvider({ children }: PropsWithChildren) {
 
     const handleSignOut = async () => {
         try {
-            await deleteToken();
-            await deleteUser();
+            await StorageService.deleteToken();
+            await StorageService.deleteUser();
             setSession(null);
             setUser(null);
         } catch (error) {

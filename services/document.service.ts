@@ -1,8 +1,8 @@
 import * as FileSystem from 'expo-file-system/legacy';
 import * as Sharing from 'expo-sharing';
 import { DocumentCategory, DocumentType } from '@/types';
-import { API_URL } from './config';
-import { getToken } from './storage';
+import { API_URL } from './config.service';
+import { StorageService } from './storage.service';
 
 // Define locally to avoid import definition issues at runtime
 const FileSystemUploadType = {
@@ -13,7 +13,7 @@ const FileSystemUploadType = {
 export const downloadDocument = async (
   url: string
 ): Promise<any> =>{
-    const token = await getToken();
+    const token = await StorageService.getToken();
     
     // Extract filename from URL
     const filename = url.split('/').pop() || 'document.pdf';
@@ -44,7 +44,7 @@ export const uploadDocument = async (
     // Dynamic import usage was causing issues, try static import or mixed approach
     // We already imported legacy as FileSystem above
 
-    const token = await getToken();
+    const token = await StorageService.getToken();
     const headers: Record<string, string> = {
       Accept: 'application/json',
     };

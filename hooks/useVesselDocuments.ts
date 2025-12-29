@@ -1,6 +1,6 @@
 import { useState, useCallback } from 'react';
 import { Alert, Linking } from 'react-native';
-import { API_URL } from '@/services/config';
+import { API_URL } from '@/services';
 import * as db from '@/lib/database';
 import { Document as DocType, DocumentTypeCategory } from '@/types';
 import { useVesselDetails } from '@/context/VesselDetailsContext';
