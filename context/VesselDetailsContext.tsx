@@ -25,7 +25,8 @@ export interface VesselDetailsContextType {
   refreshVesselVoyages: () => Promise<void>,
   getLatestNoonReport: (id: number) => Promise<NoonReport | null>
   vesselHasDocument: (document: DocumentType) => Promise<boolean>,
-  getDocuments: () => Promise<Document[]>
+  getDocuments: () => Promise<Document[]>,
+  isRefreshing: boolean
 }
 
 export const VesselDetailContext = createContext<VesselDetailsContextType | null>(null);
@@ -54,6 +55,7 @@ export function VesselDetailsProvider({ children }: VesselDetailsProviderProps) 
   const [hasQ88, setHasQ88] = useState<boolean>(false);
   const [hasFormC, setHasFormC] = useState<boolean>(false);
   const [isLoading, setIsLoading] = useState(true);
+  const [isRefreshing, setIsRefreshing] = useState(false);
   const [isInitialized, setIsInitialized] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [isOfflineData, setIsOfflineData] = useState(false);
@@ -204,7 +206,9 @@ export function VesselDetailsProvider({ children }: VesselDetailsProviderProps) 
 
   const refreshVessel = useCallback(async () => {
     try {
-      setIsLoading(true);
+      if (!isInitialized) setIsLoading(true);
+      else setIsRefreshing(true);
+
       const vesselWithStatus = await vesselService.getVesselByIdWithStatus(id);
       if (!vesselWithStatus)
         throw new Error('Cannot find vessel with id ' + id);
@@ -214,25 +218,30 @@ export function VesselDetailsProvider({ children }: VesselDetailsProviderProps) 
       setError(null);
     } catch (err) {
       console.error('Failed to refresh vessel:', err);
-      setError(err instanceof Error ? err.message : 'Failed to refresh vessel');
+      // Don't overwrite main error state on background refresh fail
+      if (!isInitialized) setError(err instanceof Error ? err.message : 'Failed to refresh vessel');
     } finally {
       setIsLoading(false);
+      setIsRefreshing(false);
     }
-  }, [id])
+  }, [id, isInitialized])
 
   const refreshVesselVoyages = useCallback(async () => {
     try {
-      setIsLoading(true);
+      if (!isInitialized) setIsLoading(true);
+      else setIsRefreshing(true);
+
       const loadedVoyages = await voyageService.getVoyagesByVesselId(id);
       setVesselVoyages(loadedVoyages);
       setError(null);
     } catch (err) {
       console.error('Failed to refresh voyages:', err);
-      setError(err instanceof Error ? err.message : 'Failed to refresh voyages');
+      if (!isInitialized) setError(err instanceof Error ? err.message : 'Failed to refresh voyages');
     } finally {
       setIsLoading(false);
+      setIsRefreshing(false);
     }
-  }, [id])
+  }, [id, isInitialized])
 
   const value: VesselDetailsContextType = {
     vessel,
@@ -243,6 +252,7 @@ export function VesselDetailsProvider({ children }: VesselDetailsProviderProps) 
     hasQ88,
     hasFormC,
     isLoading,
+    isRefreshing,
     isInitialized,
     error,
     isLocked,
