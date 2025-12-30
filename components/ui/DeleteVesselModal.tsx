@@ -1,5 +1,5 @@
-import React from 'react';
-import { Modal, View, TouchableOpacity, ActivityIndicator } from 'react-native';
+import React, { useEffect, useRef } from 'react';
+import { Modal, View, TouchableOpacity, ActivityIndicator, Platform, ActionSheetIOS } from 'react-native';
 import { AlertTriangle } from 'lucide-react-native';
 import { ThemedText } from '@/components/common';
 
@@ -24,6 +24,49 @@ export function DeleteVesselModal({
   onRetry,
   hasError = false,
 }: DeleteVesselModalProps) {
+  // On iOS use native ActionSheet for a more native feel
+  const shownRef = useRef(false);
+
+  useEffect(() => {
+    if (Platform.OS === 'ios' && visible && !shownRef.current) {
+      shownRef.current = true;
+
+      const options = hasError ? ['Retry', 'Cancel'] : ['Delete', 'Cancel'];
+      const destructiveButtonIndex = 0;
+      const cancelButtonIndex = 1;
+
+      ActionSheetIOS.showActionSheetWithOptions(
+        {
+          title: `Delete ${vesselName}?`,
+          message: hasError
+            ? 'Failed to delete previously. Would you like to retry?'
+            : hasActiveVoyage
+            ? 'This will permanently remove all associated voyages, noon reports, and documents.'
+            : 'This will permanently remove all associated voyages, noon reports, and documents.',
+          options,
+          cancelButtonIndex,
+          destructiveButtonIndex,
+        },
+        (buttonIndex: number) => {
+          shownRef.current = false;
+          if (buttonIndex === destructiveButtonIndex) {
+            if (hasError && onRetry) onRetry();
+            else onConfirm();
+          } else {
+            onCancel();
+          }
+        }
+      );
+    }
+
+    // Reset shownRef when modal becomes hidden so it can show again next time
+    if (!visible) shownRef.current = false;
+  }, [visible, vesselName, hasActiveVoyage, hasError, onCancel, onConfirm, onRetry]);
+
+  // For iOS we rely on the native ActionSheet — render nothing here
+  if (Platform.OS === 'ios') return null;
+
+  // Android / Web / Others: keep existing custom modal
   return (
     <Modal
       visible={visible}

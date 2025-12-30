@@ -2,9 +2,9 @@ import { cn } from '@/lib/utils';
 import type { LucideIcon, LucideProps } from 'lucide-react-native';
 import { cssInterop } from 'nativewind';
 
-type IconProps = LucideProps & {
+interface IconProps extends LucideProps {
   as: LucideIcon;
-};
+}
 
 function IconImpl({ as: IconComponent, ...props }: IconProps) {
   return <IconComponent {...props} />;
@@ -30,7 +30,7 @@ cssInterop(IconImpl, {
  * @example
  * ```tsx
  * import { ArrowRight } from 'lucide-react-native';
- * import { Icon } from '@/registry/components/ui/icon';
+ * import { Icon } from '@/components/ui/Icon';
  *
  * <Icon as={ArrowRight} className="text-red-500" size={16} />
  * ```
@@ -51,4 +51,4 @@ function Icon({ as: IconComponent, className, size = 14, ...props }: IconProps) 
   );
 }
 
-export { Icon };
+export { Icon, type IconProps };

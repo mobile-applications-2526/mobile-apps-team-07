@@ -1,8 +1,8 @@
 import { useColorScheme } from 'nativewind';
 import { MoonStarIcon, SunIcon } from 'lucide-react-native';
 import * as Haptics from 'expo-haptics';
-import { Button } from '@/components/ui/button';
-import { Icon } from '@/components/ui/icon';
+import { Button } from '@/components/ui/Button';
+import { Icon } from '@/components/ui/Icon';
 
 const THEME_ICONS = {
   light: SunIcon,

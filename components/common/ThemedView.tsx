@@ -1,16 +1,15 @@
 /**
  * ThemedView Component
  * 
- * A view component that supports theming.
+ * @deprecated Use `View` from '@/components/ui/View' instead.
+ * This wrapper is maintained for backward compatibility.
  */
 
-import { View, type ViewProps } from 'react-native';
-import { cn } from '@/lib/utils';
+import { View } from '@/components/ui/View';
+import type { ComponentProps } from 'react';
 
-export type ThemedViewProps = ViewProps & {
-  className?: string;
-};
+export type ThemedViewProps = ComponentProps<typeof View>;
 
-export function ThemedView({ className, ...otherProps }: ThemedViewProps) {
-  return <View className={cn('bg-background', className)} {...otherProps} />;
+export function ThemedView(props: ThemedViewProps) {
+  return <View {...props} />;
 }

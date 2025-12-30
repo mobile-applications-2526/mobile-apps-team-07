@@ -10,6 +10,12 @@ import { Vessel, VesselWithStatus, CreateVesselInput, Document, DocumentTypeCate
 import { vesselService } from '@/services';
 import { DOCUMENT_TYPES } from '@/constants';
 
+import { useNetworkStatus } from '@/context/NetworkStatusContext';
+import { queryClient } from '@/lib/queryClient';
+import { vesselKeys } from '@/hooks/queries';
+
+import { useSession } from './AuthContext';
+
 // ============================================
 // TYPES
 // ============================================
@@ -21,16 +27,18 @@ interface VesselContextType {
   isLoading: boolean;
   isInitialized: boolean;
   error: string | null;
+  // Whether data being shown is from cache because network fetch failed on startup
+  isOfflineData: boolean;
 
   // Actions
   refreshVessels: () => Promise<void>;
-  refreshVesselsWithStatus: () => Promise<void> 
+  refreshVesselsWithStatus: (isSilent?: boolean) => Promise<void>
   getVessel: (id: number) => Promise<Vessel | null>;
-  getVesselWithStatus: (id: number) => Promise<VesselWithStatus | null> 
+  getVesselWithStatus: (id: number) => Promise<VesselWithStatus | null>
   createVessel: (input: CreateVesselInput) => Promise<Vessel>;
   updateVessel: (input: Vessel) => Promise<Vessel | null>;
   deleteVessel: (id: number) => Promise<boolean>;
-  
+
   // Utilities
   imoExists: (imo: string) => Promise<boolean>;
   getAllImos: () => string[];
@@ -70,22 +78,54 @@ export function VesselProvider({ children }: VesselProviderProps) {
   const [isLoading, setIsLoading] = useState(true);
   const [isInitialized, setIsInitialized] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [isOfflineData, setIsOfflineData] = useState(false);
+  const { session, isLoading: isAuthLoading } = useSession();
+  const { setIsOffline } = useNetworkStatus();
+
+  // Sync offline state to global NetworkStatus context
+  useEffect(() => {
+    if (isInitialized && !isLoading) {
+      setIsOffline(isOfflineData);
+    }
+  }, [isOfflineData, setIsOffline, isInitialized, isLoading]);
+  // Clear data on logout
+  useEffect(() => {
+    if (!session) {
+      setVessels([]);
+      setVesselsWithStatus([]);
+      setIsInitialized(false);
+      setIsOfflineData(false);
+    }
+  }, [session]);
 
   // Initialize database and load vessels
   useEffect(() => {
-    initializeData();
-  }, []);
+    if (!isAuthLoading && session) {
+      initializeData();
+    }
+  }, [session, isAuthLoading]);
 
   const initializeData = async () => {
     try {
       setIsLoading(true);
       setError(null);
 
-      // Load vessels
-      const loadedVesselsWithStatus = await vesselService.getAllVesselsWithStatus();
-      setVessels(loadedVesselsWithStatus.map(v => v.vessel));
-      setVesselsWithStatus(loadedVesselsWithStatus);
-      setIsInitialized(true);
+      // Prefer a fresh network fetch on startup. If it succeeds use that data; if it fails fall back to cache and mark offline.
+      try {
+        const fresh = await vesselService.fetchVesselsWithStatusNetwork();
+        setVessels(fresh.map(v => v.vessel));
+        setVesselsWithStatus(fresh);
+        setIsOfflineData(false);
+        setIsInitialized(true);
+      } catch (networkErr) {
+        // Network failed — try to load cached data and flag offline
+        console.warn('Network fetch failed during initialization, falling back to cache:', networkErr);
+        const cached = await vesselService.getAllVesselsWithStatus();
+        setVessels(cached.map(v => v.vessel));
+        setVesselsWithStatus(cached);
+        setIsOfflineData(true);
+        setIsInitialized(true);
+      }
     } catch (err) {
       console.error('Failed to initialize:', err);
       setError(err instanceof Error ? err.message : 'Failed to initialize');
@@ -110,17 +150,28 @@ export function VesselProvider({ children }: VesselProviderProps) {
   }, []);
 
   //Get All Vessels With Status
-  const refreshVesselsWithStatus = useCallback(async () => {
+  const refreshVesselsWithStatus = useCallback(async (isSilent = false) => {
     try {
-      setIsLoading(true);
-      const loadedVesselsWithStatus = await vesselService.getAllVesselsWithStatus();
-      setVesselsWithStatus(loadedVesselsWithStatus);
+      if (!isSilent) setIsLoading(true);
+      // Prefer network refresh; fall back to cache if network fails
+      try {
+        const fresh = await vesselService.fetchVesselsWithStatusNetwork();
+        setVesselsWithStatus(fresh);
+        setVessels(fresh.map(v => v.vessel));
+        setIsOfflineData(false);
+      } catch (networkErr) {
+        console.warn('Network refresh failed, using cached data:', networkErr);
+        const cached = await vesselService.getAllVesselsWithStatus();
+        setVesselsWithStatus(cached);
+        setVessels(cached.map(v => v.vessel));
+        setIsOfflineData(true);
+      }
       setError(null);
     } catch (err) {
       console.error('Failed to refresh vessels with Status:', err);
       setError(err instanceof Error ? err.message : 'Failed to refresh vessels with Status');
     } finally {
-      setIsLoading(false);
+      if (!isSilent) setIsLoading(false);
     }
   }, []);
 
@@ -136,7 +187,7 @@ export function VesselProvider({ children }: VesselProviderProps) {
   }, []);
 
   // Get single vessel by ID
-  const getVesselWithStatus = useCallback(async (id: number): Promise<VesselWithStatus| null> => {
+  const getVesselWithStatus = useCallback(async (id: number): Promise<VesselWithStatus | null> => {
     try {
       return await vesselService.getVesselByIdWithStatus(id);
     } catch (err) {
@@ -145,35 +196,72 @@ export function VesselProvider({ children }: VesselProviderProps) {
     }
   }, []);
 
-  // Create new vessel
+  // Create new vessel - add to state after successful API call
   const createVessel = useCallback(async (input: CreateVesselInput): Promise<Vessel> => {
     const newVessel = await vesselService.createVessel(input);
+    // Add to state immediately after success
     setVessels(prev => [newVessel, ...prev]);
+    // Invalidate React Query cache so vessel detail pages get fresh data
+    queryClient.invalidateQueries({ queryKey: vesselKeys.all });
     return newVessel;
   }, []);
 
-  // Update existing vessel
+  // Update existing vessel - already optimistic
   const updateVessel = useCallback(async (input: Vessel): Promise<Vessel | null> => {
-    const updatedVessel = await vesselService.updateVessel(input);
-    
-    if (updatedVessel) {
-      setVessels(prev => prev.map(v => v.id === input.id ? updatedVessel : v));
-    }
-    
-    return updatedVessel;
-  }, []);
+    // Save previous state for rollback
+    const previousVessels = [...vessels];
+    const previousWithStatus = [...vesselsWithStatus];
 
-  // Delete vessel
+    // Optimistic update: apply change locally immediately so UI reflects the edit
+    setVessels(prev => prev.map(v => v.id === input.id ? input : v));
+    setVesselsWithStatus(prev => prev.map(vws => vws.vessel.id === input.id ? { ...vws, vessel: input } : vws));
+
+    try {
+      const updatedVessel = await vesselService.updateVessel(input);
+      if (updatedVessel) {
+        // Replace with authoritative response
+        setVessels(prev => prev.map(v => v.id === input.id ? updatedVessel : v));
+        setVesselsWithStatus(prev => prev.map(vws => vws.vessel.id === input.id ? { ...vws, vessel: updatedVessel } : vws));
+        // Invalidate React Query cache so vessel detail pages get fresh data
+        queryClient.invalidateQueries({ queryKey: vesselKeys.detail(input.id) });
+        return updatedVessel;
+      }
+      // If backend not implemented yet, keep optimistic result
+      return input;
+    } catch (err) {
+      console.error('Failed to update vessel in service:', err);
+      // Rollback on error
+      setVessels(previousVessels);
+      setVesselsWithStatus(previousWithStatus);
+      return null;
+    }
+  }, [vessels, vesselsWithStatus]);
+
+  // Delete vessel - optimistic update
   const deleteVessel = useCallback(async (id: number): Promise<boolean> => {
-    const success = await vesselService.deleteVessel(id);
-    
-    if (success) {
-      setVesselsWithStatus(prev => prev.filter(v => v.vessel.id !== id));
-      setVessels(prev => prev.filter(v => v.id !== id));
-    }
+    // Save previous state for rollback
+    const previousVessels = [...vessels];
+    const previousWithStatus = [...vesselsWithStatus];
 
-    return success;
-  }, []);
+    // Optimistic: remove from UI immediately
+    setVesselsWithStatus(prev => prev.filter(v => v.vessel.id !== id));
+    setVessels(prev => prev.filter(v => v.id !== id));
+
+    try {
+      const success = await vesselService.deleteVessel(id);
+      if (!success) {
+        // Rollback if delete failed
+        setVessels(previousVessels);
+        setVesselsWithStatus(previousWithStatus);
+      }
+      return success;
+    } catch (err) {
+      // Rollback on error
+      setVessels(previousVessels);
+      setVesselsWithStatus(previousWithStatus);
+      return false;
+    }
+  }, [vessels, vesselsWithStatus]);
 
   // Check if IMO exists
   const imoExists = useCallback(async (imo: string): Promise<boolean> => {
@@ -197,6 +285,7 @@ export function VesselProvider({ children }: VesselProviderProps) {
     isLoading,
     isInitialized,
     error,
+    isOfflineData,
     refreshVessels,
     refreshVesselsWithStatus,
     getVessel,

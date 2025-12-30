@@ -1,44 +1,98 @@
-import React from 'react';
-import { View } from 'react-native';
-import { FileUp } from 'lucide-react-native';
-import { ThemedText, ThemedView } from '@/components/common';
-import { VesselTopBar } from '@/components/vessel';
-import { useVesselDetails } from '@/hooks';
+import React, { useEffect } from 'react';
+import {
+  View,
+  Text,
+  ScrollView,
+} from 'react-native';
+import { ThemedText, ThemedView, Card } from '@/components/common';
+import { VesselTopBar, DocumentUpload } from '@/components/vessel';
+import { useVesselDetails } from '@/context/VesselDetailsContext';
+import { useVesselDocuments } from '@/hooks/useVesselDocuments';
+import { DocumentsSection } from '@/components/common/DocumentSection';
 
 export default function VesselSpecs() {
-  const {vessel, hasQ88} = useVesselDetails();
+  const { vessel } = useVesselDetails();
+
+  const {
+    documents,
+    uploadState,
+    loadDocuments,
+    findDoc,
+    onDownload,
+    pickAndUpload,
+    onReplace,
+  } = useVesselDocuments();
+
+  // Robust detection of gas carrier: accept different field names and casing
+  const vesselTypeRaw = (
+    (vessel as any)?.vesselType ?? (vessel as any)?.type ?? (vessel as any)?.vessel_type ?? ''
+  ).toString().trim().toLowerCase();
+  const isGasCarrier = vesselTypeRaw.includes('gas') && vesselTypeRaw.includes('carrier');
 
   return (
     <ThemedView className="flex-1 bg-gray-100 dark:bg-[#000]">
-      {/* Top App Bar */}
-      <VesselTopBar vesselName={vessel?.vesselName ?? ''} />
+      <VesselTopBar
+        vesselName={vessel?.vesselName ?? ''}
+        vesselImage={vessel?.vesselPictureUrl}
+      />
 
-      {/* Content */}
-      <View className="flex-1 items-center justify-center p-6">
-        {!hasQ88 ? (
-          <View className="items-center">
-            {/* Upload Icon */}
-            <View className="w-20 h-20 rounded-full bg-blue-50 dark:bg-blue-900/20 items-center justify-center mb-4">
-              <FileUp size={40} color="#3b82f6" />
-            </View>
-            
-            {/* Message */}
-            <ThemedText type="defaultSemiBold" className="text-lg text-center mb-2">
-              Upload Q88 Document
-            </ThemedText>
-            <ThemedText className="text-sm text-gray-500 dark:text-gray-400 text-center max-w-[280px]">
-              Please upload Q88 to continue. This document is required to access voyages and invoices.
-            </ThemedText>
+      {/* Verify if locked */}
+      {/* (Logic handled in parent layout, but good to be safe if viewed directly) */}
+
+      <ScrollView contentContainerStyle={{ padding: 16 }} className="flex-1" showsVerticalScrollIndicator={false}>
+        {/* Specification page: no global unlock banner (banner shown in layout on other pages) */}
+        {/* Progress is now shown in the navbar */}
+
+        {/* Required Documents Section */}
+        <Card className="mb-3">
+          <View className="flex-row items-center mb-3">
+            <Text
+              className="text-xs font-medium bg-gray-100 dark:bg-gray-800 text-gray-500 dark:text-gray-400 py-1 px-2.5 rounded overflow-hidden"
+            >
+              Required
+            </Text>
           </View>
-        ) : (
-          <View className="items-center">
-            <ThemedText className="text-gray-500 dark:text-gray-400 text-center">
-              Q88 document uploaded
-            </ThemedText>
+          <DocumentUpload
+            type="Q88"
+            title="Q88"
+            doc={findDoc('Q88')}
+            onUpload={pickAndUpload}
+            onReplace={(type) => onReplace(type)}
+            onDownload={onDownload}
+          />
+
+          {/* Only show Form C for Gas Carrier vessels */}
+          {isGasCarrier && (
+            <DocumentUpload
+              type="FormC"
+              title="Form C"
+              doc={findDoc('FormC')}
+              onUpload={pickAndUpload}
+              onReplace={(type) => onReplace(type)}
+              onDownload={onDownload}
+              hasBorder
+            />
+          )}
+        </Card>
+
+        {/* Optional Documents Section */}
+        <Card className="mb-3">
+          <View className="flex-row items-center mb-3">
+            <Text
+              className="text-xs font-medium bg-gray-100 dark:bg-gray-800 text-gray-500 dark:text-gray-400 py-1 px-2.5 rounded overflow-hidden"
+            >
+              Optional
+            </Text>
           </View>
-        )}
-      </View>
+          <DocumentsSection
+            documents={documents}
+            category='vessels'
+            onUpload={pickAndUpload}
+            onReplace={async (type) => onReplace(type)}
+            onDownload={onDownload}
+          />
+        </Card>
+      </ScrollView>
     </ThemedView>
   );
 }
-

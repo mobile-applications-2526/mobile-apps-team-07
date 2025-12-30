@@ -4,14 +4,14 @@
     "slug": "Safarban",
     "version": "1.0.0",
     "orientation": "portrait",
-    "icon": "./assets/images/icon.png",
-    "scheme": "Safarban",
+    "icon": "./assets/images/safarban-icon-2.0.png",
+    "scheme": "safarban",
     "userInterfaceStyle": "automatic",
     "newArchEnabled": true,
     "splash": {
-      "image": "./assets/images/splash.png",
+      "image": "./assets/images/safarban-icon-2.0.png",
       "resizeMode": "contain",
-      "backgroundColor": "#ffffff"
+      "backgroundColor": "#0278B5"
     },
     "assetBundlePatterns": [
       "**/*"
@@ -23,7 +23,7 @@
     "android": {
       "edgeToEdgeEnabled": true,
       "adaptiveIcon": {
-        "foregroundImage": "./assets/images/adaptive-icon.png",
+        "foregroundImage": "./assets/images/safarban-icon-2.0.png",
         "backgroundColor": "#ffffff"
       },
       "package": "com.dadez.Safarban"
@@ -31,15 +31,23 @@
     "web": {
       "bundler": "metro",
       "output": "static",
-      "favicon": "./assets/images/favicon.png"
+      "favicon": "./assets/images/safarban-icon-2.0.png"
     },
     "plugins": [
       "expo-router",
       "@maplibre/maplibre-react-native",
-      "expo-sqlite"
+      "expo-sqlite",
+      "expo-secure-store"
     ],
     "experiments": {
       "typedRoutes": true
-    }
+    },
+    "extra": {
+      "router": {},
+      "eas": {
+        "projectId": "cbd4ac4f-d537-47c3-99e3-36087e7a1b42"
+      }
+    },
+    "owner": "adept_nitwit"
   }
 }
