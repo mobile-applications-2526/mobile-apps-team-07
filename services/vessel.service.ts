@@ -9,6 +9,9 @@
 import { Vessel, CreateVesselInput, Document, VesselWithStatus } from '@/types';
 import * as db from '@/lib/database';
 import { apiClient } from './api-client.service';
+import * as FileSystem from 'expo-file-system/legacy';
+import { API_URL } from './config.service';
+import { StorageService } from './storage.service';
 
 // ============================================
 // VESSEL CRUD OPERATIONS
@@ -325,3 +328,5 @@ export async function imoExists(imoNumber: string): Promise<boolean> {
   const exists = await getVesselByImo(imoNumber);
   return exists.ok;
 }
+
+

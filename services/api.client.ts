@@ -14,6 +14,13 @@ export class ApiError extends Error {
     }
 }
 
+type UnauthorizedCallback = ()=>void;
+let unauthorizedCallback: UnauthorizedCallback | null = null;
+
+export const setUnauthorizedCallback = (callback: ()=>void ) => {
+    unauthorizedCallback = callback;
+};
+
 async function request<T>(endpoint: string, method: HttpMethod, options: RequestOptions = {}): Promise<T> {
     const token = await StorageService.getToken();
 
@@ -37,6 +44,16 @@ async function request<T>(endpoint: string, method: HttpMethod, options: Request
     }
 
     const response = await fetch(`${API_URL}${endpoint}`, config);
+
+    if (response.status === 401){
+      await StorageService.deleteToken();
+
+      if(unauthorizedCallback){
+        unauthorizedCallback();
+      }
+
+      throw new ApiError(401, 'Session expired. Please login again.');
+    }
 
     if (!response.ok) {
         let errorMessage = `Request failed with status ${response.status}`;

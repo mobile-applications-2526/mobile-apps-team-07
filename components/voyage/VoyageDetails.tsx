@@ -3,15 +3,17 @@
  * 
  * Card component displaying vessel information in a list.
  */
-import React from 'react';
+import { Fragment, useState } from 'react';
 import { TouchableOpacity, View, ScrollView } from 'react-native';
 import { useColorScheme } from 'nativewind';
-import { ChevronLeft, ChevronRight, Anchor, Eye, EyeOff } from 'lucide-react-native';
-import { ThemedText, DataSection, DataRow, Card } from '@/components/common';
+import { ChevronLeft, ChevronRight, Anchor, EyeOff } from 'lucide-react-native';
+import { ThemedText, DataSection, DataRow } from '@/components/common';
 import { CharterParty, Document, VesselStatus, Voyage, VoyagePort } from '@/types';
 import { Cargo } from '@/types/cargo';
 import { useDocuments } from '@/hooks';
 import { DocumentsSection } from '@/components/common/DocumentSection';
+import NoonReportCard from '../noonReport/NoonReportCard';
+import CargoCard from '../cargo/cargoCard';
 
 interface VoyageDetailsProps {
   voyage: Voyage;
@@ -55,10 +57,11 @@ export function VoyageDetails({
     onDownload,
     uploadDocument,
     replaceDocument,
+    deleteDocument
   } = useDocuments('voyages', voyage.id, getDocuments);
 
-  const [activeTab, setActiveTab] = React.useState<'reports' | 'cargo'>('reports');
-  const [showAllPorts, setShowAllPorts] = React.useState(false);
+  const [activeTab, setActiveTab] = useState<'reports' | 'cargo'>('reports');
+  const [showAllPorts, setShowAllPorts] = useState(false);
 
   // Format dates
   const formatDate = (date: Date) => {
@@ -133,7 +136,6 @@ export function VoyageDetails({
     <ScrollView className="flex-1 bg-gray-50 dark:bg-black">
       <View className="p-4">
         {/* Header */}
-        {/* Header */}
         <View className="flex-row items-center justify-between mb-4 px-2">
           <TouchableOpacity
             onPress={() => onCycleVoyage('previous')}
@@ -172,7 +174,7 @@ export function VoyageDetails({
             <View className="flex-row items-center justify-between mb-2">
               {/* Load Ports */}
               {visibleLoadPorts.map((_, index) => (
-                <React.Fragment key={`load-circle-${index}`}>
+                <Fragment key={`load-circle-${index}`}>
                   <View className="flex-1 items-center">
                     <View className={`w-12 h-12 ${index === 0 ? 'bg-blue-600' : 'bg-white dark:bg-[#1c1c1e] border-4 border-blue-600'} rounded-full items-center justify-center z-10`}>
                       {index === 0 && <Anchor size={24} color="#fff" />}
@@ -181,19 +183,19 @@ export function VoyageDetails({
                   {(index < visibleLoadPorts.length - 1 || visibleDischargePorts.length > 0) && (
                     <View className="flex-1 h-0.5 bg-blue-600 -mx-4" />
                   )}
-                </React.Fragment>
+                </Fragment>
               ))}
 
               {/* Discharge Ports */}
               {visibleDischargePorts.map((_, index) => (
-                <React.Fragment key={`discharge-circle-${index}`}>
+                <Fragment key={`discharge-circle-${index}`}>
                   <View className="flex-1 items-center">
                     <View className="w-12 h-12 bg-white dark:bg-[#1c1c1e] border-4 border-blue-600 rounded-full z-10" />
                   </View>
                   {index < visibleDischargePorts.length - 1 && (
                     <View className="flex-1 h-0.5 bg-blue-600 -mx-4" />
                   )}
-                </React.Fragment>
+                </Fragment>
               ))}
             </View>
 
@@ -201,7 +203,7 @@ export function VoyageDetails({
             <View className="flex-row items-start justify-between">
               {/* Load Ports Labels */}
               {visibleLoadPorts.map((port, index) => (
-                <React.Fragment key={`load-label-${index}`}>
+                <Fragment key={`load-label-${index}`}>
                   <View className="flex-1 items-center">
                     <ThemedText className="text-xs font-semibold text-center w-full px-1" numberOfLines={2}>
                       {port.portName}
@@ -210,12 +212,12 @@ export function VoyageDetails({
                   {(index < visibleLoadPorts.length - 1 || visibleDischargePorts.length > 0) && (
                     <View className="flex-1 -mx-4" />
                   )}
-                </React.Fragment>
+                </Fragment>
               ))}
 
               {/* Discharge Ports Labels */}
               {visibleDischargePorts.map((port, index) => (
-                <React.Fragment key={`discharge-label-${index}`}>
+                <Fragment key={`discharge-label-${index}`}>
                   <View className="flex-1 items-center">
                     <ThemedText className="text-xs font-semibold text-center w-full px-1" numberOfLines={2}>
                       {port.portName}
@@ -224,7 +226,7 @@ export function VoyageDetails({
                   {index < visibleDischargePorts.length - 1 && (
                     <View className="flex-1 -mx-4" />
                   )}
-                </React.Fragment>
+                </Fragment>
               ))}
             </View>
           </View>
@@ -284,27 +286,6 @@ export function VoyageDetails({
           </View>
         </DataSection>
 
-        {/* Cargo Summary */}
-        {cargoes.length > 0 && (
-          <DataSection title="Cargo Summary">
-            {cargoes.map((cargo, index) => (
-              <View key={index} className="gap-1 mb-3 last:mb-0">
-                {cargo.cargoType && (
-                  <DataRow label="Cargo" value={cargo.cargoType} />
-                )}
-
-                {cargo.shipQuantityMt && (
-                  <DataRow label="Quantity" value={`${cargo.shipQuantityMt.toLocaleString()} MT`} />
-                )}
-
-                {cargo.requiredTempC && (
-                  <DataRow label="Required Temp" value={`${cargo.requiredTempC}°C`} />
-                )}
-              </View>
-            ))}
-          </DataSection>
-        )}
-
         {/* Tabs - Native Segmented Control Style */}
         <View className="flex-row mb-4 bg-gray-200 dark:bg-gray-800 p-1 rounded-xl">
           <TouchableOpacity
@@ -335,34 +316,10 @@ export function VoyageDetails({
             {noonReports.length > 0 ? (
               <View>
                 {noonReports.map((report, index) => (
-                  <Card
-                    key={index}
-                    className="mb-3"
-                  >
-                    <ThemedText className="text-lg font-bold mb-3">
-                      {formatDate(new Date(report.reportDateTime))}
-                    </ThemedText>
-                    <View className="gap-1 mb-4">
-                      <DataRow
-                        label="Position"
-                        value={`${report.latitude}°N, ${report.longitude}°E`}
-                      />
-                      <DataRow
-                        label="Speed"
-                        value={`${report.averageSpeedKnots} kts`}
-                      />
-                      <DataRow
-                        label="Fuel"
-                        value={`${report.fuelRob} MT/day`}
-                      />
-                    </View>
-                    <TouchableOpacity className="flex-row items-center gap-2">
-                      <Eye size={20} color="#6b7280" />
-                      <ThemedText className="text-gray-600 dark:text-gray-400">
-                        View Report
-                      </ThemedText>
-                    </TouchableOpacity>
-                  </Card>
+                  <NoonReportCard
+                    index={index}
+                    report={report}
+                    formatDate={formatDate}/>
                 ))}
               </View>
             ) : (
@@ -374,15 +331,28 @@ export function VoyageDetails({
               </View>
             )}
           </>
-        )}
+        )} 
 
         {/* Cargo Tab Content */}
         {activeTab === 'cargo' && (
-          <View className="bg-white dark:bg-[#1c1c1e] rounded-2xl p-8 mb-4 items-center">
-            <ThemedText className="text-center text-gray-500 dark:text-gray-400">
-              Cargo Details here
-            </ThemedText>
-          </View>
+          <>
+            {cargoes.length > 0 ? (
+              <View>
+                {cargoes.map((cargo, index) => (
+                  <CargoCard
+                    index={index}
+                    cargo={cargo}
+                    formatDate={formatDate}/>
+                ))}
+              </View>
+            ) : (
+              <View className="bg-white dark:bg-[#1c1c1e] rounded-2xl p-8 mb-4 items-center">
+                <ThemedText className="text-center text-gray-500 dark:text-gray-400">
+                  Cargo Details here
+                </ThemedText>
+              </View>
+            )}
+          </>
         )}
 
         {/* Remarks */}
@@ -403,6 +373,7 @@ export function VoyageDetails({
             onUpload={uploadDocument}
             onReplace={replaceDocument}
             onDownload={onDownload}
+            onDelete={deleteDocument}
           />
         </DataSection>
       </View>

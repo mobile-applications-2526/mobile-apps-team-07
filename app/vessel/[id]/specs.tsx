@@ -4,24 +4,23 @@ import {
   Text,
   ScrollView,
 } from 'react-native';
-import { ThemedText, ThemedView, Card } from '@/components/common';
+import { ThemedView, Card } from '@/components/common';
 import { VesselTopBar, DocumentUpload } from '@/components/vessel';
 import { useVesselDetails } from '@/context/VesselDetailsContext';
-import { useVesselDocuments } from '@/hooks/useVesselDocuments';
 import { DocumentsSection } from '@/components/common/DocumentSection';
+import { useDocuments } from '@/hooks';
 
 export default function VesselSpecs() {
-  const { vessel } = useVesselDetails();
+  const { vessel, getDocuments } = useVesselDetails();
 
   const {
     documents,
-    uploadState,
-    loadDocuments,
     findDoc,
     onDownload,
-    pickAndUpload,
-    onReplace,
-  } = useVesselDocuments();
+    uploadDocument,
+    replaceDocument,
+    deleteDocument
+  } = useDocuments('vessels', vessel?.id, getDocuments);
 
   // Robust detection of gas carrier: accept different field names and casing
   const vesselTypeRaw = (
@@ -33,7 +32,7 @@ export default function VesselSpecs() {
     <ThemedView className="flex-1 bg-gray-100 dark:bg-[#000]">
       <VesselTopBar
         vesselName={vessel?.vesselName ?? ''}
-        vesselImage={vessel?.vesselPictureUrl}
+        vesselImage={vessel?.vesselPicture}
       />
 
       {/* Verify if locked */}
@@ -56,9 +55,10 @@ export default function VesselSpecs() {
             type="Q88"
             title="Q88"
             doc={findDoc('Q88')}
-            onUpload={pickAndUpload}
-            onReplace={(type) => onReplace(type)}
+            onUpload={uploadDocument}
+            onReplace={replaceDocument}
             onDownload={onDownload}
+            onDelete={deleteDocument}
           />
 
           {/* Only show Form C for Gas Carrier vessels */}
@@ -67,9 +67,10 @@ export default function VesselSpecs() {
               type="FormC"
               title="Form C"
               doc={findDoc('FormC')}
-              onUpload={pickAndUpload}
-              onReplace={(type) => onReplace(type)}
+              onUpload={uploadDocument}
+              onReplace={replaceDocument}
               onDownload={onDownload}
+              onDelete={deleteDocument}
               hasBorder
             />
           )}
@@ -87,8 +88,9 @@ export default function VesselSpecs() {
           <DocumentsSection
             documents={documents}
             category='vessels'
-            onUpload={pickAndUpload}
-            onReplace={async (type) => onReplace(type)}
+            onUpload={uploadDocument}
+            onReplace={replaceDocument}
+            onDelete={deleteDocument}
             onDownload={onDownload}
           />
         </Card>

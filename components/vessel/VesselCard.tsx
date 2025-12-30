@@ -128,13 +128,17 @@ export function VesselCard({ vessel, voyage, status, onDeletePress, onEditPress 
       <View className="flex-row items-start px-3 py-2.5">
         {/* Ship Icon or Image */}
         <Pressable
-          onLongPress={() => vessel.vesselPictureUrl && setShowImageViewer(true)}
+          onLongPress={() => vessel.vesselPicture && setShowImageViewer(true)}
           delayLongPress={300}
         >
           <View className="w-10 h-10 rounded-lg mr-3 items-center justify-center bg-blue-50 dark:bg-blue-900/20 overflow-hidden">
-            {vessel.vesselPictureUrl ? (
+            {vessel.vesselPicture && typeof vessel.vesselPicture === 'string' ? (
               <Image
-                source={{ uri: vessel.vesselPictureUrl }}
+                source={{
+                  uri: (vessel.vesselPicture.startsWith('http') || vessel.vesselPicture.startsWith('data:') || vessel.vesselPicture.startsWith('file:'))
+                    ? vessel.vesselPicture
+                    : `data:image/jpeg;base64,${vessel.vesselPicture}`
+                }}
                 className="w-full h-full"
                 resizeMode="cover"
               />
@@ -187,7 +191,7 @@ export function VesselCard({ vessel, voyage, status, onDeletePress, onEditPress 
 
       <ImageViewerModal
         visible={showImageViewer}
-        imageUri={vessel.vesselPictureUrl ?? null}
+        imageUri={vessel.vesselPicture ?? null}
         onClose={() => setShowImageViewer(false)}
       />
     </TouchableOpacity>

@@ -155,8 +155,91 @@ export const useDocuments = (
   };
 
   const replaceDocument = async (type: DocumentType, documentId: number) => {
-    //TODO
+
+    const uri = await pickAndValidateFile();
+
+    if(!uri) return; 
+
+    try {
+
+      setUploadState({ uploading: true, progress: 0, error: null });
+
+      try {
+        const uploadResp = await documentService.replaceDocument(
+          String(documentId),
+          String(subjectId), 
+          category, 
+          uri, 
+          type, 
+        );
+
+        console.log('Upload response:', uploadResp);
+
+        await loadDocuments();
+
+        // Notify other parts of the app (e.g. VesselDetailsProvider)
+        // Updated to emit only to subs of the category
+        try { emit(`${category}:documents:updated`, { subjectId }); } catch (e) { /* no-op */ }
+
+        setUploadState({ uploading: false, progress: 1, error: null });
+        Alert.alert('Upload successful', `${type} has been uploaded successfully.`);
+      } catch (uploadErr: any) {
+        setUploadState({ uploading: false, progress: 0, error: uploadErr?.message ?? 'Upload failed' });
+        Alert.alert('Upload failed', uploadErr?.message ?? 'Network error during upload. Please try again.');
+      }
+    } catch (err: any) {
+      console.error('Upload error', err);
+      setUploadState({ uploading: false, progress: 0, error: err?.message ?? 'Upload failed' });
+      Alert.alert('Upload failed', err?.message ?? 'Upload failed', [
+        { text: 'Retry', onPress: () => replaceDocument(type, documentId) },
+          { text: 'Cancel', style: 'cancel' },
+      ]);
+    }
   };
+
+  const deleteDocument = async (documentId: number) => {
+    try {
+      setUploadState({uploading: true, progress: 0, error: null});
+      
+      const shouldDelete = await deleteAlert();
+      if (!shouldDelete) {
+        setUploadState({uploading: false, progress: 0, error: null});
+        return;
+      }
+      
+      await documentService.deleteDocument(String(documentId));
+      await loadDocuments(); // Wait for documents to reload
+      
+      setUploadState({uploading: false, progress: 1, error: null});
+      Alert.alert('Delete successful', `Document has been deleted.`); // Show after reload
+      
+      // Notify other parts of the app
+      try { emit(`${category}:documents:updated`, { subjectId }); } catch (e) { /* no-op */ }
+      
+    } catch (err: any) {
+      console.error('Delete error', err);
+      setUploadState({ uploading: false, progress: 0, error: err?.message ?? 'Delete failed' });
+      Alert.alert('Delete failed', `MESSAGE: ${err?.message} | CAUSE: ${err?.cause} | STACK: ${err?.stack}`, [
+        { text: 'Retry', onPress: () => deleteDocument(documentId) },
+        { text: 'Cancel', style: 'cancel' },
+      ]);
+    }
+    // Remove the duplicate loadDocuments() call here
+  }
+
+  const deleteAlert = () => {
+    return new Promise<boolean>((resolve) => {
+      Alert.alert(
+        `Deleting Document?`,
+        `This will delete the existing document. Are you sure?`,
+        [
+          { text: 'Cancel', style: 'cancel', onPress: () => resolve(false) },
+            { text: 'Delete', onPress: () => resolve(true) },
+        ],
+          { cancelable: true }
+      );
+    });
+  }
 
   const replaceAlert = (type: DocumentType) => {
     return new Promise<boolean>((resolve) => {
@@ -180,6 +263,7 @@ export const useDocuments = (
     findDoc,
     onDownload,
     uploadDocument,
-    replaceDocument
+    replaceDocument,
+    deleteDocument
   };
 };

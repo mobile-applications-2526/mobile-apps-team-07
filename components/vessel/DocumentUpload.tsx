@@ -13,6 +13,7 @@ type Props = {
   onUpload: (type: DocumentType) => void;
   onReplace: (type: DocumentType, documentId: number) => void;
   onDownload: (doc: DocType) => void;
+  onDelete: (id: number) => void;
   hasBorder?: boolean;
 };
 
@@ -23,6 +24,7 @@ export const DocumentUpload: React.FC<Props> = ({
   onUpload,
   onReplace,
   onDownload,
+  onDelete,
   hasBorder,
 }) => {
   return (
@@ -60,6 +62,13 @@ export const DocumentUpload: React.FC<Props> = ({
                   <Download size={14} color="#fff" />
                   <ThemedText className="text-white font-medium text-xs">Download</ThemedText>
                 </View>
+              </TouchableOpacity>
+              <TouchableOpacity
+                onPress={() => onDelete(doc.id)}
+                className="w-full px-3 py-2 border border-red-500 dark:border-red-400 rounded-lg items-center justify-center"
+                activeOpacity={0.7}
+              >
+                <ThemedText className="text-red-500 dark:text-red-400 font-medium text-xs">Delete</ThemedText>
               </TouchableOpacity>
             </View>
           </View>

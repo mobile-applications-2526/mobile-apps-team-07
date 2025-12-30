@@ -158,7 +158,7 @@ export function VesselTabBar({ state, descriptors, navigation }: BottomTabBarPro
         >
             {/* Upload Progress Bar */}
             {isUploading && (
-                <View className="absolute top-0 left-0 right-0 h-[3px] bg-gray-200 dark:bg-gray-700 z-10 overflow-hidden">
+                <View className="absolute top-0 left-0 right-0 h-[6px] bg-gray-200 dark:bg-gray-700 z-10 overflow-hidden">
                     <View
                         className="h-full bg-blue-500 dark:bg-white"
                         style={{ width: `${uploadProgress * 100}%` }}
