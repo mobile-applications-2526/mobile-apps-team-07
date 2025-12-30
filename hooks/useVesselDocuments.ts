@@ -17,6 +17,38 @@ type UploadState = {
   error: string | null;
 };
 
+// Convert technical error messages to user-friendly ones
+const getFriendlyErrorMessage = (message?: string): string => {
+  if (!message) return 'Something went wrong. Please try again.';
+
+  const lowerMsg = message.toLowerCase();
+
+  if (lowerMsg.includes('403') || lowerMsg.includes('forbidden')) {
+    return 'You don\'t have permission to upload this type of document.';
+  }
+  if (lowerMsg.includes('401') || lowerMsg.includes('unauthorized')) {
+    return 'Your session has expired. Please sign in again.';
+  }
+  if (lowerMsg.includes('413') || lowerMsg.includes('too large')) {
+    return 'This file is too large. Please choose a smaller file (max 25MB).';
+  }
+  if (lowerMsg.includes('404') || lowerMsg.includes('not found')) {
+    return 'The upload destination was not found. Please try again later.';
+  }
+  if (lowerMsg.includes('500') || lowerMsg.includes('server error')) {
+    return 'The server encountered an error. Please try again in a few minutes.';
+  }
+  if (lowerMsg.includes('network') || lowerMsg.includes('timeout') || lowerMsg.includes('connection')) {
+    return 'Unable to connect to the server. Please check your internet connection.';
+  }
+  if (lowerMsg.includes('file') && lowerMsg.includes('not exist')) {
+    return 'The selected file could not be found. Please try selecting it again.';
+  }
+
+  // Default: return a cleaned up version or generic message
+  return 'Upload failed. Please try again or contact support if the problem persists.';
+};
+
 export const useVesselDocuments = () => {
   const {
     vessel,
@@ -150,18 +182,23 @@ export const useVesselDocuments = () => {
 
         // Finish upload
         setUploadState(false, 1);
-        Alert.alert('Upload successful', `${type} has been uploaded successfully.`);
+        Alert.alert('Upload Successful', `Your ${type} document has been uploaded.`);
       } catch (uploadErr: any) {
-        setError(uploadErr?.message ?? 'Upload failed');
+        const friendlyMessage = getFriendlyErrorMessage(uploadErr?.message);
+        setError(friendlyMessage);
         setUploadState(false, 0);
-        Alert.alert('Upload failed', uploadErr?.message ?? 'Network error during upload. Please try again.');
+        Alert.alert('Upload Failed', friendlyMessage, [
+          { text: 'Try Again', onPress: () => pickAndUpload(type) },
+          { text: 'Cancel', style: 'cancel' },
+        ]);
       }
     } catch (err: any) {
       console.error('Upload error', err);
-      setError(err?.message ?? 'Upload failed');
+      const friendlyMessage = getFriendlyErrorMessage(err?.message);
+      setError(friendlyMessage);
       setUploadState(false, 0);
-      Alert.alert('Upload failed', err?.message ?? 'Upload failed', [
-        { text: 'Retry', onPress: () => pickAndUpload(type) },
+      Alert.alert('Upload Failed', friendlyMessage, [
+        { text: 'Try Again', onPress: () => pickAndUpload(type) },
         { text: 'Cancel', style: 'cancel' },
       ]);
     }
