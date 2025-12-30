@@ -121,7 +121,9 @@ export function VesselTabBar({ state, descriptors, navigation }: BottomTabBarPro
     const {
         vessel,
         isLoading,
-        isLocked: missingDocs
+        isLocked: missingDocs,
+        uploadProgress,
+        isUploading
     } = useVesselDetails();
 
 
@@ -147,11 +149,23 @@ export function VesselTabBar({ state, descriptors, navigation }: BottomTabBarPro
         );
     }
 
+
+
     return (
         <View
             className="bg-white dark:bg-[#1c1c1e] border-t border-gray-200 dark:border-gray-800"
             style={{ paddingBottom: insets.bottom }}
         >
+            {/* Upload Progress Bar */}
+            {isUploading && (
+                <View className="absolute top-0 left-0 right-0 h-[3px] bg-gray-200 dark:bg-gray-700 z-10 overflow-hidden">
+                    <View
+                        className="h-full bg-blue-500 dark:bg-white"
+                        style={{ width: `${uploadProgress * 100}%` }}
+                    />
+                </View>
+            )}
+
             <View className="flex-row items-end justify-around h-[55px] px-2">
                 {tabs.map((tab) => {
                     // Find if this tab corresponds to a route in the navigator

@@ -1,4 +1,5 @@
 import { useState, useCallback, useEffect } from 'react';
+import * as DocumentPicker from 'expo-document-picker';
 import { Alert, Linking } from 'react-native';
 import { API_URL } from '@/services';
 import * as db from '@/lib/database';
@@ -17,10 +18,24 @@ type UploadState = {
 };
 
 export const useVesselDocuments = () => {
-  const { vessel, getDocuments } = useVesselDetails();
+  const {
+    vessel,
+    getDocuments,
+    uploadProgress,
+    isUploading,
+    setUploadState
+  } = useVesselDetails();
+
   const [documents, setDocuments] = useState<DocType[]>([]);
-  const [uploadState, setUploadState] = useState<UploadState>({ uploading: false, progress: 0, error: null });
+  const [error, setError] = useState<string | null>(null);
   const [refreshing, setRefreshing] = useState(false);
+
+  // Combine shared state with local error
+  const uploadState: UploadState = {
+    uploading: isUploading,
+    progress: uploadProgress,
+    error: error
+  };
 
   const loadDocuments = useCallback(async () => {
     if (!vessel) return;
@@ -74,7 +89,6 @@ export const useVesselDocuments = () => {
     }
 
     try {
-      const DocumentPicker: any = await import('expo-document-picker');
       const res = await DocumentPicker.getDocumentAsync({ type: 'application/pdf', copyToCacheDirectory: true });
       if (res.canceled || !res.assets || res.assets.length === 0) return;
 
@@ -94,11 +108,13 @@ export const useVesselDocuments = () => {
         return;
       }
 
-      setUploadState({ uploading: true, progress: 0, error: null });
+      // Start upload - update shared state
+      setError(null);
+      setUploadState(true, 0);
 
       try {
-        const uploadResp = await documentService.uploadDocument(String(vessel.id), uri, type, name, (progress) => {
-          setUploadState((prevState) => ({ ...prevState, progress }));
+        const uploadResp = await documentService.uploadDocument(String(vessel.id), 'vessels', uri, type, (progress) => {
+          setUploadState(true, progress);
         });
         console.log('Upload response:', uploadResp);
 
@@ -132,15 +148,18 @@ export const useVesselDocuments = () => {
         // Notify other parts of the app (e.g. VesselDetailsProvider)
         try { emit('documents:updated', { vesselId: vessel.id }); } catch (e) { /* no-op */ }
 
-        setUploadState({ uploading: false, progress: 1, error: null });
+        // Finish upload
+        setUploadState(false, 1);
         Alert.alert('Upload successful', `${type} has been uploaded successfully.`);
       } catch (uploadErr: any) {
-        setUploadState({ uploading: false, progress: 0, error: uploadErr?.message ?? 'Upload failed' });
+        setError(uploadErr?.message ?? 'Upload failed');
+        setUploadState(false, 0);
         Alert.alert('Upload failed', uploadErr?.message ?? 'Network error during upload. Please try again.');
       }
     } catch (err: any) {
       console.error('Upload error', err);
-      setUploadState({ uploading: false, progress: 0, error: err?.message ?? 'Upload failed' });
+      setError(err?.message ?? 'Upload failed');
+      setUploadState(false, 0);
       Alert.alert('Upload failed', err?.message ?? 'Upload failed', [
         { text: 'Retry', onPress: () => pickAndUpload(type) },
         { text: 'Cancel', style: 'cancel' },

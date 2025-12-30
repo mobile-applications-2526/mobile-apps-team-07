@@ -30,7 +30,12 @@ export interface VesselDetailsContextType {
   getLatestNoonReport: (id: number) => Promise<NoonReport | null>
   vesselHasDocument: (document: DocumentType) => Promise<boolean>,
   getDocuments: () => Promise<Document[]>,
-  isRefreshing: boolean
+  isRefreshing: boolean,
+
+  // Upload Progress
+  uploadProgress: number; // 0 to 1
+  isUploading: boolean;
+  setUploadState: (uploading: boolean, progress: number) => void;
 }
 
 export const VesselDetailContext = createContext<VesselDetailsContextType | null>(null);
@@ -76,6 +81,15 @@ export function VesselDetailsProvider({ children }: VesselDetailsProviderProps) 
   const isInitialized = !isLoading && (vesselQuery.isFetched || voyagesQuery.isFetched || documentsQuery.isFetched);
   const error = vesselQuery.error?.message ?? voyagesQuery.error?.message ?? documentsQuery.error?.message ?? null;
   const isOfflineData = vesselQuery.isError || voyagesQuery.isError || documentsQuery.isError;
+
+  // Upload state
+  const [uploadProgress, setUploadProgress] = useState(0);
+  const [isUploading, setIsUploading] = useState(false);
+
+  const setUploadState = useCallback((uploading: boolean, progress: number) => {
+    setIsUploading(uploading);
+    setUploadProgress(progress);
+  }, []);
 
   // Sync offline state to global NetworkStatus context
   // Fix: "Online" toast appearing when offline.
@@ -185,7 +199,11 @@ export function VesselDetailsProvider({ children }: VesselDetailsProviderProps) 
     refreshVesselVoyages,
     getLatestNoonReport,
     vesselHasDocument,
-    getDocuments
+    getDocuments,
+
+    uploadProgress,
+    isUploading,
+    setUploadState
   }
 
   return (

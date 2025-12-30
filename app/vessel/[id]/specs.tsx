@@ -6,11 +6,12 @@ import {
 } from 'react-native';
 import { ThemedText, ThemedView, Card } from '@/components/common';
 import { VesselTopBar, DocumentUpload } from '@/components/vessel';
-import { useVesselDetails, useDocuments } from '@/hooks';
+import { useVesselDetails } from '@/context/VesselDetailsContext';
+import { useVesselDocuments } from '@/hooks/useVesselDocuments';
 import { DocumentsSection } from '@/components/common/DocumentSection';
 
 export default function VesselSpecs() {
-  const { vessel, getDocuments } = useVesselDetails();
+  const { vessel } = useVesselDetails();
 
   const {
     documents,
@@ -18,9 +19,9 @@ export default function VesselSpecs() {
     loadDocuments,
     findDoc,
     onDownload,
-    uploadDocument,
-    replaceDocument,
-  } = useDocuments('vessels', vessel?.id, getDocuments);
+    pickAndUpload,
+    onReplace,
+  } = useVesselDocuments();
 
   // Robust detection of gas carrier: accept different field names and casing
   const vesselTypeRaw = (
@@ -40,22 +41,7 @@ export default function VesselSpecs() {
 
       <ScrollView contentContainerStyle={{ padding: 16 }} className="flex-1" showsVerticalScrollIndicator={false}>
         {/* Specification page: no global unlock banner (banner shown in layout on other pages) */}
-
-        {/* Upload Progress Indicator */}
-        {uploadState.uploading && (
-          <View className="bg-blue-50 dark:bg-blue-900/20 rounded-xl p-4 mb-4 border border-blue-200 dark:border-blue-800">
-            <View className="flex-row items-center justify-between mb-2">
-              <ThemedText className="font-medium">Uploading...</ThemedText>
-              <ThemedText className="text-sm text-gray-600 dark:text-gray-400">{Math.round(uploadState.progress * 100)}%</ThemedText>
-            </View>
-            <View className="w-full h-2 bg-gray-200 dark:bg-gray-700 rounded-full overflow-hidden">
-              <View
-                style={{ width: `${Math.round(uploadState.progress * 100)}%` }}
-                className="h-full bg-blue-600 rounded-full transition-all duration-300"
-              />
-            </View>
-          </View>
-        )}
+        {/* Progress is now shown in the navbar */}
 
         {/* Required Documents Section */}
         <Card className="mb-3">
@@ -70,8 +56,8 @@ export default function VesselSpecs() {
             type="Q88"
             title="Q88"
             doc={findDoc('Q88')}
-            onUpload={uploadDocument}
-            onReplace={replaceDocument}
+            onUpload={pickAndUpload}
+            onReplace={(type) => onReplace(type)}
             onDownload={onDownload}
           />
 
@@ -81,8 +67,8 @@ export default function VesselSpecs() {
               type="FormC"
               title="Form C"
               doc={findDoc('FormC')}
-              onUpload={uploadDocument}
-              onReplace={replaceDocument}
+              onUpload={pickAndUpload}
+              onReplace={(type) => onReplace(type)}
               onDownload={onDownload}
               hasBorder
             />
@@ -101,8 +87,8 @@ export default function VesselSpecs() {
           <DocumentsSection
             documents={documents}
             category='vessels'
-            onUpload={uploadDocument}
-            onReplace={replaceDocument}
+            onUpload={pickAndUpload}
+            onReplace={async (type) => onReplace(type)}
             onDownload={onDownload}
           />
         </Card>
