@@ -1,4 +1,4 @@
-import { API_URL } from './serviceConfig';
+import { API_URL } from './config.service';
 import { StorageService } from './storage.service';
 
 type HttpMethod = 'GET' | 'POST' | 'PUT' | 'DELETE' | 'PATCH';
