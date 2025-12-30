@@ -6,6 +6,8 @@ import { useVessels } from '@/context/VesselContext';
 import { useNetworkStatus } from '@/context/NetworkStatusContext';
 import { useHaptics } from './useHaptics';
 import { useToast } from './useToast';
+import { Alert } from 'react-native';
+import { getFriendlyErrorMessage } from '@/lib/errorUtils';
 import { CircleCheckBig } from 'lucide-react-native';
 
 export function useFleetOverview() {
@@ -145,6 +147,11 @@ export function useFleetOverview() {
                 }
             }
 
+            // Strip data URI prefix if present (backend expects raw base64)
+            if (vesselPicture && vesselPicture.startsWith('data:image')) {
+                vesselPicture = vesselPicture.replace(/^data:image\/[a-z]+;base64,/, '');
+            }
+
             const inputWithImage = {
                 ...vesselInput,
                 vesselPicture: vesselPicture
@@ -159,6 +166,8 @@ export function useFleetOverview() {
             router.push(`/vessel/${newVessel.id}` as any);
         } catch (error) {
             console.error('Failed to create vessel:', error);
+            const msg = error instanceof Error ? error.message : 'Unknown error';
+            Alert.alert('Creation Failed', getFriendlyErrorMessage(msg));
             await haptics.errorNotification();
         } finally {
             setIsCreating(false);
@@ -207,6 +216,11 @@ export function useFleetOverview() {
                 }
             }
 
+            // Strip data URI prefix if present (backend expects raw base64)
+            if (finalUpdates.vesselPicture && finalUpdates.vesselPicture.startsWith('data:image')) {
+                finalUpdates.vesselPicture = finalUpdates.vesselPicture.replace(/^data:image\/[a-z]+;base64,/, '');
+            }
+
             const updated: Vessel = {
                 ...vesselToEdit,
                 ...finalUpdates,
@@ -225,6 +239,8 @@ export function useFleetOverview() {
             await haptics.successNotification();
         } catch (err) {
             console.error('Failed to update vessel', err);
+            const msg = err instanceof Error ? err.message : 'Unknown error';
+            Alert.alert('Update Failed', getFriendlyErrorMessage(msg));
             await haptics.errorNotification();
         } finally {
             setIsSaving(false);

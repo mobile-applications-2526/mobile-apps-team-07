@@ -17,42 +17,7 @@ type UploadState = {
   error: string | null;
 };
 
-// Convert technical error messages to user-friendly ones
-const getFriendlyErrorMessage = (message?: string): string => {
-  if (!message) return 'Something went wrong. Please try again.';
-
-  const lowerMsg = message.toLowerCase();
-
-  if (lowerMsg.includes('403') || lowerMsg.includes('forbidden')) {
-    return 'You don\'t have permission to upload this type of document.';
-  }
-  if (lowerMsg.includes('401') || lowerMsg.includes('unauthorized')) {
-    return 'Your session has expired. Please sign in again.';
-  }
-  if (lowerMsg.includes('413') || lowerMsg.includes('too large')) {
-    return 'This file is too large. Please choose a smaller file (max 25MB).';
-  }
-  if (lowerMsg.includes('404') || lowerMsg.includes('not found')) {
-    return 'The upload destination was not found. Please try again later.';
-  }
-  if (lowerMsg.includes('500') || lowerMsg.includes('server error')) {
-    return 'The server encountered an error. Please try again in a few minutes.';
-  }
-  if (lowerMsg.includes('network') || lowerMsg.includes('timeout') || lowerMsg.includes('connection')) {
-    return 'Unable to connect to the server. Please check your internet connection.';
-  }
-  if (lowerMsg.includes('file') && lowerMsg.includes('not exist')) {
-    return 'The selected file could not be found. Please try selecting it again.';
-  }
-
-  // Catch HTML or very long technical messages
-  if (lowerMsg.startsWith('<') || lowerMsg.includes('<!doctype html>') || lowerMsg.length > 200) {
-    return 'The server encountered an unexpected error. Our team has been notified.';
-  }
-
-  // Default: return a cleaned up version or generic message
-  return 'Upload failed. Please try again or contact support if the problem persists.';
-};
+import { getFriendlyErrorMessage } from '@/lib/errorUtils';
 
 export const useVesselDocuments = () => {
   const {
