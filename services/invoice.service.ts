@@ -1,4 +1,4 @@
-import { apiClient } from './api-client.service';
+import { apiClient } from './api.client';
 import * as db from '@/lib/database';
 import { Invoice } from '@/types';
 

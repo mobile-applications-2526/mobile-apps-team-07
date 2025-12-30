@@ -9,8 +9,6 @@ import React, { createContext, useContext, useEffect, useCallback, useState, Rea
 import { Vessel, VesselWithStatus, CreateVesselInput, Document, DocumentTypeCategory } from '@/types';
 import { vesselService } from '@/services';
 
-import { DOCUMENT_TYPES } from '@/constants';
-
 import { useNetworkStatus } from '@/context/NetworkStatusContext';
 import { queryClient } from '@/lib/queryClient';
 import { vesselKeys } from '@/hooks/queries';

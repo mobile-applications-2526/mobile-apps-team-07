@@ -3,7 +3,7 @@ import * as Sharing from 'expo-sharing';
 import { DocumentCategory, DocumentType } from '@/types';
 import { API_URL } from './config.service';
 import { StorageService } from './storage.service';
-import { apiClient } from './api-client.service';
+import { apiClient } from './api.client';
 
 // Define locally to avoid import definition issues at runtime
 const FileSystemUploadType = {
