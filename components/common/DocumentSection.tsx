@@ -14,6 +14,7 @@ interface DocumentsSectionProps {
   onUpload: (type: DocumentType) => Promise<void>;
   onReplace: (type: DocumentType, documentId: number) => Promise<void>;
   onDownload: (doc: Document) => Promise<void>;
+  onDelete: (id: number) => Promise<void>;
 }
 
 export function DocumentsSection({
@@ -23,6 +24,7 @@ export function DocumentsSection({
   onUpload,
   onReplace,
   onDownload,
+  onDelete
 }: DocumentsSectionProps) {
 
   const IOS = Platform.OS == 'ios';
@@ -124,7 +126,8 @@ export function DocumentsSection({
                 doc={doc}
                 onUpload={() => onUpload(selectedType!)}
                 onReplace={() => onReplace(selectedType!, doc.id)}
-                onDownload={() => onDownload(doc)}
+                onDownload={onDownload}
+                onDelete={onDelete}
                 hasBorder={false}
               />
             ))}

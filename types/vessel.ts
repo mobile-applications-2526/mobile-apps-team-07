@@ -11,8 +11,8 @@ import { Voyage } from "./voyage";
 export interface Vessel {
   id: number;
   vesselName: string;
-  vesselType: VesselTypeCategory;
-  vesselSubtype: string;
+  vesselType: VesselType;
+  vesselSubtype: VesselSubtype;
   imoNumber: string;
   flag: string | null;
   classificationSociety: string | null;
@@ -34,8 +34,8 @@ export interface Vessel {
 export interface CreateVesselInput {
   vesselName: string;
   imoNumber: string;
-  vesselType: string;
-  vesselSubtype: string;
+  vesselType: VesselType;
+  vesselSubtype: VesselSubtype;
   vesselPicture: string | null;
 }
 
@@ -43,8 +43,8 @@ export interface CreateVesselInput {
 export interface UpdateVesselInput {
   name?: string;
   imo?: string;
-  type?: string;
-  subtype?: string;
+  type?: VesselType;
+  subtype?: VesselSubtype;
   flag?: string | null;
   classification?: string | null;
   buildYear?: number | null;
@@ -71,7 +71,7 @@ export interface VesselStatus {
   reportType: string;
   latitude: number;
   longitude: number;
-  activity: VesselActivityCategory;
+  activity: VesselActivity;
   portName: number;
   distanceTravelledNm: number;
   distanceToGoNm: number;
@@ -113,19 +113,18 @@ export interface VesselKPIs {
   };
 }
 
-export type VesselTypeCategory =
+export type VesselType =
   | 'Gas Carrier'
   | 'Chemical Tanker'
   | 'MR Tanker';
 
-export type VesselSubtypeCategory = {
-  'Gas Carrier': 'LPG' | 'LNG' | 'LEG';
-  'Chemical Tanker': 'Type 1' | 'Type 2' | 'Type 3';
-  'MR Tanker': 'Clean' | 'Dirty';
-};
+export type VesselSubtype =
+  | 'LPG'    | 'LNG'    | 'LEG'
+  | 'Type 1' | 'Type 2' | 'Type 3'
+  | 'Clean'  | 'Dirty';
 
-export type VesselActivityCategory =
-  | 'Underway '
+export type VesselActivity =
+  | 'Underway'
   | 'Loading'
   | 'Discharging'
   | 'Anchored'

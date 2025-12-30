@@ -1,10 +1,8 @@
-import React, { useMemo } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import {
   View,
   TextInput,
-  StyleSheet,
   Pressable,
-  Keyboard,
   ActionSheetIOS,
   Platform,
   Alert,
@@ -12,22 +10,11 @@ import {
 } from 'react-native';
 import { BottomSheetModal, BottomSheetBackdrop, BottomSheetScrollView } from '@gorhom/bottom-sheet';
 import { ThemedText } from '@/components/common';
-import { Camera, Check } from 'lucide-react-native';
 import { useColorScheme } from 'nativewind';
-import { CreateVesselInput } from '@/types';
+import { CreateVesselInput, VesselSubtype, VesselType } from '@/types';
+import { VESSEL_TYPES, VESSEL_SUBTYPES } from '@/constants';
 import * as ImagePicker from 'expo-image-picker';
-
-
-// Vessel type options
-const VESSEL_TYPES = ['Gas Carrier', 'Chemical Tanker', 'MR Tanker'] as const;
-type VesselType = typeof VESSEL_TYPES[number];
-
-// Subtype options based on vessel type
-const SUBTYPES: Record<VesselType, string[]> = {
-  'Gas Carrier': ['LPG', 'LNG', 'LEG'],
-  'Chemical Tanker': ['Type 1', 'Type 2', 'Type 3'],
-  'MR Tanker': ['Clean', 'Dirty'],
-};
+import { Picker } from '@react-native-picker/picker';
 
 interface AddVesselModalProps {
   visible: boolean;
@@ -44,19 +31,21 @@ export function AddVesselModal({
   onCreate,
   isCreating = false,
 }: AddVesselModalProps) {
+
+  const IOS = Platform.OS == 'ios';
   const { colorScheme } = useColorScheme();
   const isDark = colorScheme === 'dark';
-  const bottomSheetRef = React.useRef<BottomSheetModal>(null);
-  const snapPoints = React.useMemo(() => ['60%', '100%'], []);
+  const bottomSheetRef = useRef<BottomSheetModal>(null);
+  const snapPoints = useMemo(() => ['60%', '100%'], []);
 
   // Form State
-  const [vesselName, setVesselName] = React.useState('');
-  const [imoNumber, setImoNumber] = React.useState('');
-  const [vesselType, setVesselType] = React.useState<VesselType>('Gas Carrier');
-  const [vesselSubtype, setVesselSubtype] = React.useState('LPG');
-  const [vesselPicture, setVesselPicture] = React.useState('');
+  const [vesselName, setVesselName] = useState('');
+  const [imoNumber, setImoNumber] = useState('');
+  const [vesselType, setVesselType] = useState<VesselType>('Gas Carrier');
+  const [vesselSubtype, setVesselSubtype] = useState<VesselSubtype>('LPG');
+  const [vesselPicture, setVesselPicture] = useState('');
 
-  React.useEffect(() => {
+  useEffect(() => {
     if (visible) {
       bottomSheetRef.current?.present();
       // Reset state on open
@@ -71,12 +60,12 @@ export function AddVesselModal({
   }, [visible]);
 
   // Update subtype when type changes
-  React.useEffect(() => {
-    setVesselSubtype(SUBTYPES[vesselType][0]);
+  useEffect(() => {
+    setVesselSubtype(VESSEL_SUBTYPES[vesselType][0]);
   }, [vesselType]);
 
   // Validation
-  const isFormValid = React.useMemo(() => {
+  const isFormValid = useMemo(() => {
     if (!vesselName.trim()) return false;
     if (!imoNumber || imoNumber.length !== 7) return false;
     if (existingImos.includes(imoNumber)) return false;
@@ -96,7 +85,7 @@ export function AddVesselModal({
   };
 
   const showSelection = (title: string, options: string[], onSelect: (opt: string) => void) => {
-    if (Platform.OS === 'ios') {
+    if (IOS) {
       ActionSheetIOS.showActionSheetWithOptions(
         {
           options: [...options, 'Cancel'],
@@ -109,18 +98,7 @@ export function AddVesselModal({
           }
         }
       );
-    } else {
-      // Android simple native alert
-      Alert.alert(
-        title,
-        'Select an option',
-        (options.map(opt => ({
-          text: opt,
-          onPress: () => onSelect(opt),
-        })) as { text: string; onPress: () => void; style?: 'cancel' | 'default' | 'destructive' }[]).concat([{ text: 'Cancel', style: 'cancel', onPress: () => { } }]),
-        { cancelable: true }
-      );
-    }
+    }  
   };
 
   const pickImage = async (useCamera: boolean) => {
@@ -187,25 +165,27 @@ export function AddVesselModal({
       handleIndicatorStyle={{ backgroundColor: isDark ? '#404040' : '#e5e7eb' }}
       onDismiss={onCancel}
     >
-      <View style={styles.header}>
-        <ThemedText style={styles.headerTitle}>Add New Vessel</ThemedText>
+      <View className="flex-row items-center justify-between px-4 py-3 border-b border-black/5">
+        <ThemedText className="text-lg font-semibold text-center flex-1">Add New Vessel</ThemedText>
       </View>
 
       <BottomSheetScrollView
-        contentContainerStyle={styles.content}
+        contentContainerStyle={{ padding: 16, paddingBottom: 40 }}
         showsVerticalScrollIndicator={false}
       >
         {/* Vessel Details Section */}
-        <View style={[styles.section, isDark && styles.sectionDark]}>
-          <ThemedText style={styles.sectionHeader}>Vessel Details</ThemedText>
+        <View className={`rounded-xl p-4 mb-5 ${isDark ? 'bg-[#1C1C1E]' : 'bg-white shadow-sm'}`}>
+          <ThemedText className="text-[15px] font-semibold text-gray-500 mb-3">Vessel Details</ThemedText>
 
           {/* Vessel Name */}
-          <View style={styles.fieldContainer}>
-            <ThemedText style={styles.label}>Vessel Name</ThemedText>
-            <View style={[styles.input, isDark && styles.inputDark, { flexDirection: 'row', alignItems: 'center' }]}>
-              <ThemedText style={{ fontSize: 17, color: isDark ? '#FFF' : '#000', minWidth: 100 }}>Name</ThemedText>
+          <View className="mb-4">
+            <ThemedText className="text-[13px] font-medium mb-1.5 text-gray-500">Vessel Name</ThemedText>
+            <View className={`flex-row items-center p-3 rounded-lg ${isDark ? 'bg-[#2C2C2E]' : 'bg-gray-100'}`}>
+              <ThemedText className={`text-[17px] min-w-[100px] ${isDark ? 'text-white' : 'text-black'}`}>
+                Name
+              </ThemedText>
               <TextInput
-                style={[styles.nativeInput, isDark && { color: '#FFF' }]}
+                className={`flex-1 text-right text-[17px] ${isDark ? 'text-white' : 'text-black'}`}
                 placeholder="Enter name"
                 placeholderTextColor={isDark ? '#666' : '#999'}
                 value={vesselName}
@@ -216,12 +196,14 @@ export function AddVesselModal({
           </View>
 
           {/* IMO Number */}
-          <View style={styles.fieldContainer}>
-            <ThemedText style={styles.label}>IMO Number</ThemedText>
-            <View style={[styles.input, isDark && styles.inputDark, { flexDirection: 'row', alignItems: 'center' }]}>
-              <ThemedText style={{ fontSize: 17, color: isDark ? '#FFF' : '#000', minWidth: 100 }}>IMO</ThemedText>
+          <View className="mb-4">
+            <ThemedText className="text-[13px] font-medium mb-1.5 text-gray-500">IMO Number</ThemedText>
+            <View className={`flex-row items-center p-3 rounded-lg ${isDark ? 'bg-[#2C2C2E]' : 'bg-gray-100'}`}>
+              <ThemedText className={`text-[17px] min-w-[100px] ${isDark ? 'text-white' : 'text-black'}`}>
+                IMO
+              </ThemedText>
               <TextInput
-                style={[styles.nativeInput, isDark && { color: '#FFF' }]}
+                className={`flex-1 text-right text-[17px] ${isDark ? 'text-white' : 'text-black'}`}
                 placeholder="7-digit number"
                 placeholderTextColor={isDark ? '#666' : '#999'}
                 value={imoNumber}
@@ -236,49 +218,85 @@ export function AddVesselModal({
             </View>
           </View>
           {imoNumber.length > 0 && imoNumber.length !== 7 && (
-            <ThemedText style={styles.hint}>IMO must be exactly 7 digits</ThemedText>
+            <ThemedText className="text-xs text-gray-400 mt-1">IMO must be exactly 7 digits</ThemedText>
           )}
           {existingImos.includes(imoNumber) && imoNumber.length === 7 && (
-            <ThemedText style={[styles.hint, { color: '#ef4444' }]}>
+            <ThemedText className="text-xs text-red-500 mt-1">
               This IMO already exists
             </ThemedText>
           )}
         </View>
 
         {/* Classification Section */}
-        <View style={[styles.section, isDark && styles.sectionDark]}>
-          <ThemedText style={styles.sectionHeader}>Classification</ThemedText>
+        <View className={`rounded-xl p-4 mb-5 ${isDark ? 'bg-[#1C1C1E]' : 'bg-white shadow-sm'}`}>
+          <ThemedText className="text-[15px] font-semibold text-gray-500 mb-3">Classification</ThemedText>
 
           {/* Vessel Type */}
-          <View style={styles.fieldContainer}>
-            <ThemedText style={styles.label}>Vessel Type</ThemedText>
-            <Pressable
-              onPress={() => showSelection('Select Vessel Type', [...VESSEL_TYPES], (opt) => setVesselType(opt as VesselType))}
-              style={[styles.input, isDark && styles.inputDark, { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' }]}
-            >
-              <ThemedText style={{ fontSize: 17, color: isDark ? '#FFF' : '#000' }}>{vesselType}</ThemedText>
-              <ThemedText style={{ color: '#007AFF', fontSize: 17 }}>Edit</ThemedText>
-            </Pressable>
+          <View className="mb-4">
+            <ThemedText className="text-[13px] font-medium mb-1.5 text-gray-500">Vessel Type</ThemedText>
+            {IOS?(
+              <Pressable
+                onPress={() => showSelection('Select Vessel Type', [...VESSEL_TYPES], (opt) => setVesselType(opt as VesselType))}
+                className={`flex-row justify-between items-center p-3 rounded-lg ${isDark ? 'bg-[#2C2C2E]' : 'bg-gray-100'}`}
+              >
+                <ThemedText className={`text-[17px] ${isDark ? 'text-white' : 'text-black'}`}>
+                  {vesselType}
+                </ThemedText>
+                <ThemedText className="text-[#007AFF] text-[17px]">Edit</ThemedText>
+              </Pressable>
+            ):(
+              <Picker
+                selectedValue={vesselType}
+                onValueChange={(value) => setVesselType(value)}
+                className="w-full"
+              >
+                {VESSEL_TYPES.map((type, i) => (
+                  <Picker.Item 
+                    key={i} 
+                    label={type} 
+                    value={type} 
+                  />
+                ))}
+              </Picker>
+            ) }
           </View>
 
           {/* Vessel Subtype */}
-          <View style={styles.fieldContainer}>
-            <ThemedText style={styles.label}>Subtype</ThemedText>
-            <Pressable
-              onPress={() => showSelection('Select Subtype', SUBTYPES[vesselType], (opt) => setVesselSubtype(opt))}
-              style={[styles.input, isDark && styles.inputDark, { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' }]}
-            >
-              <ThemedText style={{ fontSize: 17, color: isDark ? '#FFF' : '#000' }}>{vesselSubtype}</ThemedText>
-              <ThemedText style={{ color: '#007AFF', fontSize: 17 }}>Edit</ThemedText>
-            </Pressable>
+          <View className="mb-4">
+            <ThemedText className="text-[13px] font-medium mb-1.5 text-gray-500">Subtype</ThemedText>
+            {IOS?(
+              <Pressable
+                onPress={() => showSelection('Select Subtype', VESSEL_SUBTYPES[vesselType], (opt) => setVesselSubtype(opt as VesselSubtype))}
+                className={`flex-row justify-between items-center p-3 rounded-lg ${isDark ? 'bg-[#2C2C2E]' : 'bg-gray-100'}`}
+              >
+                <ThemedText className={`text-[17px] ${isDark ? 'text-white' : 'text-black'}`}>
+                  {vesselSubtype}
+                </ThemedText>
+                <ThemedText className="text-[#007AFF] text-[17px]">Edit</ThemedText>
+              </Pressable>
+            ):(
+              <Picker
+                selectedValue={vesselSubtype}
+                onValueChange={(value) => setVesselSubtype(value)}
+                className="w-full"
+              >
+                {VESSEL_SUBTYPES[vesselType].map((sub, i) => (
+                  <Picker.Item 
+                    key={i} 
+                    label={sub} 
+                    value={sub} 
+                  />
+                ))}
+              </Picker>
+            ) }
           </View>
 
           {/* Vessel Picture */}
-          <View style={styles.fieldContainer}>
-            <ThemedText style={styles.label}>Vessel Photo</ThemedText>
+          <View className="mb-4">
+            <ThemedText className="text-[13px] font-medium mb-1.5 text-gray-500">Vessel Photo</ThemedText>
             <Pressable
               onPress={showImageSelection}
-              style={[styles.input, isDark && styles.inputDark, { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' }]}
+              className={`flex-row justify-between items-center p-3 rounded-lg ${isDark ? 'bg-[#2C2C2E]' : 'bg-gray-100'}`}
             >
               <ThemedText style={{ fontSize: 17, color: isDark ? '#FFF' : '#000' }}>Photo</ThemedText>
               <View style={{ flexDirection: 'row', alignItems: 'center' }}>
@@ -298,160 +316,15 @@ export function AddVesselModal({
         <Pressable
           onPress={handleSubmit}
           disabled={!isFormValid || isCreating}
-          style={[
-            styles.submitButton,
-            (!isFormValid || isCreating) && styles.submitButtonDisabled,
-          ]}
+          className={`bg-white rounded-full py-3 w-full items-center mt-8 mb-5 shadow-lg ${(!isFormValid || isCreating) && 'opacity-50'}`}
         >
-          <ThemedText style={styles.submitButtonText}>
+          <ThemedText className="text-black text-base font-bold">
             {isCreating ? 'Creating...' : 'Create Vessel'}
           </ThemedText>
         </Pressable>
       </BottomSheetScrollView>
-    </BottomSheetModal >
+    </BottomSheetModal>
   );
 }
-
-const styles = StyleSheet.create({
-  header: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-    paddingHorizontal: 16,
-    paddingVertical: 12,
-    borderBottomWidth: 1,
-    borderBottomColor: 'rgba(0,0,0,0.05)',
-  },
-  headerTitle: {
-    fontSize: 18,
-    fontWeight: '600',
-    textAlign: 'center',
-    flex: 1,
-  },
-  content: {
-    padding: 16,
-    paddingBottom: 40,
-  },
-  section: {
-    backgroundColor: '#fff',
-    borderRadius: 12,
-    padding: 16,
-    marginBottom: 20,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 1 },
-    shadowOpacity: 0.05,
-    shadowRadius: 2,
-    elevation: 2,
-  },
-  sectionDark: {
-    backgroundColor: '#1C1C1E', // System Gray 6
-  },
-  sectionHeader: {
-    fontSize: 15,
-    fontWeight: '600',
-    color: '#666',
-    marginBottom: 12,
-  },
-  imageButton: {
-    height: 80,
-    borderWidth: 1,
-    borderStyle: 'dashed',
-    borderColor: '#d1d5db',
-    alignItems: 'center',
-    justifyContent: 'center',
-    marginBottom: 20,
-    borderRadius: 10,
-    backgroundColor: '#f9fafb',
-  },
-  imageButtonDark: {
-    borderColor: '#4b5563',
-    backgroundColor: '#1f2937',
-  },
-  fieldContainer: {
-    marginBottom: 16,
-  },
-  label: {
-    fontSize: 13,
-    fontWeight: '500',
-    marginBottom: 6,
-    color: '#666',
-  },
-  input: {
-    backgroundColor: '#F2F2F7', // Changed from '#FFF' to light gray for better contrast in white section
-    padding: 12,
-    borderRadius: 10,
-    fontSize: 16,
-    // Borders handled by container if needed, but for native rows usually just background
-  },
-  inputDark: {
-    backgroundColor: '#2C2C2E', // Changed from '#1C1C1E' to lighter dark gray for contrast
-    color: '#FFF',
-  },
-  nativeInput: {
-    flex: 1,
-    textAlign: 'right',
-    fontSize: 17,
-    padding: 0,
-    color: '#000',
-  },
-  hint: {
-    fontSize: 12,
-    color: '#999',
-    marginTop: 4,
-  },
-  segmentedControl: {
-    flexDirection: 'row',
-    backgroundColor: '#E5E5EA',
-    borderRadius: 10,
-    padding: 2,
-    gap: 4,
-  },
-  segmentedControlDark: {
-    backgroundColor: '#1C1C1E',
-  },
-  segment: {
-    flex: 1,
-    paddingVertical: 8,
-    paddingHorizontal: 12,
-    borderRadius: 8,
-    alignItems: 'center',
-  },
-  segmentActive: {
-    backgroundColor: '#3C3C3E',
-  },
-  segmentActiveLight: {
-    backgroundColor: '#fff',
-  },
-  segmentText: {
-    fontSize: 13,
-    fontWeight: '500',
-  },
-  segmentTextActive: {
-    fontWeight: '600',
-  },
-  submitButton: {
-    backgroundColor: '#fff',
-    borderRadius: 30,
-    paddingVertical: 12,
-    width: '100%',
-    alignItems: 'center',
-    marginTop: 32,
-    marginBottom: 20,
-    borderColor: '#fff',
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.3,
-    shadowRadius: 8,
-    elevation: 4,
-  },
-  submitButtonDisabled: {
-    opacity: 0.5,
-  },
-  submitButtonText: {
-    color: '#000',
-    fontSize: 16,
-    fontWeight: '700',
-  },
-});
 
 export default AddVesselModal;

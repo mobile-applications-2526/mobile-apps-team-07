@@ -4,21 +4,17 @@
  * Constants related to vessel types and configurations.
  */
 
-import { DocumentTypeCategory, VesselTypeCategory } from '@/types';
+import { VesselSubtype, VesselType } from '@/types';
 
 // Available vessel types
-export const VESSEL_TYPES: VesselTypeCategory[] = [
+export const VESSEL_TYPES: VesselType[] = [
   'Gas Carrier',
   'Chemical Tanker', 
   'MR Tanker',
 ];
 
-export const DOCUMENT_TYPES: DocumentTypeCategory[] = [
-    'Q88', 'FormC', 'ClassCert', 'CharterParty'
-]
-
 // Subtypes mapped by vessel type
-export const VESSEL_SUBTYPES: Record<VesselTypeCategory, string[]> = {
+export const VESSEL_SUBTYPES: Record<VesselType, VesselSubtype[]> = {
   'Gas Carrier': ['LPG', 'LNG', 'LEG'],
   'Chemical Tanker': ['Type 1', 'Type 2', 'Type 3'],
   'MR Tanker': ['Clean', 'Dirty'],

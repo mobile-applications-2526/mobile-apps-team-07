@@ -1,4 +1,4 @@
-import { useState, useCallback, useEffect, useRef, createElement } from 'react';
+import { useState, useCallback, createElement } from 'react';
 import { useFocusEffect, useRouter } from 'expo-router';
 import { Vessel, CreateVesselInput } from '@/types';
 import * as FileSystem from 'expo-file-system/legacy';
@@ -22,7 +22,6 @@ export function useFleetOverview() {
         deleteVessel,
         createVessel,
         updateVessel,
-        isOfflineData,
         getAllImos,
     } = useVessels();
 

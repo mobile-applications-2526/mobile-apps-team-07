@@ -1,4 +1,3 @@
-import React, { useState, useCallback, useEffect } from 'react';
 import { FlatList, TouchableOpacity, View, RefreshControl } from 'react-native';
 import { Plus, User } from 'lucide-react-native';
 import { ThemedText, ThemedView, Loader } from '@/components/common';

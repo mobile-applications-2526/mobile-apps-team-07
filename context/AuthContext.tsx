@@ -1,4 +1,5 @@
 import { StorageService, AuthService } from '@/services';
+import { setUnauthorizedCallback } from '@/services/api.client';
 import type { LoginCredentials } from '@/services/auth.service';
 import React, { createContext, useContext, useState, PropsWithChildren, useEffect } from 'react';
 
@@ -52,6 +53,18 @@ export function AuthProvider({ children }: PropsWithChildren) {
     const [session, setSession] = useState<string | null>(null);
     const [user, setUser] = useState<{ email: string } | null>(null);
     const [isLoading, setIsLoading] = useState(true);
+
+    useEffect(() => {
+        setUnauthorizedCallback(() => {
+          console.log('Session expired - logging out');
+          handleSignOut();
+        });
+
+        // Cleanup on unmount
+        return () => {
+          setUnauthorizedCallback(() => {});
+        };
+    }, [session]);
 
     useEffect(() => {
         // Load persisted token and user on mount
@@ -147,6 +160,7 @@ export function AuthProvider({ children }: PropsWithChildren) {
             console.error('Sign out failed:', error);
         }
     };
+
 
     return (
         <AuthContext.Provider
