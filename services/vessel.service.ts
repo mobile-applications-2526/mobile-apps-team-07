@@ -6,7 +6,7 @@
  */
 
 import { Vessel, CreateVesselInput, Document, VesselWithStatus } from '@/types';
-import { API_URL } from '.';
+import { API_URL, defaultHeaders } from './config';
 
 // ============================================
 // VESSEL CRUD OPERATIONS
@@ -16,7 +16,7 @@ import { API_URL } from '.';
  * Get all vessels
  */
 export async function getAllVessels(): Promise<Vessel[]> {
-  const response = await fetch(`${API_URL}/api/vessels`);
+  const response = await fetch(`${API_URL}/api/vessels`, { headers: defaultHeaders });
   return await response.json();
 }
 
@@ -24,7 +24,7 @@ export async function getAllVessels(): Promise<Vessel[]> {
  * Get all vessels with status
  */
 export async function getAllVesselsWithStatus(): Promise<VesselWithStatus[]> {
-  const response = await fetch(`${API_URL}/api/vessels/with-status`);
+  const response = await fetch(`${API_URL}/api/vessels/with-status`, { headers: defaultHeaders });
   return await response.json();
 }
 
@@ -32,7 +32,7 @@ export async function getAllVesselsWithStatus(): Promise<VesselWithStatus[]> {
  * Get a vessel by ID
  */
 export async function getVesselById(id: number): Promise<Vessel | null> {
-  const response = await fetch(`${API_URL}/api/vessels/${id}`);
+  const response = await fetch(`${API_URL}/api/vessels/${id}`, { headers: defaultHeaders });
   return await response.json();
 }
 
@@ -40,7 +40,7 @@ export async function getVesselById(id: number): Promise<Vessel | null> {
  * Get a vessel with status by ID
  */
 export async function getVesselByIdWithStatus(id: number): Promise<VesselWithStatus | null> {
-  const response = await fetch(`${API_URL}/api/vessels/${id}/with-status`);
+  const response = await fetch(`${API_URL}/api/vessels/${id}/with-status`, { headers: defaultHeaders });
   return await response.json();
 }
 
@@ -48,7 +48,7 @@ export async function getVesselByIdWithStatus(id: number): Promise<VesselWithSta
  * Get a vessel by IMO number
  */
 export async function getVesselByImo(imoNumber: string): Promise<Response> {
-  const response = await fetch(`${API_URL}/api/vessels/imo/${imoNumber}`);
+  const response = await fetch(`${API_URL}/api/vessels/imo/${imoNumber}`, { headers: defaultHeaders });
   return response;
 }
 
@@ -62,9 +62,7 @@ export async function createVessel(input: CreateVesselInput): Promise<Vessel> {
   
   const response = await fetch(`${API_URL}/api/vessels`, {
     method: 'POST',
-    headers: {
-      "content-type": "application/json"
-    },
+    headers: defaultHeaders,
     body: JSON.stringify(input)
   });
   return await response.json();
@@ -81,8 +79,9 @@ export async function updateVessel(vessel: Vessel): Promise<Vessel | null> {
  * Delete a vessel
  */
 export async function deleteVessel(id: number): Promise<boolean> {
-  const response = await fetch(`${API_URL}/api/vessels/${id}`,{
-    method: "DELETE"
+  const response = await fetch(`${API_URL}/api/vessels/${id}`, {
+    method: "DELETE",
+    headers: defaultHeaders
   });
   return response.status === 204;
 }
@@ -91,7 +90,7 @@ export async function deleteVessel(id: number): Promise<boolean> {
  * get Documents By Vessel id
  */
 export async function getVesselDocuments(id: number): Promise<Document[]> {
-  const response = await fetch(`${API_URL}/api/vessels/${id}/documents`);
+  const response = await fetch(`${API_URL}/api/vessels/${id}/documents`, { headers: defaultHeaders });
   return await response.json();
 }
 

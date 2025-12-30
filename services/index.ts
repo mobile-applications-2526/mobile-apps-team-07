@@ -7,5 +7,4 @@
 export * as vesselService from './vessel.service';
 export * as voyageService from './voyage.service'
 export * as noonReportService from './noonReport.service'
-
-export const API_URL = 'http://10.0.2.2:8080';
+export { API_URL } from './config';
