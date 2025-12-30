@@ -12,3 +12,7 @@ export * from './VesselOverviewSheet';
 export * from './DocumentUpload';
 export * from './InvoiceCard';
 export { EmptyVesselList } from './EmptyVesselList';
+export { DocumentViewer } from './DocumentViewer';
+export { PdfViewer } from './PdfViewer';
+export { ImageViewer } from './ImageViewer';
+export { DocumentPlaceholder } from './DocumentPlaceholder';

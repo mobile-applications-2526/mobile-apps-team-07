@@ -150,23 +150,10 @@ export const useVesselDocuments = () => {
         });
         console.log('Upload response:', uploadResp);
 
-        // Optimistic: add document to local state immediately
-        const newDoc: DocType = {
-          id: uploadResp?.id ?? Date.now(),
-          documentType: type,
-          fileUrl: uploadResp?.fileUrl ?? uri,
-          documentName: name,
-          documentDate: new Date(),
-          remarks: '',
-        };
-        setDocuments(prev => {
-          // Replace existing doc of same type, or add new one
-          const exists = prev.some(d => d.documentType === type);
-          if (exists) {
-            return prev.map(d => d.documentType === type ? newDoc : d);
-          }
-          return [...prev, newDoc];
-        });
+        // Optimistic update removed to prevent showing preview before confirmation
+        // Instead, we reload the documents list to get the official state from backend
+        // This ensures the preview URL is valid and confirmed
+        await loadDocuments();
 
         // Invalidate documents cache for background sync
         try {

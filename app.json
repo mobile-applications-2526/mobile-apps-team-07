@@ -18,13 +18,16 @@
     ],
     "ios": {
       "supportsTablet": true,
-      "bundleIdentifier": "com.anonymous.Safarban"
+      "bundleIdentifier": "com.anonymous.Safarban",
+      "infoPlist": {
+        "ITSAppUsesNonExemptEncryption": false
+      }
     },
     "android": {
       "edgeToEdgeEnabled": true,
       "adaptiveIcon": {
         "foregroundImage": "./assets/images/safarban-icon-2.0.png",
-        "backgroundColor": "#ffffff"
+        "backgroundColor": "#0278B5"
       },
       "package": "com.dadez.Safarban"
     },

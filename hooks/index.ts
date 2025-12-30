@@ -15,6 +15,7 @@ export { useVesselOverviewScreen } from './useVesselOverviewScreen';
 export { useVesselVoyagesScreen } from './useVesselVoyagesScreen';
 export * from './useFleetOverview';
 export * from './useInvoices';
+export { usePdfDownload } from './usePdfDownload';
 
 // Re-export context hooks
 export { useVessels } from '@/context/VesselContext';
