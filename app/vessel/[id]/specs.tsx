@@ -33,7 +33,7 @@ export default function VesselSpecs() {
     <ThemedView className="flex-1 bg-gray-100 dark:bg-[#000]">
       <VesselTopBar
         vesselName={vessel?.vesselName ?? ''}
-        vesselImage={vessel?.vesselPictureUrl}
+        vesselImage={vessel?.vesselPicture}
       />
 
       {/* Verify if locked */}

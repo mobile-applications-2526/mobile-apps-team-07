@@ -28,7 +28,7 @@ export interface Vessel {
   drydockDueDate: Date;
   averageSpeedKnots: number | null;     // Average speed (Knots)
   fuelConsumptionMtDay: number | null;  // Fuel consumption (MT/Day)
-  vesselPictureUrl: string | null;
+  vesselPicture: string | null;
 }
 
 export interface CreateVesselInput {
@@ -36,7 +36,7 @@ export interface CreateVesselInput {
   imoNumber: string;
   vesselType: string;
   vesselSubtype: string;
-  vesselPictureUrl: string | null;
+  vesselPicture: string | null;
 }
 
 // Input type for updating a vessel
@@ -61,7 +61,7 @@ export interface UpdateVesselInput {
   fuelConsumption?: number | null;
   eta?: string | null;
   port?: string | null;
-  image?: string | null;
+  vesselPicture?: string | null;
   hasQ88?: boolean;
 }
 

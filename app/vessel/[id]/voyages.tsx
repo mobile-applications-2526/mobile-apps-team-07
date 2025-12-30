@@ -49,7 +49,7 @@ export default function VesselVoyages() {
       <ThemedView className="flex-1 bg-gray-100 dark:bg-[#000]">
         <VesselTopBar
           vesselName={vessel?.vesselName ?? ''}
-          vesselImage={vessel?.vesselPictureUrl}
+          vesselImage={vessel?.vesselPicture}
           rightContent={AddVoyageButton}
         />
         <Loader text="Loading voyages..." />
@@ -62,7 +62,7 @@ export default function VesselVoyages() {
       {/* Top App Bar */}
       <VesselTopBar
         vesselName={vessel?.vesselName ?? ''}
-        vesselImage={vessel?.vesselPictureUrl}
+        vesselImage={vessel?.vesselPicture}
         rightContent={AddVoyageButton}
       />
 

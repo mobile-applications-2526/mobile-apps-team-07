@@ -44,7 +44,11 @@ export function VesselTopBar({ vesselName, vesselImage, rightContent }: VesselTo
           <View className="w-10 h-10 rounded-lg overflow-hidden bg-blue-50 dark:bg-blue-900/20 items-center justify-center">
             {vesselImage ? (
               <Image
-                source={{ uri: vesselImage }}
+                source={{
+                  uri: (vesselImage.startsWith('http') || vesselImage.startsWith('data:') || vesselImage.startsWith('file:'))
+                    ? vesselImage
+                    : `data:image/jpeg;base64,${vesselImage}`
+                }}
                 className="w-full h-full"
                 resizeMode="cover"
               />

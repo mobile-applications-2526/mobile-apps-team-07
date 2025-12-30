@@ -36,7 +36,11 @@ async function request<T>(endpoint: string, method: HttpMethod, options: Request
         config.body = JSON.stringify(options.data);
     }
 
+    console.log(`[API] Request: ${method} ${API_URL}${endpoint}`);
+
+
     const response = await fetch(`${API_URL}${endpoint}`, config);
+    console.log(`[API] Response: ${response.status} ${method} ${endpoint}`);
 
     if (!response.ok) {
         let errorMessage = `Request failed with status ${response.status}`;

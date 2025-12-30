@@ -18,7 +18,7 @@ export default function VesselOverview() {
     isLocked,
     onRefresh,
   } = useVesselOverviewScreen();
-  
+
   const { colorScheme } = useColorScheme();
   const isDark = colorScheme === 'dark';
 
@@ -65,9 +65,9 @@ export default function VesselOverview() {
           zIndex: 9999, // Ensure highest z-order
         }}
       >
-        <VesselTopBar 
-          vesselName={vessel.vesselName} 
-          vesselImage={vessel.vesselPictureUrl} 
+        <VesselTopBar
+          vesselName={vessel.vesselName}
+          vesselImage={vessel.vesselPicture}
         />
       </View>
     </View>

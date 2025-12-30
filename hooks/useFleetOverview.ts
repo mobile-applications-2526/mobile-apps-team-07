@@ -1,6 +1,7 @@
 import { useState, useCallback, useEffect, useRef, createElement } from 'react';
 import { useFocusEffect, useRouter } from 'expo-router';
 import { Vessel, CreateVesselInput } from '@/types';
+import * as FileSystem from 'expo-file-system/legacy';
 import { useVessels } from '@/context/VesselContext';
 import { useNetworkStatus } from '@/context/NetworkStatusContext';
 import { useHaptics } from './useHaptics';
@@ -116,7 +117,43 @@ export function useFleetOverview() {
     const handleCreateVessel = useCallback(async (vesselInput: CreateVesselInput) => {
         setIsCreating(true);
         try {
-            const newVessel = await createVessel(vesselInput);
+            // Process image if local
+            let vesselPicture = vesselInput.vesselPicture;
+
+            if (vesselPicture && (vesselPicture.startsWith('file:') || vesselPicture.startsWith('content:'))) {
+                try {
+                    const fileInfo = await FileSystem.getInfoAsync(vesselPicture);
+                    if (fileInfo.exists) {
+                        // 10MB Limit Check
+                        const MAX_SIZE = 10 * 1024 * 1024; // 10MB
+                        if (fileInfo.size > MAX_SIZE) {
+                            throw new Error('Image size exceeds 10MB limit');
+                        }
+
+                        const base64 = await FileSystem.readAsStringAsync(vesselPicture, {
+                            encoding: 'base64'
+                        });
+                        vesselPicture = base64;
+                    }
+                } catch (err: any) {
+                    console.warn('Image processing failed:', err);
+                    const msg = err.message || 'Failed to process image';
+                    showToast(msg.length > 50 ? msg.substring(0, 50) + '...' : msg, undefined);
+                    // Fallback: send null or original URI (which won't work on backend but saves crash)
+                    // Let's send null if processing fails so we don't save bad data
+                    vesselPicture = null;
+                }
+            }
+
+            const inputWithImage = {
+                ...vesselInput,
+                vesselPicture: vesselPicture
+            };
+
+            const newVessel = await createVessel(inputWithImage);
+
+            if (!newVessel) throw new Error('Failed to create vessel on backend');
+
             setAddModalVisible(false);
             await haptics.successNotification();
             router.push(`/vessel/${newVessel.id}` as any);
@@ -126,7 +163,7 @@ export function useFleetOverview() {
         } finally {
             setIsCreating(false);
         }
-    }, [router, createVessel, haptics]);
+    }, [router, createVessel, haptics, showToast]);
 
     // Edit
     const handleEditPress = useCallback(async (vessel: Vessel) => {
@@ -144,12 +181,43 @@ export function useFleetOverview() {
         if (!vesselToEdit || vesselToEdit.id !== vesselId) return;
         setIsSaving(true);
         try {
+            let finalUpdates = { ...updates };
+
+            // Check if image update exists and handle local file
+            if (finalUpdates.vesselPicture && (finalUpdates.vesselPicture.startsWith('file:') || finalUpdates.vesselPicture.startsWith('content:'))) {
+                try {
+                    const fileInfo = await FileSystem.getInfoAsync(finalUpdates.vesselPicture);
+                    if (fileInfo.exists) {
+                        // 10MB Limit Check
+                        const MAX_SIZE = 10 * 1024 * 1024;
+                        if (fileInfo.size > MAX_SIZE) {
+                            throw new Error('Image size exceeds 10MB limit');
+                        }
+
+                        const base64 = await FileSystem.readAsStringAsync(finalUpdates.vesselPicture, {
+                            encoding: 'base64'
+                        });
+                        finalUpdates.vesselPicture = base64;
+                    }
+                } catch (err: any) {
+                    console.warn('Image processing failed:', err);
+                    const msg = err.message || 'Image processing failed';
+                    showToast(msg.length > 50 ? msg.substring(0, 50) + '...' : msg);
+                    delete finalUpdates.vesselPicture; // Don't save broken image
+                }
+            }
+
             const updated: Vessel = {
                 ...vesselToEdit,
-                ...updates,
-                vesselType: updates.vesselType as any || vesselToEdit.vesselType, // Ensure enum compatibility
+                ...finalUpdates,
+                vesselType: (finalUpdates.vesselType || vesselToEdit.vesselType) as any, // Ensure enum compatibility
             };
-            await updateVessel(updated);
+            const result = await updateVessel(updated);
+
+            if (!result) {
+                throw new Error('Failed to update vessel on backend');
+            }
+
             await refreshVesselsWithStatus();
             setEditModalVisible(false);
             setVesselToEdit(null);

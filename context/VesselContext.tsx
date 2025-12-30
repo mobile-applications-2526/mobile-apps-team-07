@@ -8,6 +8,7 @@
 import React, { createContext, useContext, useEffect, useCallback, useState, ReactNode } from 'react';
 import { Vessel, VesselWithStatus, CreateVesselInput, Document, DocumentTypeCategory } from '@/types';
 import { vesselService } from '@/services';
+
 import { DOCUMENT_TYPES } from '@/constants';
 
 import { useNetworkStatus } from '@/context/NetworkStatusContext';
@@ -226,8 +227,10 @@ export function VesselProvider({ children }: VesselProviderProps) {
         queryClient.invalidateQueries({ queryKey: vesselKeys.detail(input.id) });
         return updatedVessel;
       }
-      // If backend not implemented yet, keep optimistic result
-      return input;
+      // If we are offline, maybe we want to keep it? But if we are online and it failed, we should know.
+      // Since we want to detect failure in the UI, we should return null if the backend didn't confirm.
+      // UNLESS we are offline mode support, but right now we treat null as failure.
+      return null;
     } catch (err) {
       console.error('Failed to update vessel in service:', err);
       // Rollback on error

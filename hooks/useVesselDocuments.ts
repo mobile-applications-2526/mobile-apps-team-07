@@ -45,6 +45,11 @@ const getFriendlyErrorMessage = (message?: string): string => {
     return 'The selected file could not be found. Please try selecting it again.';
   }
 
+  // Catch HTML or very long technical messages
+  if (lowerMsg.startsWith('<') || lowerMsg.includes('<!doctype html>') || lowerMsg.length > 200) {
+    return 'The server encountered an unexpected error. Our team has been notified.';
+  }
+
   // Default: return a cleaned up version or generic message
   return 'Upload failed. Please try again or contact support if the problem persists.';
 };
@@ -143,12 +148,13 @@ export const useVesselDocuments = () => {
       // Start upload - update shared state
       setError(null);
       setUploadState(true, 0);
+      console.log(`Starting upload for ${type} (size: ${fileSize} bytes)`);
 
       try {
         const uploadResp = await documentService.uploadDocument(String(vessel.id), 'vessels', uri, type, (progress) => {
           setUploadState(true, progress);
         });
-        console.log('Upload response:', uploadResp);
+        console.log('Upload completed successfully', uploadResp);
 
         // Optimistic update removed to prevent showing preview before confirmation
         // Instead, we reload the documents list to get the official state from backend

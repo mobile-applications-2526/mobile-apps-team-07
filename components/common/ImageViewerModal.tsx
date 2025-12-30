@@ -40,7 +40,11 @@ export function ImageViewerModal({ visible, imageUri, onClose }: ImageViewerModa
                     onPress={onClose}
                 >
                     <Image
-                        source={{ uri: imageUri }}
+                        source={{
+                            uri: (imageUri.startsWith('http') || imageUri.startsWith('data:') || imageUri.startsWith('file:'))
+                                ? imageUri
+                                : `data:image/jpeg;base64,${imageUri}`
+                        }}
                         style={styles.image}
                         resizeMode="contain"
                     />

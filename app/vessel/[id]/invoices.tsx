@@ -79,7 +79,7 @@ export default function VesselInvoices() {
     <ThemedView className="flex-1 bg-gray-100 dark:bg-[#000] p-0">
       <VesselTopBar
         vesselName={vessel?.vesselName ?? ''}
-        vesselImage={vessel?.vesselPictureUrl}
+        vesselImage={vessel?.vesselPicture}
         rightContent={
           <TouchableOpacity
             onPress={() => setShowCreateInvoice(true)}

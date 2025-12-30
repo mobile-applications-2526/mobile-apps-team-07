@@ -18,7 +18,6 @@ import { CreateVesselInput } from '@/types';
 import * as ImagePicker from 'expo-image-picker';
 
 
-
 // Vessel type options
 const VESSEL_TYPES = ['Gas Carrier', 'Chemical Tanker', 'MR Tanker'] as const;
 type VesselType = typeof VESSEL_TYPES[number];
@@ -55,7 +54,7 @@ export function AddVesselModal({
   const [imoNumber, setImoNumber] = React.useState('');
   const [vesselType, setVesselType] = React.useState<VesselType>('Gas Carrier');
   const [vesselSubtype, setVesselSubtype] = React.useState('LPG');
-  const [vesselPictureUrl, setVesselPictureUrl] = React.useState('');
+  const [vesselPicture, setVesselPicture] = React.useState('');
 
   React.useEffect(() => {
     if (visible) {
@@ -65,7 +64,7 @@ export function AddVesselModal({
       setImoNumber('');
       setVesselType('Gas Carrier');
       setVesselSubtype('LPG');
-      setVesselPictureUrl('');
+      setVesselPicture('');
     } else {
       bottomSheetRef.current?.dismiss();
     }
@@ -92,7 +91,7 @@ export function AddVesselModal({
       imoNumber,
       vesselType,
       vesselSubtype,
-      vesselPictureUrl,
+      vesselPicture,
     });
   };
 
@@ -128,7 +127,7 @@ export function AddVesselModal({
     try {
       let result;
       const options: ImagePicker.ImagePickerOptions = {
-        mediaTypes: ImagePicker.MediaTypeOptions.Images,
+        mediaTypes: 'images',
         allowsEditing: true,
         aspect: [4, 3],
         quality: 0.8,
@@ -143,7 +142,7 @@ export function AddVesselModal({
       }
 
       if (!result.canceled && result.assets[0]) {
-        setVesselPictureUrl(result.assets[0].uri);
+        setVesselPicture(result.assets[0].uri);
       }
     } catch (error) {
       Alert.alert('Error', 'Failed to pick image');
@@ -283,13 +282,13 @@ export function AddVesselModal({
             >
               <ThemedText style={{ fontSize: 17, color: isDark ? '#FFF' : '#000' }}>Photo</ThemedText>
               <View style={{ flexDirection: 'row', alignItems: 'center' }}>
-                {vesselPictureUrl ? (
+                {vesselPicture ? (
                   <Image
-                    source={{ uri: vesselPictureUrl }}
+                    source={{ uri: vesselPicture }}
                     style={{ width: 32, height: 32, borderRadius: 4, marginRight: 8 }}
                   />
                 ) : null}
-                <ThemedText style={{ color: '#007AFF', fontSize: 17 }}>{vesselPictureUrl ? 'Edit' : 'Add'}</ThemedText>
+                <ThemedText style={{ color: '#007AFF', fontSize: 17 }}>{vesselPicture ? 'Edit' : 'Add'}</ThemedText>
               </View>
             </Pressable>
           </View>

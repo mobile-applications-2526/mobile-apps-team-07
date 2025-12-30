@@ -12,22 +12,22 @@ const FileSystemUploadType = {
 
 export const downloadDocument = async (
   url: string
-): Promise<any> =>{
-    const token = await StorageService.getToken();
-    
-    // Extract filename from URL
-    const filename = url.split('/').pop() || 'document.pdf';
-    const fileUri = `${FileSystem.documentDirectory}${filename}`;
+): Promise<any> => {
+  const token = await StorageService.getToken();
 
-    // Download with auth
-    const result = await FileSystem.downloadAsync(url, fileUri, {
-      headers: {
-        'Authorization': `Bearer ${token}`,
-      },
-    });
+  // Extract filename from URL
+  const filename = url.split('/').pop() || 'document.pdf';
+  const fileUri = `${FileSystem.documentDirectory}${filename}`;
 
-    // Open file
-    await Sharing.shareAsync(result.uri);
+  // Download with auth
+  const result = await FileSystem.downloadAsync(url, fileUri, {
+    headers: {
+      'Authorization': `Bearer ${token}`,
+    },
+  });
+
+  // Open file
+  await Sharing.shareAsync(result.uri);
 }
 
 
@@ -63,18 +63,29 @@ export const uploadDocument = async (
     });
 
     if (uploadResult.status >= 200 && uploadResult.status < 300) {
-      return JSON.parse(uploadResult.body);
+      if (!uploadResult.body) return {};
+      try {
+        return JSON.parse(uploadResult.body);
+      } catch (e) {
+        console.warn('Upload success but failed to parse response', uploadResult.body.substring(0, 100));
+        return {}; // Return empty object on success but parse fail, rather than throw
+      }
     } else {
       const text = uploadResult.body || '';
-      console.error('Upload failed', uploadResult.status, text, { uploadUrl, documentType: type });
+      // Prevent logging massive HTML strings
+      const logText = text.length > 500 ? text.substring(0, 500) + '...[truncated]' : text;
+
+      console.error('Upload failed', uploadResult.status, logText, { uploadUrl, documentType: type });
+
       const parsed = (() => {
         try { return JSON.parse(text || '{}'); } catch { return null; }
       })();
-      const message = parsed?.message || text || `Server returned ${uploadResult.status}`;
+
+      const message = parsed?.message || (text.startsWith('<') ? 'Server returned an HTML error page' : text) || `Server returned ${uploadResult.status}`;
       throw new Error(message);
     }
   } catch (uploadErr: any) {
-    console.error('Upload error', uploadErr);
+    console.error('Upload error in service', uploadErr.message);
     throw new Error(uploadErr?.message ?? 'Network error during upload. Please try again.');
   }
 };
