@@ -2,7 +2,6 @@ import { FlatList, TouchableOpacity, View, RefreshControl } from 'react-native';
 import { Plus, User } from 'lucide-react-native';
 import { ThemedText, ThemedView, Loader } from '@/components/common';
 import { VesselCard, EmptyVesselList } from '@/components/vessel';
-import { DeleteVesselModal } from '@/components/ui/DeleteVesselModal';
 import { AddVesselModal } from '@/components/ui/AddVesselModal';
 import EditVesselModal from '@/components/ui/EditVesselModal';
 import { useFleetOverview } from '@/hooks';
@@ -72,7 +71,6 @@ export default function Overview() {
               vessel={item.vessel}
               voyage={item.activeVoyage}
               status={item.latestStatus}
-              onDeletePress={actions.handleDeletePress}
               onEditPress={actions.handleEditPress} />
           }
           contentContainerStyle={{
@@ -94,18 +92,6 @@ export default function Overview() {
 
 
       </View>
-
-      {/* Delete Confirmation Modal */}
-      <DeleteVesselModal
-        visible={state.deleteModalVisible}
-        vesselName={state.vesselToDelete?.vesselName || ''}
-        isDeleting={state.isDeleting}
-        hasActiveVoyage={state.vesselHasActiveVoyage}
-        hasError={state.deleteError}
-        onCancel={actions.handleCancelDelete}
-        onConfirm={actions.handleConfirmDelete}
-        onRetry={actions.handleConfirmDelete}
-      />
 
       {/* Add Vessel Modal */}
       <AddVesselModal

@@ -6,7 +6,7 @@
 
 import React, { useState } from 'react';
 import { TouchableOpacity, View, Image, Pressable } from 'react-native';
-import { Ship, Navigation, Pencil, Trash2, Anchor } from 'lucide-react-native';
+import { Ship, Navigation, Pencil, Anchor } from 'lucide-react-native';
 import { useRouter } from 'expo-router';
 import { ThemedText } from '@/components/common';
 import { ImageViewerModal } from '@/components/common/ImageViewerModal';
@@ -19,12 +19,11 @@ interface VesselCardProps {
   vessel: Vessel;
   voyage: Voyage | null;
   status: VesselStatus | null;
-  onDeletePress: (vessel: Vessel) => void;
   onEditPress?: (vessel: Vessel) => void;
   testID?: string;
 }
 
-export function VesselCard({ vessel, voyage, status, onDeletePress, onEditPress, testID }: VesselCardProps) {
+export function VesselCard({ vessel, voyage, status, onEditPress, testID }: VesselCardProps) {
   const router = useRouter();
   const { lightImpact, mediumImpact } = useHaptics();
   const [showImageViewer, setShowImageViewer] = useState(false);
@@ -108,11 +107,6 @@ export function VesselCard({ vessel, voyage, status, onDeletePress, onEditPress,
     router.push(`/vessel/${vessel.id}` as any);
   };
 
-  const handleDeletePress = async () => {
-    await mediumImpact();
-    onDeletePress(vessel);
-  };
-
   return (
     <TouchableOpacity
       testID={testID}
@@ -165,26 +159,19 @@ export function VesselCard({ vessel, voyage, status, onDeletePress, onEditPress,
           </ThemedText>
         </View>
 
-        {/* Action Icons */}
+        {/* Edit Icon - Centered */}
         <View className="items-center justify-center h-10">
-          <TouchableOpacity
-            testID={testID ? `${testID}-delete` : undefined}
-            className="p-1.5"
-            activeOpacity={0.6}
-            hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
-            onPress={handleDeletePress}
-          >
-            <Trash2 size={16} color="#9ca3af" />
-          </TouchableOpacity>
-          <TouchableOpacity
-            testID={testID ? `${testID}-edit` : undefined}
-            className="p-1.5 mt-1"
-            activeOpacity={0.6}
-            hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
-            onPress={async () => { if (onEditPress) { await mediumImpact(); onEditPress(vessel); } }}
-          >
-            <Pencil size={16} color="#9ca3af" />
-          </TouchableOpacity>
+          {onEditPress && (
+            <TouchableOpacity
+              testID={testID ? `${testID}-edit` : undefined}
+              className="p-1.5"
+              activeOpacity={0.6}
+              hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
+              onPress={async () => { await mediumImpact(); onEditPress(vessel); }}
+            >
+              <Pencil size={16} color="#9ca3af" />
+            </TouchableOpacity>
+          )}
         </View>
       </View>
 

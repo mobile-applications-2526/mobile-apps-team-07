@@ -52,6 +52,10 @@ export interface DocumentUploadRequest {
   vesselId?: number;
   voyageId?: number;
   charterBaseId?: number;
+  /** If false, wait for processing to complete before returning. Default: false */
+  asyncProcessing?: boolean;
+  /** If true, auto-commit extracted data to DB after successful extraction. Default: true */
+  autoCommit?: boolean;
 }
 
 export interface ValidationRequest {
@@ -64,6 +68,8 @@ export interface CommitRequest {
   targetEntityId?: number; // Existing vessel/voyage ID to update
   createNewEntity?: boolean; // Create new vessel/voyage if not found
   fieldMappingOverrides?: Record<string, string>; // Override field mappings
+  onlyValidated?: boolean; // Only commit validated fields
+  minimumConfidence?: number; // Only commit fields with >= this confidence (0-100)
 }
 
 // ============================================
@@ -71,9 +77,20 @@ export interface CommitRequest {
 // ============================================
 
 export interface DocumentUploadResponse {
-  documentId: number;
+  id: number;
+  documentId?: number; // Backend may return documentId instead of id
+  documentName: string;
+  documentType: ProcessingDocumentType;
+  documentDate: string;
   processingStatus: ProcessingStatus;
-  message: string;
+  createdAt: string;
+  updatedAt: string;
+  fileUrl: string;
+  extractionConfidence?: number | null;
+  processingStartedAt?: string | null;
+  processingCompletedAt?: string | null;
+  processingError?: string | null;
+  remarks?: string | null;
 }
 
 export interface ProcessingStatusResponse {

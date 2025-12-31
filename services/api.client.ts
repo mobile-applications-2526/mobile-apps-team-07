@@ -33,6 +33,9 @@ async function request<T>(endpoint: string, method: HttpMethod, options: Request
         headers['Authorization'] = `Bearer ${token}`;
     }
 
+    // Debug logging for auth issues
+    console.log(`[API] ${method} ${endpoint} | Token: ${token ? `${token.slice(0, 20)}...` : 'NONE'}`);
+
     const config: RequestInit = {
         method,
         headers,
@@ -41,18 +44,45 @@ async function request<T>(endpoint: string, method: HttpMethod, options: Request
 
     if (options.data) {
         config.body = JSON.stringify(options.data);
+        // Log POST/PUT body for debugging
+        if (method === 'POST' || method === 'PUT') {
+            console.log(`[API] ${method} ${endpoint} | Body:`, JSON.stringify(options.data, null, 2));
+        }
     }
 
     const response = await fetch(`${API_URL}${endpoint}`, config);
+    console.log(`[API] ${method} ${endpoint} | Status: ${response.status}`);
 
-    if (response.status === 401){
-      await StorageService.deleteToken();
+    // Check if this is an auth endpoint (login, register, etc.)
+    const isAuthEndpoint = endpoint.includes('/auth/');
 
-      if(unauthorizedCallback){
-        unauthorizedCallback();
+    if (response.status === 401) {
+      // Only trigger session expired for non-auth endpoints
+      // For auth endpoints, 401 means invalid credentials, not session expired
+      if (!isAuthEndpoint) {
+        // Don't auto-delete token - it may be valid for other endpoints
+        // The backend may have endpoint-specific auth issues
+        // Let the error propagate and be handled by the calling code
+        let errorMessage = 'Unauthorized';
+        try {
+          const errorData = await response.json();
+          errorMessage = errorData.message || errorMessage;
+        } catch {
+          // Use default message
+        }
+        console.warn(`[API] 401 on ${endpoint}: ${errorMessage}`);
+        throw new ApiError(401, errorMessage);
       }
 
-      throw new ApiError(401, 'Session expired. Please login again.');
+      // For auth endpoints, parse the error message from the response
+      let errorMessage = 'Invalid credentials';
+      try {
+        const errorData = await response.json();
+        errorMessage = errorData.message || errorMessage;
+      } catch {
+        // Use default message
+      }
+      throw new ApiError(401, errorMessage);
     }
 
     if (!response.ok) {

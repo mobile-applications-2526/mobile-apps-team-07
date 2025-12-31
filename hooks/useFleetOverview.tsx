@@ -16,7 +16,6 @@ export function useFleetOverview() {
         refreshVesselsWithStatus,
         isLoading,
         isInitialized,
-        deleteVessel,
         createVessel,
         updateVessel,
         isOfflineData,
@@ -36,13 +35,6 @@ export function useFleetOverview() {
         }, [refreshVesselsWithStatus])
     );
 
-    // --- DELETE STATE ---
-    const [deleteModalVisible, setDeleteModalVisible] = useState(false);
-    const [vesselToDelete, setVesselToDelete] = useState<Vessel | null>(null);
-    const [vesselHasActiveVoyage, setVesselHasActiveVoyage] = useState(false);
-    const [isDeleting, setIsDeleting] = useState(false);
-    const [deleteError, setDeleteError] = useState(false);
-
     // --- ADD STATE ---
     const [addModalVisible, setAddModalVisible] = useState(false);
     const [isCreating, setIsCreating] = useState(false);
@@ -57,51 +49,7 @@ export function useFleetOverview() {
     const { showToast } = useToast();
     const { resetNetworkToast } = useNetworkStatus();
 
-    // Helpers
-    const hasActiveVoyage = useCallback((vesselId: number): boolean => {
-        const vWithError = vesselsWithStatus.find(v => v.vessel.id === vesselId);
-        return vWithError?.activeVoyage !== null && vWithError?.activeVoyage !== undefined;
-    }, [vesselsWithStatus]);
-
     // --- EVENT HANDLERS ---
-
-    // Delete
-    const handleDeletePress = useCallback(async (vessel: Vessel) => {
-        setVesselToDelete(vessel);
-        setDeleteError(false);
-        const hasActive = hasActiveVoyage(vessel.id);
-        setVesselHasActiveVoyage(hasActive);
-        setDeleteModalVisible(true);
-    }, [hasActiveVoyage]);
-
-    const handleCancelDelete = useCallback(() => {
-        setDeleteModalVisible(false);
-        setVesselToDelete(null);
-        setVesselHasActiveVoyage(false);
-        setDeleteError(false);
-    }, []);
-
-    const handleConfirmDelete = useCallback(async () => {
-        if (!vesselToDelete) return;
-        setIsDeleting(true);
-        setDeleteError(false);
-        try {
-            const success = await deleteVessel(vesselToDelete.id);
-            if (!success) throw new Error('Failed to delete vessel');
-
-            setDeleteModalVisible(false);
-            setVesselToDelete(null);
-            setVesselHasActiveVoyage(false);
-            refreshVesselsWithStatus();
-            showToast('Vessel deleted');
-            await haptics.successNotification();
-        } catch (error) {
-            setDeleteError(true);
-            await haptics.errorNotification();
-        } finally {
-            setIsDeleting(false);
-        }
-    }, [vesselToDelete, deleteVessel, haptics, refreshVesselsWithStatus, showToast]);
 
     // Add
     const handleAddPress = useCallback(async () => {
@@ -178,11 +126,6 @@ export function useFleetOverview() {
             isInitialized,
             isLoading,
             // Modals
-            deleteModalVisible,
-            vesselToDelete,
-            vesselHasActiveVoyage,
-            isDeleting,
-            deleteError,
             addModalVisible,
             isCreating,
             editModalVisible,
@@ -193,15 +136,11 @@ export function useFleetOverview() {
             existingImos: getAllImos(),
         },
         actions: {
-            handleDeletePress,
-            handleCancelDelete,
-            handleConfirmDelete,
             handleAddPress,
             handleCancelAdd,
             handleCreateVessel,
             handleEditPress,
             handleCancelEdit,
-            handleSaveEdit,
             handleSaveEdit,
             handleToastAnimationComplete,
             onRefresh,

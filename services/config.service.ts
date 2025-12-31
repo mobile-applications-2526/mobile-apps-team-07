@@ -7,7 +7,7 @@
 
 import { StorageService } from './storage.service';
 
-export const API_URL = process.env.EXPO_PUBLIC_API_URL;
+export const API_URL = process.env.EXPO_PUBLIC_API_URL || 'https://w-shipping-api.onrender.com';
 
 export const getAuthHeaders = async () => {
     const token = await StorageService.getToken();

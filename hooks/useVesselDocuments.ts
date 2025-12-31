@@ -1,15 +1,30 @@
 import { useState, useCallback, useEffect } from 'react';
 import * as DocumentPicker from 'expo-document-picker';
 import { Alert, Linking } from 'react-native';
+import { useRouter } from 'expo-router';
 import { API_URL } from '@/services';
 import * as db from '@/lib/database';
 import { Document as DocType, DocumentTypeCategory } from '@/types';
 import { useVesselDetails } from '@/context/VesselDetailsContext';
-import { documentService } from '@/services';
+import { documentService, documentProcessingService } from '@/services';
 import { emit } from '@/lib/events';
+import { ProcessingDocumentType } from '@/types/documentProcessing';
 
 // Acceptance constants
 const MAX_FILE_BYTES = 25 * 1024 * 1024; // 25MB
+
+// Document types that support OCR processing
+const PROCESSING_SUPPORTED_TYPES: Record<string, ProcessingDocumentType> = {
+  'Q88': 'Q88',
+  'FormC': 'FormC',
+  'CharterParty': 'CharterParty',
+  'NoonReport': 'NoonReport',
+  'NoticeOfReadiness': 'NOR',
+  'PortClearance': 'PortClearance',
+  'BillOfLading': 'BL',
+  'CargoManifest': 'CargoManifest',
+  'StatementOfFacts': 'SOF',
+};
 
 type UploadState = {
   uploading: boolean;
@@ -20,6 +35,7 @@ type UploadState = {
 import { getFriendlyErrorMessage } from '@/lib/errorUtils';
 
 export const useVesselDocuments = () => {
+  const router = useRouter();
   const {
     vessel,
     getDocuments,
@@ -115,32 +131,65 @@ export const useVesselDocuments = () => {
       setUploadState(true, 0);
       console.log(`Starting upload for ${type} (size: ${fileSize} bytes)`);
 
+      // Check if this document type supports OCR processing
+      const processingType = PROCESSING_SUPPORTED_TYPES[type];
+
       try {
-        const uploadResp = await documentService.uploadDocument(String(vessel.id), 'vessels', uri, type, (progress) => {
-          setUploadState(true, progress);
-        });
-        console.log('Upload completed successfully', uploadResp);
+        if (processingType) {
+          // Use document processing service for OCR-supported types
+          console.log(`Using document processing for ${type} -> ${processingType}`);
+          const uploadResp = await documentProcessingService.uploadDocument(
+            {
+              file: { uri, type: 'application/pdf', name },
+              documentType: processingType,
+              vesselId: vessel.id,
+              asyncProcessing: false,
+              autoCommit: true,
+            },
+            (progress) => setUploadState(true, progress / 100)
+          );
+          console.log('Processing upload completed:', uploadResp);
 
-        // Optimistic update removed to prevent showing preview before confirmation
-        // Instead, we reload the documents list to get the official state from backend
-        // This ensures the preview URL is valid and confirmed
-        await loadDocuments();
+          // Finish upload state
+          setUploadState(false, 1);
 
-        // Invalidate documents cache for background sync
-        try {
-          if (vessel && typeof vessel.id === 'number') {
-            await db.deleteCacheValue(db.CACHE_KEYS.DOCUMENTS_BY_VESSEL(vessel.id));
+          // Get document ID from response (backend returns documentId, not id)
+          const docId = uploadResp.documentId || uploadResp.id;
+
+          // Navigate to processing screen to monitor OCR and extraction
+          router.push({
+            pathname: '/document-processing/processing',
+            params: {
+              documentId: docId.toString(),
+              documentName: name,
+            },
+          });
+        } else {
+          // Use legacy upload for non-processing types
+          const uploadResp = await documentService.uploadDocument(String(vessel.id), 'vessels', uri, type, (progress) => {
+            setUploadState(true, progress);
+          });
+          console.log('Upload completed successfully', uploadResp);
+
+          // Reload documents list
+          await loadDocuments();
+
+          // Invalidate documents cache for background sync
+          try {
+            if (vessel && typeof vessel.id === 'number') {
+              await db.deleteCacheValue(db.CACHE_KEYS.DOCUMENTS_BY_VESSEL(vessel.id));
+            }
+          } catch (cacheErr) {
+            console.warn('Failed to delete documents cache:', cacheErr);
           }
-        } catch (cacheErr) {
-          console.warn('Failed to delete documents cache:', cacheErr);
+
+          // Notify other parts of the app
+          try { emit('documents:updated', { vesselId: vessel.id }); } catch (e) { /* no-op */ }
+
+          // Finish upload
+          setUploadState(false, 1);
+          Alert.alert('Upload Successful', `Your ${type} document has been uploaded.`);
         }
-
-        // Notify other parts of the app (e.g. VesselDetailsProvider)
-        try { emit('documents:updated', { vesselId: vessel.id }); } catch (e) { /* no-op */ }
-
-        // Finish upload
-        setUploadState(false, 1);
-        Alert.alert('Upload Successful', `Your ${type} document has been uploaded.`);
       } catch (uploadErr: any) {
         const friendlyMessage = getFriendlyErrorMessage(uploadErr?.message);
         setError(friendlyMessage);

@@ -1,11 +1,26 @@
 import { useState, useCallback, useEffect } from 'react';
 import { Alert } from 'react-native';
+import { useRouter } from 'expo-router';
 import { API_URL } from '@/services';
 import * as db from '@/lib/database';
 import { Document, DocumentType, DocumentCategory } from '@/types';
-import { documentService } from '@/services';
+import { documentService, documentProcessingService } from '@/services';
 import { emit } from '@/lib/events';
 import { MAX_FILE_SIZE, SUPPORTED_EXTENSIONS, SUPPORTED_FORMATS } from '@/constants';
+import { ProcessingDocumentType } from '@/types/documentProcessing';
+
+// Document types that support OCR processing
+const PROCESSING_SUPPORTED_TYPES: Record<string, ProcessingDocumentType> = {
+  'Q88': 'Q88',
+  'FormC': 'FormC',
+  'CharterParty': 'CharterParty',
+  'NoonReport': 'NoonReport',
+  'NoticeOfReadiness': 'NOR',
+  'PortClearance': 'PortClearance',
+  'BillOfLading': 'BL',
+  'CargoManifest': 'CargoManifest',
+  'StatementOfFacts': 'SOF',
+};
 
 type UploadState = {
   uploading: boolean;
@@ -14,11 +29,11 @@ type UploadState = {
 };
 
 export const useDocuments = (
-  category: DocumentCategory, 
+  category: DocumentCategory,
   subjectId: number | undefined,
   getDocuments: ()=>Promise<Document[]>
 ) => {
-
+  const router = useRouter();
   const [documents, setDocuments] = useState<Document[]>([]);
   const [uploadState, setUploadState] = useState<UploadState>({ uploading: false, progress: 0, error: null });
   const [refreshing, setRefreshing] = useState(false);
@@ -101,27 +116,57 @@ export const useDocuments = (
 
     if(!uri) return; 
 
-    try {
+    // Check if this document type supports OCR processing
+    const processingType = PROCESSING_SUPPORTED_TYPES[type];
 
+    try {
       setUploadState({ uploading: true, progress: 0, error: null });
 
-      try {
+      if (processingType && category === 'vessels') {
+        // Use document processing service for OCR-supported types
+        console.log(`Using document processing for ${type} -> ${processingType}`);
+
+        const uploadResp = await documentProcessingService.uploadDocument(
+          {
+            file: { uri, type: 'application/pdf', name: `${type}.pdf` },
+            documentType: processingType,
+            vesselId: subjectId,
+            asyncProcessing: false,
+            autoCommit: true,
+          },
+          (progress) => setUploadState((prev) => ({ ...prev, progress: progress / 100 }))
+        );
+
+        console.log('Processing upload completed:', uploadResp);
+        setUploadState({ uploading: false, progress: 1, error: null });
+
+        // Get document ID from response (backend returns documentId, not id)
+        const docId = uploadResp.documentId || uploadResp.id;
+
+        // Navigate to processing screen to monitor OCR and extraction
+        router.push({
+          pathname: '/document-processing/processing',
+          params: {
+            documentId: docId.toString(),
+            documentName: `${type}.pdf`,
+          },
+        });
+      } else {
+        // Use legacy upload for non-processing types
         const uploadResp = await documentService.uploadDocument(
-          String(subjectId), 
-          category, 
-          uri, 
-          type, 
-          (progress) => {
-            setUploadState((prevState) => ({ ...prevState, progress }));
-          }
+          String(subjectId),
+          category,
+          uri,
+          type,
+          (progress) => setUploadState((prev) => ({ ...prev, progress }))
         );
 
         console.log('Upload response:', uploadResp);
 
-        // Invalidate documents cache so loadDocuments fetches fresh data
+        // Invalidate documents cache
         try {
           switch(category){
-            case 'vessels': 
+            case 'vessels':
               await db.deleteCacheValue(db.CACHE_KEYS.DOCUMENTS_BY_VESSEL(subjectId));
             case 'voyages':
               await db.deleteCacheValue(db.CACHE_KEYS.DOCUMENTS_BY_VOYAGE(subjectId));
@@ -133,23 +178,17 @@ export const useDocuments = (
         }
 
         await loadDocuments();
-
-        // Notify other parts of the app (e.g. VesselDetailsProvider)
-        // Updated to emit only to subs of the category
         try { emit(`${category}:documents:updated`, { subjectId }); } catch (e) { /* no-op */ }
 
         setUploadState({ uploading: false, progress: 1, error: null });
         Alert.alert('Upload successful', `${type} has been uploaded successfully.`);
-      } catch (uploadErr: any) {
-        setUploadState({ uploading: false, progress: 0, error: uploadErr?.message ?? 'Upload failed' });
-        Alert.alert('Upload failed', uploadErr?.message ?? 'Network error during upload. Please try again.');
       }
-    } catch (err: any) {
-      console.error('Upload error', err);
-      setUploadState({ uploading: false, progress: 0, error: err?.message ?? 'Upload failed' });
-      Alert.alert('Upload failed', err?.message ?? 'Upload failed', [
+    } catch (uploadErr: any) {
+      console.error('Upload error', uploadErr);
+      setUploadState({ uploading: false, progress: 0, error: uploadErr?.message ?? 'Upload failed' });
+      Alert.alert('Upload failed', uploadErr?.message ?? 'Network error during upload. Please try again.', [
         { text: 'Retry', onPress: () => uploadDocument(type) },
-          { text: 'Cancel', style: 'cancel' },
+        { text: 'Cancel', style: 'cancel' },
       ]);
     }
   };

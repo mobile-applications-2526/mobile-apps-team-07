@@ -1,11 +1,11 @@
 import React from 'react';
-import { RefreshControl } from 'react-native';
+import { RefreshControl, View, Text } from 'react-native';
 import BottomSheet, { BottomSheetScrollView } from '@gorhom/bottom-sheet';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { DataSection, DataRow } from '@/components/common';
 import { KPIGraph } from '@/components/vessel/KPIGraph';
-import { Vessel, VesselKPIs } from '@/types';
-import { formatValue } from '@/lib/utils';
+import { Vessel, VesselKPIs, VesselStatus, Voyage, CharterParty } from '@/types';
+import { formatValue, formatDate } from '@/lib/utils';
 
 interface VesselOverviewSheetProps {
     vessel: Vessel;
@@ -13,6 +13,9 @@ interface VesselOverviewSheetProps {
     refreshing: boolean;
     onRefresh: () => void;
     isDark: boolean;
+    vesselStatus?: VesselStatus | null;
+    activeVoyage?: Voyage | null;
+    activeCharter?: CharterParty | null;
 }
 
 export function VesselOverviewSheet({
@@ -20,7 +23,10 @@ export function VesselOverviewSheet({
     kpis,
     refreshing,
     onRefresh,
-    isDark
+    isDark,
+    vesselStatus,
+    activeVoyage,
+    activeCharter
 }: VesselOverviewSheetProps) {
     const insets = useSafeAreaInsets();
     const bottomSheetRef = React.useRef<BottomSheet>(null);
@@ -54,6 +60,68 @@ export function VesselOverviewSheet({
                     <DataRow label="Classification" value={formatValue(vessel.classificationSociety)} />
                     <DataRow label="Build Year" value={formatValue(vessel.buildYear)} />
                 </DataSection>
+
+                {/* Latest Status from Noon Report */}
+                {vesselStatus && (
+                    <DataSection title="Latest Status (Noon Report)">
+                        <DataRow label="Report Type" value={formatValue(vesselStatus.reportType)} />
+                        <DataRow label="Activity" value={formatValue(vesselStatus.activity)} />
+                        <DataRow label="Position" value={
+                            vesselStatus.latitude && vesselStatus.longitude
+                                ? `${vesselStatus.latitude.toFixed(4)}°, ${vesselStatus.longitude.toFixed(4)}°`
+                                : '-'
+                        } />
+                        <DataRow label="Avg Speed" value={formatValue(vesselStatus.averageSpeedKnots, ' kts')} />
+                        <DataRow label="Distance Travelled" value={formatValue(vesselStatus.distanceTravelledNm, ' NM')} />
+                        <DataRow label="Distance To Go" value={formatValue(vesselStatus.distanceToGoNm, ' NM')} />
+                        <DataRow label="Cargo Temp" value={formatValue(vesselStatus.cargoTempAvgC, '°C')} />
+                        <DataRow label="Cargo Pressure" value={formatValue(vesselStatus.cargoPressureAvgBar, ' Bar')} />
+                        <DataRow label="Fuel ROB" value={formatValue(vesselStatus.fuelRob, ' MT')} />
+                        <DataRow label="Sea Condition" value={formatValue(vesselStatus.seaCondition)} />
+                        <DataRow label="Wind Force" value={formatValue(vesselStatus.windForceBeaufort, ' Beaufort')} />
+                    </DataSection>
+                )}
+
+                {/* Active Voyage Information */}
+                {activeVoyage && (
+                    <DataSection title="Active Voyage">
+                        <DataRow label="Voyage Number" value={formatValue(activeVoyage.voyageNumber)} />
+                        <DataRow label="Status" value={formatValue(activeVoyage.voyageStatus)} />
+                        <DataRow label="Load Region" value={formatValue(activeVoyage.loadRegion)} />
+                        <DataRow label="Discharge Region" value={formatValue(activeVoyage.dischargeRegion)} />
+                        <DataRow label="Start Date" value={formatDate(activeVoyage.voyageStartDate)} />
+                        <DataRow label="End Date" value={formatDate(activeVoyage.voyageEndDate)} />
+                        {activeVoyage.remarks && (
+                            <DataRow label="Remarks" value={activeVoyage.remarks} />
+                        )}
+                    </DataSection>
+                )}
+
+                {/* Active Charter Information */}
+                {activeCharter && (
+                    <DataSection title="Active Charter Party">
+                        <DataRow label="Charter Ref" value={formatValue(activeCharter.charterReference)} />
+                        <DataRow label="Charterer" value={formatValue(activeCharter.chartererName)} />
+                        <DataRow label="Charter Type" value={activeCharter.isVC ? 'Voyage Charter' : 'Time Charter'} />
+                        <DataRow label="Start Date" value={formatDate(activeCharter.charterDateStart)} />
+                        <DataRow label="End Date" value={formatDate(activeCharter.charterDateEnd)} />
+                        {!activeCharter.isVC && 'dailyHireRate' in activeCharter && (
+                            <DataRow label="Daily Hire Rate" value={formatValue(activeCharter.dailyHireRate, ' USD/day')} />
+                        )}
+                        {activeCharter.isVC && 'freightRateMt' in activeCharter && (
+                            <>
+                                <DataRow label="Freight Rate" value={formatValue(activeCharter.freightRateMt, ' USD/MT')} />
+                                <DataRow label="Demurrage Rate" value={formatValue(activeCharter.demurrageRateHourly, ' USD/hr')} />
+                                <DataRow label="Laytime Load" value={formatValue(activeCharter.laytimeHoursLoad, ' hrs')} />
+                                <DataRow label="Laytime Discharge" value={formatValue(activeCharter.laytimeHoursDischarge, ' hrs')} />
+                            </>
+                        )}
+                        <DataRow label="Representative" value={formatValue(activeCharter.charterRepresentativeName)} />
+                        {activeCharter.charterRepresentativeEmail && (
+                            <DataRow label="Email" value={activeCharter.charterRepresentativeEmail} />
+                        )}
+                    </DataSection>
+                )}
 
                 <DataSection title="Capacity">
                     <DataRow label="DWT" value={formatValue(vessel.dwtMt, ' MT')} />

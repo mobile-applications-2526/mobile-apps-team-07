@@ -1,12 +1,23 @@
 /**
  * VoyageDetails Component
- * 
+ *
  * Card component displaying vessel information in a list.
  */
 import { Fragment, useState } from 'react';
 import { TouchableOpacity, View, ScrollView } from 'react-native';
 import { useColorScheme } from 'nativewind';
-import { ChevronLeft, ChevronRight, Anchor, EyeOff } from 'lucide-react-native';
+import {
+  ChevronLeft,
+  ChevronRight,
+  Anchor,
+  EyeOff,
+  Plus,
+  MapPin,
+  Package,
+  Clock,
+  CheckCircle,
+  Circle,
+} from 'lucide-react-native';
 import { ThemedText, DataSection, DataRow } from '@/components/common';
 import { CharterParty, Document, VesselStatus, Voyage, VoyagePort } from '@/types';
 import { Cargo } from '@/types/cargo';
@@ -14,6 +25,7 @@ import { useDocuments } from '@/hooks';
 import { DocumentsSection } from '@/components/common/DocumentSection';
 import NoonReportCard from '../noonReport/NoonReportCard';
 import CargoCard from '../cargo/cargoCard';
+import { PORT_TYPE_LABELS, PORT_TYPE_COLORS } from '@/constants';
 
 interface VoyageDetailsProps {
   voyage: Voyage;
@@ -22,7 +34,7 @@ interface VoyageDetailsProps {
   cargoes: Cargo[];
   ports: VoyagePort[];
   charterParty: CharterParty | null;
-  getDocuments: ()=>Promise<Document[]>;
+  getDocuments: () => Promise<Document[]>;
   onCycleVoyage: (direction: 'next' | 'previous') => void;
   onAdd: () => void;
   onRefresh: () => void;
@@ -31,6 +43,10 @@ interface VoyageDetailsProps {
   isLastVoyage?: boolean;
   hasNoVoyages?: boolean;
   onCreateFirstVoyage?: () => void;
+  onAddPort?: () => void;
+  onEditPort?: (port: VoyagePort) => void;
+  onAddCargo?: () => void;
+  onEditCargo?: (cargo: Cargo) => void;
 }
 
 export function VoyageDetails({
@@ -47,8 +63,11 @@ export function VoyageDetails({
   isLastVoyage = false,
   hasNoVoyages = false,
   onCreateFirstVoyage,
+  onAddPort,
+  onEditPort,
+  onAddCargo,
+  onEditCargo,
 }: VoyageDetailsProps) {
-
   const { colorScheme } = useColorScheme();
   const iconColor = colorScheme === 'dark' ? '#fff' : '#000';
 
@@ -57,10 +76,10 @@ export function VoyageDetails({
     onDownload,
     uploadDocument,
     replaceDocument,
-    deleteDocument
+    deleteDocument,
   } = useDocuments('voyages', voyage.id, getDocuments);
 
-  const [activeTab, setActiveTab] = useState<'reports' | 'cargo'>('reports');
+  const [activeTab, setActiveTab] = useState<'reports' | 'cargo' | 'ports'>('reports');
   const [showAllPorts, setShowAllPorts] = useState(false);
 
   // Format dates
@@ -292,9 +311,19 @@ export function VoyageDetails({
             onPress={() => setActiveTab('reports')}
             style={{ flex: 1 }}
           >
-            <View className={`py-1.5 rounded-lg items-center justify-center ${activeTab === 'reports' ? 'bg-white' : 'bg-transparent'}`}>
-              <ThemedText className={`text-sm font-medium ${activeTab === 'reports' ? 'text-black' : 'text-gray-500 dark:text-gray-400'}`}>
-                Noon Reports
+            <View
+              className={`py-1.5 rounded-lg items-center justify-center ${
+                activeTab === 'reports' ? 'bg-white' : 'bg-transparent'
+              }`}
+            >
+              <ThemedText
+                className={`text-sm font-medium ${
+                  activeTab === 'reports'
+                    ? 'text-black'
+                    : 'text-gray-500 dark:text-gray-400'
+                }`}
+              >
+                Reports
               </ThemedText>
             </View>
           </TouchableOpacity>
@@ -302,9 +331,39 @@ export function VoyageDetails({
             onPress={() => setActiveTab('cargo')}
             style={{ flex: 1 }}
           >
-            <View className={`py-1.5 rounded-lg items-center justify-center ${activeTab === 'cargo' ? 'bg-white' : 'bg-transparent'}`}>
-              <ThemedText className={`text-sm font-medium ${activeTab === 'cargo' ? 'text-black' : 'text-gray-500 dark:text-gray-400'}`}>
+            <View
+              className={`py-1.5 rounded-lg items-center justify-center ${
+                activeTab === 'cargo' ? 'bg-white' : 'bg-transparent'
+              }`}
+            >
+              <ThemedText
+                className={`text-sm font-medium ${
+                  activeTab === 'cargo'
+                    ? 'text-black'
+                    : 'text-gray-500 dark:text-gray-400'
+                }`}
+              >
                 Cargo
+              </ThemedText>
+            </View>
+          </TouchableOpacity>
+          <TouchableOpacity
+            onPress={() => setActiveTab('ports')}
+            style={{ flex: 1 }}
+          >
+            <View
+              className={`py-1.5 rounded-lg items-center justify-center ${
+                activeTab === 'ports' ? 'bg-white' : 'bg-transparent'
+              }`}
+            >
+              <ThemedText
+                className={`text-sm font-medium ${
+                  activeTab === 'ports'
+                    ? 'text-black'
+                    : 'text-gray-500 dark:text-gray-400'
+                }`}
+              >
+                Ports
               </ThemedText>
             </View>
           </TouchableOpacity>
@@ -340,18 +399,185 @@ export function VoyageDetails({
             {cargoes.length > 0 ? (
               <View>
                 {cargoes.map((cargo, index) => (
-                  <CargoCard
-                    index={index}
-                    cargo={cargo}
-                    formatDate={formatDate}/>
+                  <TouchableOpacity
+                    key={cargo.id}
+                    onPress={() => onEditCargo?.(cargo)}
+                    activeOpacity={0.7}
+                  >
+                    <CargoCard index={index} cargo={cargo} formatDate={formatDate} />
+                  </TouchableOpacity>
                 ))}
               </View>
             ) : (
               <View className="bg-white dark:bg-[#1c1c1e] rounded-2xl p-8 mb-4 items-center">
-                <ThemedText className="text-center text-gray-500 dark:text-gray-400">
-                  Cargo Details here
+                <Package size={48} color="#9ca3af" />
+                <ThemedText className="text-center text-gray-500 dark:text-gray-400 mt-3">
+                  No cargo added yet
                 </ThemedText>
               </View>
+            )}
+
+            {/* Add Cargo Button */}
+            {onAddCargo && (
+              <TouchableOpacity
+                onPress={onAddCargo}
+                className="flex-row items-center justify-center gap-2 py-3 border-2 border-dashed border-gray-300 dark:border-gray-600 rounded-xl mb-4"
+              >
+                <Plus size={20} color="#6b7280" />
+                <ThemedText className="text-gray-500 font-medium">Add Cargo</ThemedText>
+              </TouchableOpacity>
+            )}
+          </>
+        )}
+
+        {/* Ports Tab Content */}
+        {activeTab === 'ports' && (
+          <>
+            {ports.length > 0 ? (
+              <View>
+                {[...ports]
+                  .sort((a, b) => a.portSequence - b.portSequence)
+                  .map((port) => {
+                    const getStatusIcon = () => {
+                      if (port.atd)
+                        return <CheckCircle size={16} color="#22c55e" />;
+                      if (port.atb) return <Clock size={16} color="#f59e0b" />;
+                      return <Circle size={16} color="#9ca3af" />;
+                    };
+
+                    const getStatusText = () => {
+                      if (port.atd) return 'Departed';
+                      if (port.atb) return 'At Berth';
+                      if (port.eta) {
+                        const etaDate = new Date(port.eta);
+                        return `ETA: ${etaDate.toLocaleDateString('en-GB', {
+                          day: '2-digit',
+                          month: 'short',
+                        })}, ${etaDate.toLocaleTimeString('en-GB', {
+                          hour: '2-digit',
+                          minute: '2-digit',
+                        })}`;
+                      }
+                      return 'Scheduled';
+                    };
+
+                    return (
+                      <TouchableOpacity
+                        key={port.id}
+                        onPress={() => onEditPort?.(port)}
+                        activeOpacity={0.7}
+                        className="bg-white dark:bg-[#1c1c1e] rounded-xl p-4 mb-3"
+                      >
+                        <View className="flex-row items-start">
+                          {/* Timeline indicator */}
+                          <View className="items-center mr-3">
+                            <View
+                              className={`w-8 h-8 rounded-full items-center justify-center ${
+                                PORT_TYPE_COLORS[port.portType]?.bg || 'bg-blue-500/20'
+                              }`}
+                            >
+                              <ThemedText className="text-sm font-bold text-blue-600">
+                                {port.portSequence}
+                              </ThemedText>
+                            </View>
+                          </View>
+
+                          {/* Port details */}
+                          <View className="flex-1">
+                            <View className="flex-row items-center justify-between">
+                              <View className="flex-row items-center gap-2 flex-1">
+                                <ThemedText className="text-base font-semibold">
+                                  {port.portName}
+                                </ThemedText>
+                                <View className="bg-gray-200 dark:bg-gray-700 px-2 py-0.5 rounded">
+                                  <ThemedText className="text-xs text-gray-600 dark:text-gray-300">
+                                    {PORT_TYPE_LABELS[port.portType]}
+                                  </ThemedText>
+                                </View>
+                              </View>
+                              <ChevronRight size={20} color="#9ca3af" />
+                            </View>
+
+                            {/* Status */}
+                            <View className="flex-row items-center gap-2 mt-2">
+                              {getStatusIcon()}
+                              <ThemedText className="text-sm text-gray-500 dark:text-gray-400">
+                                {getStatusText()}
+                              </ThemedText>
+                            </View>
+
+                            {/* Laycan */}
+                            {(port.laycanStart || port.laycanEnd) && (
+                              <View className="flex-row items-center gap-2 mt-2">
+                                <MapPin size={14} color="#9ca3af" />
+                                <ThemedText className="text-sm text-gray-500 dark:text-gray-400">
+                                  Laycan:{' '}
+                                  {port.laycanStart &&
+                                    new Date(port.laycanStart).toLocaleDateString(
+                                      'en-GB',
+                                      { day: '2-digit', month: 'short' }
+                                    )}
+                                  {port.laycanEnd &&
+                                    ` - ${new Date(port.laycanEnd).toLocaleDateString(
+                                      'en-GB',
+                                      { day: '2-digit', month: 'short' }
+                                    )}`}
+                                </ThemedText>
+                              </View>
+                            )}
+
+                            {/* NOR Status */}
+                            {(port.norTendered || port.norAccepted) && (
+                              <View className="flex-row items-center gap-3 mt-2">
+                                <View className="flex-row items-center gap-1">
+                                  {port.norTendered ? (
+                                    <CheckCircle size={12} color="#22c55e" />
+                                  ) : (
+                                    <Circle size={12} color="#9ca3af" />
+                                  )}
+                                  <ThemedText className="text-xs text-gray-500 dark:text-gray-400">
+                                    NOR Tendered
+                                  </ThemedText>
+                                </View>
+                                <View className="flex-row items-center gap-1">
+                                  {port.norAccepted ? (
+                                    <CheckCircle size={12} color="#22c55e" />
+                                  ) : (
+                                    <Circle size={12} color="#9ca3af" />
+                                  )}
+                                  <ThemedText className="text-xs text-gray-500 dark:text-gray-400">
+                                    NOR Accepted
+                                  </ThemedText>
+                                </View>
+                              </View>
+                            )}
+                          </View>
+                        </View>
+                      </TouchableOpacity>
+                    );
+                  })}
+              </View>
+            ) : (
+              <View className="bg-white dark:bg-[#1c1c1e] rounded-2xl p-8 mb-4 items-center">
+                <MapPin size={48} color="#9ca3af" />
+                <ThemedText className="text-lg font-semibold mt-3 mb-2">
+                  No ports added yet
+                </ThemedText>
+                <ThemedText className="text-center text-gray-500 dark:text-gray-400 px-4">
+                  Tap the button below to add your first port to the voyage.
+                </ThemedText>
+              </View>
+            )}
+
+            {/* Add Port Button */}
+            {onAddPort && (
+              <TouchableOpacity
+                onPress={onAddPort}
+                className="flex-row items-center justify-center gap-2 py-3 border-2 border-dashed border-gray-300 dark:border-gray-600 rounded-xl mb-4"
+              >
+                <Plus size={20} color="#6b7280" />
+                <ThemedText className="text-gray-500 font-medium">Add Port</ThemedText>
+              </TouchableOpacity>
             )}
           </>
         )}

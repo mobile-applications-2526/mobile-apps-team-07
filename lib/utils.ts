@@ -28,3 +28,35 @@ export function formatCurrency(amount: number, currency = 'USD') {
     return `${currency} ${Number(amount || 0).toFixed(2)}`;
   }
 }
+
+export function formatDate(date: Date | string | null | undefined): string {
+  if (!date) return '-';
+  try {
+    const d = typeof date === 'string' ? new Date(date) : date;
+    if (isNaN(d.getTime())) return '-';
+    return d.toLocaleDateString('en-US', {
+      year: 'numeric',
+      month: 'short',
+      day: 'numeric'
+    });
+  } catch {
+    return '-';
+  }
+}
+
+export function formatDateTime(date: Date | string | null | undefined): string {
+  if (!date) return '-';
+  try {
+    const d = typeof date === 'string' ? new Date(date) : date;
+    if (isNaN(d.getTime())) return '-';
+    return d.toLocaleString('en-US', {
+      year: 'numeric',
+      month: 'short',
+      day: 'numeric',
+      hour: '2-digit',
+      minute: '2-digit'
+    });
+  } catch {
+    return '-';
+  }
+}

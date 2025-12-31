@@ -70,6 +70,8 @@ export const useDocumentStatus = (
 ) => {
   const { enabled = true, onCompleted, onFailed } = options || {};
 
+  console.log('useDocumentStatus called with:', { documentId, enabled });
+
   return useQuery({
     queryKey: documentProcessingKeys.status(documentId),
     queryFn: () => documentProcessingService.getStatus(documentId),

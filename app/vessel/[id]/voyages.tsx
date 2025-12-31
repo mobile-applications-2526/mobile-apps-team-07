@@ -6,11 +6,15 @@ import { VesselTopBar } from '@/components/vessel';
 import { useVesselVoyagesScreen } from '@/hooks';
 import { EmptyVoyageList } from '@/components/voyage/EmptyVoyageList';
 import { VoyageDetails } from '@/components/voyage/VoyageDetails';
+import { CreateVoyageSheet } from '@/components/voyage/CreateVoyageSheet';
+import { AddEditPortSheet } from '@/components/voyage/AddEditPortSheet';
+import { AddEditCargoSheet } from '@/components/voyage/AddEditCargoSheet';
 
 export default function VesselVoyages() {
   const {
     vessel,
     vesselVoyages,
+    index,
     voyageWithDetails,
     getDocuments,
     isLoadingVessel,
@@ -21,6 +25,27 @@ export default function VesselVoyages() {
     handleCycleVoyage,
     handleAddVoyage,
     handleRefresh,
+    // Bottom sheet state
+    showCreateVoyageSheet,
+    setShowCreateVoyageSheet,
+    showPortSheet,
+    setShowPortSheet,
+    editingPort,
+    showCargoSheet,
+    setShowCargoSheet,
+    editingCargo,
+    // CRUD handlers
+    handleCreateVoyage,
+    handleAddPort,
+    handleEditPort,
+    handleSavePort,
+    handleDeletePort,
+    handleAddCargo,
+    handleEditCargo,
+    handleSaveCargo,
+    handleDeleteCargo,
+    isSaving,
+    vesselCharters,
   } = useVesselVoyagesScreen();
 
   // If required documents are missing, show locked state
@@ -101,12 +126,53 @@ export default function VesselVoyages() {
               onAdd={handleAddVoyage}
               onRefresh={handleRefresh}
               isRefreshing={isLoadingVoyage}
+              isFirstVoyage={index === vesselVoyages.length - 1}
+              isLastVoyage={index === 0}
+              onAddPort={handleAddPort}
+              onEditPort={handleEditPort}
+              onAddCargo={handleAddCargo}
+              onEditCargo={handleEditCargo}
             />
           ) : null
         ) : (
           <EmptyVoyageList onAdd={handleAddVoyage} />
         )}
       </View>
+
+      {/* Bottom Sheets */}
+      {vessel && (
+        <CreateVoyageSheet
+          visible={showCreateVoyageSheet}
+          onCancel={() => setShowCreateVoyageSheet(false)}
+          onCreate={handleCreateVoyage}
+          vesselId={vessel.id}
+          charters={vesselCharters}
+          isCreating={isSaving}
+        />
+      )}
+
+      {voyageWithDetails && (
+        <>
+          <AddEditPortSheet
+            visible={showPortSheet}
+            onCancel={() => setShowPortSheet(false)}
+            onSubmit={handleSavePort}
+            port={editingPort}
+            voyageId={voyageWithDetails.voyage.id}
+            existingPorts={voyageWithDetails.ports}
+            isSubmitting={isSaving}
+          />
+
+          <AddEditCargoSheet
+            visible={showCargoSheet}
+            onCancel={() => setShowCargoSheet(false)}
+            onSubmit={handleSaveCargo}
+            cargo={editingCargo}
+            voyageId={voyageWithDetails.voyage.id}
+            isSubmitting={isSaving}
+          />
+        </>
+      )}
     </ThemedView>
   );
 }

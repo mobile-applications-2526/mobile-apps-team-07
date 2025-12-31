@@ -7,13 +7,17 @@
 
 import { useState, useEffect, useCallback } from 'react';
 import { useVesselDetails } from '@/hooks';
-import type { VesselKPIs } from '@/types';
+import type { VesselKPIs, Voyage, CharterParty } from '@/types';
 
 interface UseVesselOverviewScreenReturn {
   /** The vessel data */
   vessel: ReturnType<typeof useVesselDetails>['vessel'];
   /** The latest vessel status/position */
   vesselStatus: ReturnType<typeof useVesselDetails>['vesselStatus'];
+  /** The active voyage */
+  activeVoyage: Voyage | null;
+  /** The active charter party */
+  activeCharter: CharterParty | null;
   /** KPI performance data */
   kpis: VesselKPIs | null;
   /** Whether the screen is currently refreshing */
@@ -39,10 +43,12 @@ export function useVesselOverviewScreen(): UseVesselOverviewScreenReturn {
   const {
     vessel,
     vesselStatus,
+    activeVoyage,
+    activeCharterParty,
     refreshVessel,
     isLocked,
   } = useVesselDetails();
-  
+
   const [refreshing, setRefreshing] = useState(false);
   const [kpis, setKPIs] = useState<VesselKPIs | null>(null);
 
@@ -51,7 +57,7 @@ export function useVesselOverviewScreen(): UseVesselOverviewScreenReturn {
     const pollInterval = setInterval(() => {
       refreshVessel();
     }, 30000);
-    
+
     return () => clearInterval(pollInterval);
   }, [vessel?.id, refreshVessel]);
 
@@ -65,6 +71,8 @@ export function useVesselOverviewScreen(): UseVesselOverviewScreenReturn {
   return {
     vessel,
     vesselStatus,
+    activeVoyage,
+    activeCharter: activeCharterParty,
     kpis,
     refreshing,
     isLocked,

@@ -36,10 +36,12 @@ import {
   Layers,
   PenTool,
 } from 'lucide-react-native';
+import { useQueryClient } from '@tanstack/react-query';
 import {
   useExtraction,
   useValidateField,
   useCommitExtraction,
+  documentProcessingKeys,
 } from '@/hooks/queries';
 import {
   ExtractedField,
@@ -96,13 +98,14 @@ export default function ExtractionReviewScreen() {
     isRefetching,
   } = useExtraction(documentId);
 
+  const queryClient = useQueryClient();
   const validateMutation = useValidateField(documentId);
   const commitMutation = useCommitExtraction();
 
   const [expandedTables, setExpandedTables] = useState<Set<string>>(
     new Set(['vessel', 'charter_base'])
   );
-  const [editingFieldId, setEditingFieldId] = useState<number | null>(null);
+  const [editingFieldKey, setEditingFieldKey] = useState<string | null>(null);
   const [editValue, setEditValue] = useState('');
 
   // Group fields by target table
@@ -123,7 +126,7 @@ export default function ExtractionReviewScreen() {
     return {
       total: fields.length,
       validated: fields.filter((f) => f.validated).length,
-      lowConfidence: fields.filter((f) => f.confidenceScore < 70).length,
+      lowConfidence: fields.filter((f) => (f.confidenceScore ?? 0) < 70).length,
       averageConfidence: extraction?.averageConfidence || 0,
     };
   }, [extraction]);
@@ -140,35 +143,63 @@ export default function ExtractionReviewScreen() {
     });
   }, []);
 
-  const startEditing = (field: ExtractedField) => {
-    setEditingFieldId(field.id);
-    setEditValue(field.fieldValue);
+  const startEditing = (field: ExtractedField, fieldKey: string) => {
+    setEditingFieldKey(fieldKey);
+    setEditValue(field.fieldValue || '');
   };
 
   const cancelEditing = () => {
-    setEditingFieldId(null);
+    setEditingFieldKey(null);
     setEditValue('');
   };
 
   const handleValidate = useCallback(
-    async (fieldId: number, correctedValue: string | undefined, approved: boolean) => {
+    async (field: ExtractedField, correctedValue: string | undefined, approved: boolean) => {
+      const fieldId = field.id;
+
+      // If field has no ID, update cache locally (backend bug workaround)
+      if (fieldId === undefined || fieldId === null) {
+        queryClient.setQueryData(
+          documentProcessingKeys.extraction(documentId),
+          (old: any) => {
+            if (!old) return old;
+            return {
+              ...old,
+              extractedFields: old.extractedFields.map((f: ExtractedField) =>
+                f.fieldName === field.fieldName && f.targetTable === field.targetTable
+                  ? {
+                      ...f,
+                      fieldValue: correctedValue ?? f.fieldValue,
+                      validated: approved,
+                      validatedAt: new Date().toISOString(),
+                    }
+                  : f
+              ),
+            };
+          }
+        );
+        setEditingFieldKey(null);
+        setEditValue('');
+        return;
+      }
+
       try {
         await validateMutation.mutateAsync({
           fieldId,
           data: { correctedValue, approved },
         });
-        setEditingFieldId(null);
+        setEditingFieldKey(null);
         setEditValue('');
-      } catch (error) {
-        Alert.alert('Error', 'Failed to validate field');
+      } catch (error: any) {
+        Alert.alert('Error', error?.message || 'Failed to validate field');
       }
     },
-    [validateMutation]
+    [validateMutation, queryClient, documentId]
   );
 
   const handleCommit = useCallback(() => {
     const unvalidatedLowConfidence = extraction?.extractedFields.filter(
-      (f) => !f.validated && f.confidenceScore < 70
+      (f) => !f.validated && (f.confidenceScore ?? 0) < 70
     ).length || 0;
 
     if (unvalidatedLowConfidence > 0) {
@@ -183,7 +214,7 @@ export default function ExtractionReviewScreen() {
               // Expand all tables with low confidence fields
               const tablesWithLowConfidence = new Set(
                 extraction?.extractedFields
-                  .filter((f) => !f.validated && f.confidenceScore < 70)
+                  .filter((f) => !f.validated && (f.confidenceScore ?? 0) < 70)
                   .map((f) => f.targetTable || 'other')
               );
               setExpandedTables(tablesWithLowConfidence);
@@ -205,18 +236,60 @@ export default function ExtractionReviewScreen() {
     try {
       const result = await commitMutation.mutateAsync({
         documentId,
-        options: { createNewEntity: true },
+        options: { createNewEntity: true, minimumConfidence: 70 },
       });
 
       if (result.success) {
+        // Build a summary of what was affected
+        const affectedItems: string[] = [];
+        if (result.affectedRecords.vessel) {
+          const vesselName = result.affectedRecords.vessel.name;
+          affectedItems.push(vesselName ? `Vessel "${vesselName}" updated` : 'Vessel data updated');
+        }
+        if (result.affectedRecords.vesselStatus) {
+          affectedItems.push('Noon Report data saved');
+        }
+        if (result.affectedRecords.charter) {
+          const charterType = result.affectedRecords.charter.type;
+          affectedItems.push(charterType ? `Charter Party (${charterType}) saved` : 'Charter Party saved');
+        }
+        if (result.affectedRecords.voyage) {
+          affectedItems.push('Voyage data saved');
+        }
+        if (result.affectedRecords.voyagePort) {
+          affectedItems.push('Port information saved');
+        }
+        if (result.affectedRecords.cargo) {
+          affectedItems.push('Cargo data saved');
+        }
+
+        const summaryMessage = affectedItems.length > 0
+          ? `Successfully committed:\n${affectedItems.map(item => `• ${item}`).join('\n')}`
+          : result.message || 'Data has been successfully committed to the database';
+
+        // Determine where to navigate based on what was affected
+        const vesselId = result.affectedRecords.vessel?.id;
+
         Alert.alert(
           'Success',
-          result.message || 'Data has been committed to the database',
+          summaryMessage,
           [
             {
-              text: 'OK',
-              onPress: () => router.replace('/(tabs)'),
+              text: vesselId ? 'View Vessel' : 'OK',
+              onPress: () => {
+                if (vesselId) {
+                  // Navigate to the vessel overview to see the updated data
+                  router.replace(`/vessel/${vesselId}`);
+                } else {
+                  router.replace('/(tabs)');
+                }
+              },
             },
+            ...(vesselId ? [{
+              text: 'Go to Fleet',
+              style: 'cancel' as const,
+              onPress: () => router.replace('/(tabs)'),
+            }] : []),
           ]
         );
       } else {
@@ -310,7 +383,7 @@ export default function ExtractionReviewScreen() {
             const tableStats = {
               total: fields.length,
               validated: fields.filter((f) => f.validated).length,
-              lowConfidence: fields.filter((f) => f.confidenceScore < 70).length,
+              lowConfidence: fields.filter((f) => (f.confidenceScore ?? 0) < 70).length,
             };
 
             return (
@@ -345,19 +418,22 @@ export default function ExtractionReviewScreen() {
                 {/* Fields */}
                 {isExpanded && (
                   <View className="px-4 py-2">
-                    {fields.map((field, index) => (
-                      <FieldRow
-                        key={field.id}
-                        field={field}
-                        isEditing={editingFieldId === field.id}
-                        editValue={editValue}
-                        onEditValueChange={setEditValue}
-                        onStartEdit={() => startEditing(field)}
-                        onCancelEdit={cancelEditing}
-                        onValidate={handleValidate}
-                        isLast={index === fields.length - 1}
-                      />
-                    ))}
+                    {fields.map((field, index) => {
+                      const fieldKey = `${table}-${field.id ?? index}`;
+                      return (
+                        <FieldRow
+                          key={fieldKey}
+                          field={field}
+                          isEditing={editingFieldKey === fieldKey}
+                          editValue={editValue}
+                          onEditValueChange={setEditValue}
+                          onStartEdit={() => startEditing(field, fieldKey)}
+                          onCancelEdit={cancelEditing}
+                          onValidate={handleValidate}
+                          isLast={index === fields.length - 1}
+                        />
+                      );
+                    })}
                   </View>
                 )}
               </View>
@@ -395,11 +471,11 @@ interface FieldRowProps {
   onEditValueChange: (value: string) => void;
   onStartEdit: () => void;
   onCancelEdit: () => void;
-  onValidate: (fieldId: number, correctedValue: string | undefined, approved: boolean) => void;
+  onValidate: (field: ExtractedField, correctedValue: string | undefined, approved: boolean) => void;
   isLast: boolean;
 }
 
-const FieldRow: React.FC<FieldRowProps> = ({
+const FieldRow: React.FC<FieldRowProps> = React.memo(({
   field,
   isEditing,
   editValue,
@@ -436,7 +512,7 @@ const FieldRow: React.FC<FieldRowProps> = ({
             className="px-4 py-2 rounded-lg bg-blue-500"
             onPress={() => {
               const correctedValue = editValue !== field.fieldValue ? editValue : undefined;
-              onValidate(field.id, correctedValue, true);
+              onValidate(field, correctedValue, true);
             }}
           >
             <Text className="text-white text-sm font-medium">Save</Text>
@@ -470,7 +546,7 @@ const FieldRow: React.FC<FieldRowProps> = ({
             style={{ backgroundColor: `${confidenceColor}20` }}
           >
             <Text className="text-xs font-medium" style={{ color: confidenceColor }}>
-              {field.confidenceScore.toFixed(0)}%
+              {(field.confidenceScore ?? 0).toFixed(0)}%
             </Text>
           </View>
         </View>
@@ -488,7 +564,7 @@ const FieldRow: React.FC<FieldRowProps> = ({
             </TouchableOpacity>
             <TouchableOpacity
               className="w-8 h-8 rounded-full bg-green-100 dark:bg-green-900/30 items-center justify-center"
-              onPress={() => onValidate(field.id, undefined, true)}
+              onPress={() => onValidate(field, undefined, true)}
             >
               <Check size={14} color="#22c55e" />
             </TouchableOpacity>
@@ -497,11 +573,12 @@ const FieldRow: React.FC<FieldRowProps> = ({
       </View>
     </View>
   );
-};
+});
 
 // Helper function to get confidence color (defined outside component to avoid re-creation)
-function getConfidenceColor(score: number): string {
-  if (score >= 90) return '#22c55e';
-  if (score >= 70) return '#f59e0b';
+function getConfidenceColor(score: number | undefined): string {
+  const safeScore = score ?? 0;
+  if (safeScore >= 90) return '#22c55e';
+  if (safeScore >= 70) return '#f59e0b';
   return '#ef4444';
 }

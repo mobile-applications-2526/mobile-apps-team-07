@@ -41,10 +41,32 @@ export default function DocumentProcessingScreen() {
   const documentId = parseInt(params.documentId || '0');
   const [shouldNavigate, setShouldNavigate] = useState(false);
 
+  // Debug: Log when screen mounts
+  useEffect(() => {
+    console.log('Processing screen mounted with documentId:', documentId);
+  }, [documentId]);
+
   const { data: status, isLoading, error } = useDocumentStatus(documentId, {
-    onCompleted: () => setShouldNavigate(true),
+    onCompleted: () => {
+      console.log('Processing completed for document:', documentId);
+      setShouldNavigate(true);
+    },
     onFailed: (error) => console.error('Processing failed:', error),
   });
+
+  // Debug: Log status changes
+  useEffect(() => {
+    if (status) {
+      console.log('Document status update:', {
+        documentId,
+        status: status.status,
+        progress: status.progress,
+        ocrCompleted: status.ocrCompleted,
+        extractionCompleted: status.extractionCompleted,
+        fieldsCount: status.extractedFieldsCount,
+      });
+    }
+  }, [status]);
 
   const progressWidth = useSharedValue(0);
   const pulseScale = useSharedValue(1);

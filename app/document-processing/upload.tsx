@@ -180,15 +180,20 @@ export default function DocumentUploadScreen() {
           vesselId: params.vesselId ? parseInt(params.vesselId) : undefined,
           voyageId: params.voyageId ? parseInt(params.voyageId) : undefined,
           charterBaseId: params.charterBaseId ? parseInt(params.charterBaseId) : undefined,
+          // Wait for processing to complete synchronously
+          asyncProcessing: false,
+          // Auto-commit extracted data to DB after successful extraction
+          autoCommit: true,
         },
         onProgress: setUploadProgress,
       });
 
       // Navigate to processing status screen
+      console.log('Navigating to processing screen with documentId:', response.id);
       router.push({
         pathname: '/document-processing/processing',
         params: {
-          documentId: response.documentId.toString(),
+          documentId: response.id.toString(),
           documentName: selectedFile.name,
         },
       });

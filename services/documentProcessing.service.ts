@@ -6,7 +6,7 @@
  */
 
 import * as FileSystem from 'expo-file-system/legacy';
-import { apiClient } from './api-client.service';
+import { apiClient } from './api.client';
 import { API_URL } from './config.service';
 import { StorageService } from './storage.service';
 import {
@@ -30,7 +30,7 @@ const FileSystemUploadType = {
   MULTIPART: 1,
 };
 
-// Base endpoint for document processing API
+// Base endpoint for document processing API (uses /api/v1 prefix, unlike other services)
 const DOCUMENTS_API = '/api/v1/documents';
 
 /**
@@ -66,6 +66,10 @@ export const uploadDocument = async (
     if (request.charterBaseId) {
       parameters.charterBaseId = request.charterBaseId.toString();
     }
+    // asyncProcessing: false = wait for processing to complete (synchronous)
+    parameters.asyncProcessing = (request.asyncProcessing ?? false).toString();
+    // autoCommit: true = auto-commit extracted data to DB after successful extraction
+    parameters.autoCommit = (request.autoCommit ?? true).toString();
 
     const uploadResult = await FileSystem.uploadAsync(uploadUrl, request.file.uri, {
       fieldName: 'file',
@@ -80,7 +84,9 @@ export const uploadDocument = async (
         throw new Error('Empty response from server');
       }
       try {
-        return JSON.parse(uploadResult.body);
+        const response = JSON.parse(uploadResult.body);
+        console.log('Upload response:', response);
+        return response;
       } catch (e) {
         console.warn('Upload success but failed to parse response', uploadResult.body.substring(0, 100));
         throw new Error('Invalid response from server');
@@ -109,7 +115,9 @@ export const uploadDocument = async (
  * Get processing status (poll this during processing)
  */
 export const getStatus = async (documentId: number): Promise<ProcessingStatusResponse> => {
-  return apiClient.get<ProcessingStatusResponse>(`${DOCUMENTS_API}/${documentId}/status`);
+  const result = await apiClient.get<ProcessingStatusResponse>(`${DOCUMENTS_API}/${documentId}/status`);
+  console.log(`Status poll for doc ${documentId}:`, result.status, result.progress + '%');
+  return result;
 };
 
 /**

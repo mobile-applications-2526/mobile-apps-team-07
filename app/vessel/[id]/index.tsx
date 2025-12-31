@@ -1,5 +1,5 @@
 import React from 'react';
-import { View, StyleSheet } from 'react-native';
+import { View, StyleSheet, Platform } from 'react-native';
 import { ThemedText, ThemedView } from '@/components/common';
 import { VesselTopBar, VesselOverviewSheet, VesselMap } from '@/components/vessel';
 import { useColorScheme } from 'nativewind';
@@ -13,6 +13,8 @@ export default function VesselOverview() {
   const {
     vessel,
     vesselStatus,
+    activeVoyage,
+    activeCharter,
     kpis,
     refreshing,
     isLocked,
@@ -37,14 +39,16 @@ export default function VesselOverview() {
 
   return (
     <View testID="vessel-overview-screen" className="flex-1 relative">
-      {/* 1. LAYER: Background Map */}
-      <View testID="vessel-map" style={StyleSheet.absoluteFill}>
-        <VesselMap
-          latitude={vesselStatus?.latitude}
-          longitude={vesselStatus?.longitude}
-          zoomLevel={8}
-        />
-      </View>
+      {/* 1. LAYER: Background Map (disabled on iOS) */}
+      {Platform.OS !== 'ios' && (
+        <View testID="vessel-map" style={StyleSheet.absoluteFill}>
+          <VesselMap
+            latitude={vesselStatus?.latitude}
+            longitude={vesselStatus?.longitude}
+            zoomLevel={8}
+          />
+        </View>
+      )}
 
       {/* 2. LAYER: Bottom Sheet (Standard, not Modal) */}
       <VesselOverviewSheet
@@ -53,6 +57,9 @@ export default function VesselOverview() {
         refreshing={refreshing}
         onRefresh={onRefresh}
         isDark={isDark}
+        vesselStatus={vesselStatus}
+        activeVoyage={activeVoyage}
+        activeCharter={activeCharter}
       />
 
       {/* 3. LAYER: Navbar (Top App Bar) - Absolute Positioned on TOP */}
