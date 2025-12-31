@@ -22,7 +22,9 @@ android/app/build/
 android/**/build/
 android/local.properties
 *.keystore
-android
+
+# Kotlin Multiplatform / Compose
+composeApp/build/
 
 # iOS
 # CocoaPods
@@ -30,7 +32,6 @@ ios/Pods/
 ios/Podfile.lock
 ios/build/
 ios/DerivedData/
-ios
 
 package-lock.json
 
