@@ -143,8 +143,8 @@ export function useInvoices(vesselId: number | undefined) {
             const fresh = await invoiceService.getInvoiceById(Number(original.id));
             const newDetails = mapBackendInvoice(fresh || updated);
 
-            // Invalidate to show updated invoice
-            queryClient.invalidateQueries({ queryKey: invoiceKeys.byVessel(vesselId!) });
+            // Refetch to show updated invoice (wait for data to be available)
+            await queryClient.refetchQueries({ queryKey: invoiceKeys.byVessel(vesselId!) });
             return true;
         } catch (err) {
             console.error('Failed to update invoice', err);

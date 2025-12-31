@@ -6,13 +6,12 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
 import {
   View,
-  TextInput,
   Pressable,
   ActionSheetIOS,
   Platform,
   Alert,
 } from 'react-native';
-import { BottomSheetModal, BottomSheetBackdrop, BottomSheetScrollView } from '@gorhom/bottom-sheet';
+import { BottomSheetModal, BottomSheetBackdrop, BottomSheetScrollView, BottomSheetTextInput } from '@gorhom/bottom-sheet';
 import { ThemedText } from '@/components/common';
 import { useColorScheme } from 'nativewind';
 import { Package, Thermometer, AlertTriangle, FileText } from 'lucide-react-native';
@@ -187,8 +186,8 @@ export function AddEditCargoSheet({
           isDark ? 'bg-[#2C2C2E]' : 'bg-gray-100'
         }`}
       >
-        <TextInput
-          className={`flex-1 text-[17px] ${isDark ? 'text-white' : 'text-black'}`}
+        <BottomSheetTextInput
+          style={{ flex: 1, fontSize: 17, color: isDark ? '#fff' : '#000' }}
           placeholder={placeholder}
           placeholderTextColor={isDark ? '#666' : '#999'}
           value={value}
@@ -294,8 +293,8 @@ export function AddEditCargoSheet({
                     isDark ? 'bg-[#2C2C2E]' : 'bg-gray-100'
                   }`}
                 >
-                  <TextInput
-                    className={`flex-1 text-[17px] ${isDark ? 'text-white' : 'text-black'}`}
+                  <BottomSheetTextInput
+                    style={{ flex: 1, fontSize: 17, color: isDark ? '#fff' : '#000' }}
                     placeholder="Enter charterer"
                     placeholderTextColor={isDark ? '#666' : '#999'}
                     value={chartererName}
@@ -314,8 +313,8 @@ export function AddEditCargoSheet({
                     isDark ? 'bg-[#2C2C2E]' : 'bg-gray-100'
                   }`}
                 >
-                  <TextInput
-                    className={`flex-1 text-[17px] ${isDark ? 'text-white' : 'text-black'}`}
+                  <BottomSheetTextInput
+                    style={{ flex: 1, fontSize: 17, color: isDark ? '#fff' : '#000' }}
                     placeholder="Enter receiver"
                     placeholderTextColor={isDark ? '#666' : '#999'}
                     value={receiverName}
@@ -414,8 +413,8 @@ export function AddEditCargoSheet({
                     isDark ? 'bg-[#2C2C2E]' : 'bg-gray-100'
                   }`}
                 >
-                  <TextInput
-                    className={`flex-1 text-[17px] ${isDark ? 'text-white' : 'text-black'}`}
+                  <BottomSheetTextInput
+                    style={{ flex: 1, fontSize: 17, color: isDark ? '#fff' : '#000' }}
                     placeholder="e.g. UN1978"
                     placeholderTextColor={isDark ? '#666' : '#999'}
                     value={unNumber}
@@ -491,14 +490,13 @@ export function AddEditCargoSheet({
               Loading Instructions
             </ThemedText>
             <View className={`p-3 rounded-lg ${isDark ? 'bg-[#2C2C2E]' : 'bg-gray-100'}`}>
-              <TextInput
-                className={`text-[17px] min-h-[80px] ${isDark ? 'text-white' : 'text-black'}`}
+              <BottomSheetTextInput
+                style={{ fontSize: 17, minHeight: 80, color: isDark ? '#fff' : '#000', textAlignVertical: 'top' }}
                 placeholder="Enter special loading instructions..."
                 placeholderTextColor={isDark ? '#666' : '#999'}
                 value={loadingInstructions}
                 onChangeText={setLoadingInstructions}
                 multiline
-                textAlignVertical="top"
               />
             </View>
           </View>
@@ -508,14 +506,13 @@ export function AddEditCargoSheet({
               Discharge Instructions
             </ThemedText>
             <View className={`p-3 rounded-lg ${isDark ? 'bg-[#2C2C2E]' : 'bg-gray-100'}`}>
-              <TextInput
-                className={`text-[17px] min-h-[80px] ${isDark ? 'text-white' : 'text-black'}`}
+              <BottomSheetTextInput
+                style={{ fontSize: 17, minHeight: 80, color: isDark ? '#fff' : '#000', textAlignVertical: 'top' }}
                 placeholder="Enter special discharge instructions..."
                 placeholderTextColor={isDark ? '#666' : '#999'}
                 value={dischargeInstructions}
                 onChangeText={setDischargeInstructions}
                 multiline
-                textAlignVertical="top"
               />
             </View>
           </View>

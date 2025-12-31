@@ -1,53 +1,162 @@
-[![Review Assignment Due Date](https://classroom.github.com/assets/deadline-readme-button-22041afd0340ce965d47ae6ef1cefeee28c7c493a6346c4f15d667ab976d596c.svg)](https://classroom.github.com/a/bPpEXmle)
+# Safarban - Maritime Fleet Management
 
+A React Native mobile application for managing maritime vessel operations, voyages, and document processing.
 
-# Welcome to your Expo app 👋
+## Features
 
-This is an [Expo](https://expo.dev) project created with [`create-expo-app`](https://www.npmjs.com/package/create-expo-app).
+- **Fleet Overview**: View and manage your vessel fleet with real-time status
+- **Voyage Management**: Create, track, and manage vessel voyages with ports and cargo
+- **Document Processing**: Upload and process maritime documents with AI-powered extraction
+- **Charter Party Management**: Handle time charter and voyage charter contracts
+- **Noon Reports**: Track vessel status and operational reports
 
-## Get started
+## Prerequisites
 
-1. Install dependencies
+Before running the app, ensure you have the following installed:
 
+- **Node.js** (v18 or higher)
+- **npm** or **yarn**
+- **Expo CLI**: `npm install -g expo-cli`
+
+### For iOS Development
+- **macOS** (required)
+- **Xcode** (latest version from App Store)
+- **CocoaPods**: `sudo gem install cocoapods`
+
+### For Android Development
+- **Android Studio** with Android SDK
+- **Java Development Kit (JDK)** 17 or higher
+- Android Emulator or physical device
+
+## Environment Setup
+
+Create a `.env` file in the root directory with the following variables:
+
+```env
+# API Configuration
+EXPO_PUBLIC_API_URL=https://your-api-url.com
+
+# Optional: Disable authentication for development
+# EXPO_PUBLIC_DISABLE_AUTHENTICATION=true
+```
+
+### Environment Variables
+
+| Variable | Required | Description |
+|----------|----------|-------------|
+| `EXPO_PUBLIC_API_URL` | Yes | Backend API URL (defaults to `https://w-shipping-api.onrender.com`) |
+| `EXPO_PUBLIC_DISABLE_AUTHENTICATION` | No | Set to `true` to bypass login during development |
+
+## Installation
+
+1. **Clone the repository**
+   ```bash
+   git clone <repository-url>
+   cd mobile-apps-team-07
+   ```
+
+2. **Install dependencies**
    ```bash
    npm install
    ```
 
-2. Start the app
-
+3. **Install iOS dependencies** (macOS only)
    ```bash
-   npx expo start
+   cd ios && pod install && cd ..
    ```
 
-In the output, you'll find options to open the app in a
+## Running the App
 
-- [development build](https://docs.expo.dev/develop/development-builds/introduction/)
-- [Android emulator](https://docs.expo.dev/workflow/android-studio-emulator/)
-- [iOS simulator](https://docs.expo.dev/workflow/ios-simulator/)
-- [Expo Go](https://expo.dev/go), a limited sandbox for trying out app development with Expo
-
-You can start developing by editing the files inside the **app** directory. This project uses [file-based routing](https://docs.expo.dev/router/introduction).
-
-## Get a fresh project
-
-When you're ready, run:
+### iOS (macOS only)
 
 ```bash
-npm run reset-project
+# Run on iOS Simulator
+npx expo run:ios
+
+# Run on specific simulator
+npx expo run:ios --device "iPhone 15 Pro"
+
+# List available simulators
+xcrun simctl list devices
 ```
 
-This command will move the starter code to the **app-example** directory and create a blank **app** directory where you can start developing.
+### Android
 
-## Learn more
+```bash
+# Run on Android Emulator or connected device
+npx expo run:android
 
-To learn more about developing your project with Expo, look at the following resources:
+# Run on specific device
+npx expo run:android --device
+```
 
-- [Expo documentation](https://docs.expo.dev/): Learn fundamentals, or go into advanced topics with our [guides](https://docs.expo.dev/guides).
-- [Learn Expo tutorial](https://docs.expo.dev/tutorial/introduction/): Follow a step-by-step tutorial where you'll create a project that runs on Android, iOS, and the web.
+### Development Server (Expo Go)
 
-## Join the community
+```bash
+# Start the Expo development server
+npx expo start
 
-Join our community of developers creating universal apps.
+# Then scan the QR code with:
+# - iOS: Camera app
+# - Android: Expo Go app
+```
 
-- [Expo on GitHub](https://github.com/expo/expo): View our open source platform and contribute.
-- [Discord community](https://chat.expo.dev): Chat with Expo users and ask questions.
+## Troubleshooting
+
+### iOS Issues
+
+- **Pod install fails**: Run `cd ios && pod install --repo-update && cd ..`
+- **Build fails**: Open `ios/Safarban.xcworkspace` in Xcode and check for errors
+- **Simulator not found**: Run `xcrun simctl list devices` to see available simulators
+
+### Android Issues
+
+- **Token/Auth errors**: Clear app data: `adb shell pm clear com.dadez.Safarban`
+- **Build fails**: Run `cd android && ./gradlew clean && cd ..` then rebuild
+- **Emulator networking issues**: Ensure emulator has internet access
+
+### General Issues
+
+- **Session expired errors**: Log out, force close app, log in again
+- **API connection issues**: Verify `EXPO_PUBLIC_API_URL` in `.env` file
+- **Cache issues**: Clear Metro cache: `npx expo start --clear`
+
+## Project Structure
+
+```
+mobile-apps-team-07/
+├── app/                    # App screens (file-based routing)
+│   ├── (tabs)/            # Tab navigation screens
+│   ├── document-processing/ # Document upload & review
+│   └── vessel/            # Vessel details & voyages
+├── components/            # Reusable UI components
+│   ├── common/           # Shared components (Loader, ThemedView, etc.)
+│   ├── vessel/           # Vessel-specific components
+│   └── voyage/           # Voyage-specific components
+├── hooks/                # Custom React hooks
+│   └── queries/          # React Query hooks for API
+├── services/             # API services and business logic
+├── types/                # TypeScript type definitions
+├── context/              # React Context providers
+├── lib/                  # Utility functions and database
+├── constants/            # App constants and configuration
+├── android/              # Android native code
+└── ios/                  # iOS native code
+```
+
+## Tech Stack
+
+- **Framework**: React Native with Expo
+- **Navigation**: Expo Router (file-based routing)
+- **Styling**: NativeWind (Tailwind CSS for React Native)
+- **State Management**: React Query (TanStack Query)
+- **Storage**: Expo SecureStore (tokens), SQLite (cache)
+- **UI Components**: Custom components with Lucide icons
+
+## Team
+
+Mobile Applications Project - Team 07
+
+## License
+
+This project is part of an academic course assignment.

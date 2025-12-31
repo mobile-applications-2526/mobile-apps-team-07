@@ -160,11 +160,14 @@ export function VesselDetailsProvider({ children }: VesselDetailsProviderProps) 
   const isLocked = isGasCarrierVessel ? !(hasQ88 && hasFormC) : !hasQ88;
 
   const refreshVessel = useCallback(async () => {
-    await queryClient.invalidateQueries({ queryKey: vesselKeys.detail(id) });
+    // Use refetchQueries to actually wait for the data to be fetched
+    await queryClient.refetchQueries({ queryKey: vesselKeys.detail(id) });
   }, [id, queryClient]);
 
   const refreshVesselVoyages = useCallback(async () => {
-    await queryClient.invalidateQueries({ queryKey: voyageKeys.byVessel(id) });
+    // Use refetchQueries to actually wait for the data to be fetched
+    // invalidateQueries only marks as stale, doesn't wait for refetch
+    await queryClient.refetchQueries({ queryKey: voyageKeys.byVessel(id) });
   }, [id, queryClient]);
 
   const getLatestNoonReport = useCallback(async (vesselId: number): Promise<NoonReport | null> => {

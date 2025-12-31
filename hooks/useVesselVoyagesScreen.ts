@@ -227,7 +227,7 @@ export function useVesselVoyagesScreen(): UseVesselVoyagesScreenReturn {
         haptics.successNotification();
         setShowPortSheet(false);
         setEditingPort(null);
-        refresh();
+        await refresh();
       } catch (error) {
         haptics.errorNotification();
         console.error('Failed to save port:', error);
@@ -248,7 +248,7 @@ export function useVesselVoyagesScreen(): UseVesselVoyagesScreenReturn {
         haptics.successNotification();
         setShowPortSheet(false);
         setEditingPort(null);
-        refresh();
+        await refresh();
       } catch (error) {
         haptics.errorNotification();
         console.error('Failed to delete port:', error);
@@ -291,7 +291,7 @@ export function useVesselVoyagesScreen(): UseVesselVoyagesScreenReturn {
         haptics.successNotification();
         setShowCargoSheet(false);
         setEditingCargo(null);
-        refresh();
+        await refresh();
       } catch (error) {
         haptics.errorNotification();
         console.error('Failed to save cargo:', error);
@@ -312,7 +312,7 @@ export function useVesselVoyagesScreen(): UseVesselVoyagesScreenReturn {
         haptics.successNotification();
         setShowCargoSheet(false);
         setEditingCargo(null);
-        refresh();
+        await refresh();
       } catch (error) {
         haptics.errorNotification();
         console.error('Failed to delete cargo:', error);

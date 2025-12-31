@@ -126,7 +126,8 @@ export default function ExtractionReviewScreen() {
     return {
       total: fields.length,
       validated: fields.filter((f) => f.validated).length,
-      lowConfidence: fields.filter((f) => (f.confidenceScore ?? 0) < 70).length,
+      // Only count unvalidated low-confidence fields (validated ones have been reviewed)
+      lowConfidence: fields.filter((f) => !f.validated && (f.confidenceScore ?? 0) < 70).length,
       averageConfidence: extraction?.averageConfidence || 0,
     };
   }, [extraction]);
@@ -383,7 +384,8 @@ export default function ExtractionReviewScreen() {
             const tableStats = {
               total: fields.length,
               validated: fields.filter((f) => f.validated).length,
-              lowConfidence: fields.filter((f) => (f.confidenceScore ?? 0) < 70).length,
+              // Only count unvalidated low-confidence fields
+              lowConfidence: fields.filter((f) => !f.validated && (f.confidenceScore ?? 0) < 70).length,
             };
 
             return (
@@ -554,21 +556,21 @@ const FieldRow: React.FC<FieldRowProps> = React.memo(({
 
       {/* Action Buttons */}
       <View className="flex-row items-center ml-2">
+        {/* Always show edit button - even validated fields can be edited */}
+        <TouchableOpacity
+          className="w-8 h-8 rounded-full bg-gray-100 dark:bg-gray-800 items-center justify-center mr-2"
+          onPress={onStartEdit}
+        >
+          <Edit3 size={14} color="#6b7280" />
+        </TouchableOpacity>
+        {/* Only show validate button for non-validated fields */}
         {!field.validated && (
-          <>
-            <TouchableOpacity
-              className="w-8 h-8 rounded-full bg-gray-100 dark:bg-gray-800 items-center justify-center mr-2"
-              onPress={onStartEdit}
-            >
-              <Edit3 size={14} color="#6b7280" />
-            </TouchableOpacity>
-            <TouchableOpacity
-              className="w-8 h-8 rounded-full bg-green-100 dark:bg-green-900/30 items-center justify-center"
-              onPress={() => onValidate(field, undefined, true)}
-            >
-              <Check size={14} color="#22c55e" />
-            </TouchableOpacity>
-          </>
+          <TouchableOpacity
+            className="w-8 h-8 rounded-full bg-green-100 dark:bg-green-900/30 items-center justify-center"
+            onPress={() => onValidate(field, undefined, true)}
+          >
+            <Check size={14} color="#22c55e" />
+          </TouchableOpacity>
         )}
       </View>
     </View>

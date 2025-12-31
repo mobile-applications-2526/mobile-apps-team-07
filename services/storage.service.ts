@@ -9,17 +9,20 @@ export const StorageService = {
     saveToken: async (token: string) => {
         try {
             await SecureStore.setItemAsync(TOKEN_KEY, token);
+            console.log('[Storage] Token saved successfully');
         } catch (error) {
-            console.error('Error saving token:', error);
+            console.error('[Storage] Error saving token:', error);
             throw error;
         }
     },
 
     getToken: async (): Promise<string | null> => {
         try {
-            return await SecureStore.getItemAsync(TOKEN_KEY);
+            const token = await SecureStore.getItemAsync(TOKEN_KEY);
+            console.log(`[Storage] getToken: ${token ? 'found' : 'not found'}`);
+            return token;
         } catch (error) {
-            console.error('Error getting token:', error);
+            console.error('[Storage] Error getting token:', error);
             return null; // Fail gracefully
         }
     },
