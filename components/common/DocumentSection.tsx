@@ -15,6 +15,7 @@ interface DocumentsSectionProps {
   onReplace: (type: DocumentType, documentId: number) => Promise<void>;
   onDownload: (doc: Document) => Promise<void>;
   onDelete: (id: number) => Promise<void>;
+  testID?: string;
 }
 
 export function DocumentsSection({
@@ -24,7 +25,8 @@ export function DocumentsSection({
   onUpload,
   onReplace,
   onDownload,
-  onDelete
+  onDelete,
+  testID
 }: DocumentsSectionProps) {
 
   const IOS = Platform.OS == 'ios';
@@ -71,7 +73,7 @@ export function DocumentsSection({
   };
 
   return (
-    <View>
+    <View testID={testID}>
       {/* Header with Document Type Selector */}
       <View className="mb-4">
         {title && (
@@ -83,6 +85,7 @@ export function DocumentsSection({
         {/* Document Type Button */}
         {IOS?(
           <TouchableOpacity
+            testID={testID ? `${testID}-type-selector` : undefined}
             onPress={handleDocumentTypePress}
             className="flex-row items-center justify-between p-3 bg-[#F2F2F7] dark:bg-[#2C2C2E] rounded-xl"
             activeOpacity={0.7}
@@ -117,9 +120,10 @@ export function DocumentsSection({
       <View>
         {filteredDocs.length > 0 ? (
           <View>
-            {filteredDocs.map((doc) => (
+            {filteredDocs.map((doc, index) => (
               <DocumentUpload
                 key={doc.id}
+                testID={testID ? `${testID}-doc-${index}` : undefined}
                 optional
                 type={selectedType!}
                 title={doc.documentName || selectedLabel!}
@@ -139,6 +143,7 @@ export function DocumentsSection({
             {/* If we strictly want to mimic "Add new" as a placeholder card below the list: */}
             {category !== 'vessels' && (
               <TouchableOpacity
+                testID={testID ? `${testID}-add-another` : undefined}
                 onPress={() => onUpload(selectedType!)}
                 activeOpacity={0.6}
                 className="w-full items-center justify-center border-2 border-dashed border-gray-300 dark:border-gray-700 rounded-xl py-4 bg-gray-50 dark:bg-gray-900/30 mt-2"
@@ -152,6 +157,7 @@ export function DocumentsSection({
           </View>
         ) : (
           <TouchableOpacity
+            testID={testID ? `${testID}-upload-empty` : undefined}
             onPress={() => onUpload(selectedType!)}
             activeOpacity={0.6}
             className="w-full items-center justify-center border-2 border-dashed border-gray-300 dark:border-gray-700 rounded-xl py-4 bg-gray-50 dark:bg-gray-900/30"

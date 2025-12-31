@@ -16,3 +16,4 @@ export { DocumentViewer } from './DocumentViewer';
 export { PdfViewer } from './PdfViewer';
 export { ImageViewer } from './ImageViewer';
 export { DocumentPlaceholder } from './DocumentPlaceholder';
+export { ProcessDocumentButton } from './ProcessDocumentButton';

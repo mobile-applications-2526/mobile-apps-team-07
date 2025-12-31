@@ -37,13 +37,14 @@ export default function SignIn() {
     }
 
     return (
-        <ThemedView className="flex-1 bg-white dark:bg-black p-4">
+        <ThemedView testID="sign-in-screen" className="flex-1 bg-white dark:bg-black p-4">
             <KeyboardAvoidingView
                 behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
                 className="flex-1"
             >
                 <ScrollView contentContainerStyle={{ flexGrow: 1, justifyContent: 'center' }}>
                     <TouchableOpacity
+                        testID="sign-in-back-button"
                         onPress={() => router.back()}
                         className="absolute top-12 left-0 z-10 w-8 h-8 items-center justify-center rounded-full bg-gray-100 dark:bg-gray-800"
                     >
@@ -55,13 +56,14 @@ export default function SignIn() {
                     </View>
 
                     {error && (
-                        <View className="mb-4 bg-red-50 dark:bg-red-900/20 p-3 rounded-lg">
+                        <View testID="error-message" className="mb-4 bg-red-50 dark:bg-red-900/20 p-3 rounded-lg">
                             <ThemedText className="text-red-500 text-center text-sm">{error}</ThemedText>
                         </View>
                     )}
 
                     <View className="space-y-6 gap-4">
                         <AuthInput
+                            testID="email-input"
                             label="Email"
                             placeholder="Enter your email"
                             value={email}
@@ -71,6 +73,7 @@ export default function SignIn() {
                         />
 
                         <AuthInput
+                            testID="password-input"
                             label="Password"
                             placeholder="Enter your password"
                             value={password}
@@ -80,6 +83,7 @@ export default function SignIn() {
 
                         <View className="pt-2">
                             <AuthButton
+                                testID="sign-in-button"
                                 title="Sign In"
                                 onPress={handleSignIn}
                             />

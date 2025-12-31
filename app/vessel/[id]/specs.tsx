@@ -29,7 +29,7 @@ export default function VesselSpecs() {
   const isGasCarrier = vesselTypeRaw.includes('gas') && vesselTypeRaw.includes('carrier');
 
   return (
-    <ThemedView className="flex-1 bg-gray-100 dark:bg-[#000]">
+    <ThemedView testID="vessel-specs-screen" className="flex-1 bg-gray-100 dark:bg-[#000]">
       <VesselTopBar
         vesselName={vessel?.vesselName ?? ''}
         vesselImage={vessel?.vesselPicture}
@@ -43,7 +43,7 @@ export default function VesselSpecs() {
         {/* Progress is now shown in the navbar */}
 
         {/* Required Documents Section */}
-        <Card className="mb-3">
+        <Card testID="required-docs-section" className="mb-3">
           <View className="flex-row items-center mb-3">
             <Text
               className="text-xs font-medium bg-gray-100 dark:bg-gray-800 text-gray-500 dark:text-gray-400 py-1 px-2.5 rounded overflow-hidden"
@@ -52,6 +52,7 @@ export default function VesselSpecs() {
             </Text>
           </View>
           <DocumentUpload
+            testID="doc-upload-q88"
             type="Q88"
             title="Q88"
             doc={findDoc('Q88')}
@@ -64,6 +65,7 @@ export default function VesselSpecs() {
           {/* Only show Form C for Gas Carrier vessels */}
           {isGasCarrier && (
             <DocumentUpload
+              testID="doc-upload-formc"
               type="FormC"
               title="Form C"
               doc={findDoc('FormC')}
@@ -77,7 +79,7 @@ export default function VesselSpecs() {
         </Card>
 
         {/* Optional Documents Section */}
-        <Card className="mb-3">
+        <Card testID="optional-docs-section" className="mb-3">
           <View className="flex-row items-center mb-3">
             <Text
               className="text-xs font-medium bg-gray-100 dark:bg-gray-800 text-gray-500 dark:text-gray-400 py-1 px-2.5 rounded overflow-hidden"
@@ -86,6 +88,7 @@ export default function VesselSpecs() {
             </Text>
           </View>
           <DocumentsSection
+            testID="documents-section"
             documents={documents}
             category='vessels'
             onUpload={uploadDocument}

@@ -110,8 +110,8 @@ export default function EditInvoiceSheet({ invoice, onClose, onSave }: EditInvoi
             handleIndicatorStyle={{ backgroundColor: isDark ? '#404040' : '#e5e7eb' }}
             onDismiss={onClose}
         >
-            <View style={styles.header}>
-                <ThemedText style={styles.headerTitle}>Edit Invoice</ThemedText>
+            <View testID="edit-invoice-sheet" style={styles.header}>
+                <ThemedText testID="edit-invoice-title" style={styles.headerTitle}>Edit Invoice</ThemedText>
             </View>
 
             <BottomSheetScrollView
@@ -127,6 +127,7 @@ export default function EditInvoiceSheet({ invoice, onClose, onSave }: EditInvoi
                     <View style={styles.fieldContainer}>
                         <ThemedText style={styles.label}>Invoice Number</ThemedText>
                         <TextInput
+                            testID="edit-invoice-number-input"
                             style={[styles.input, isDark && styles.inputDark]}
                             value={formState.number}
                             onChangeText={v => setFormState(s => ({ ...s, number: v }))}
@@ -221,6 +222,7 @@ export default function EditInvoiceSheet({ invoice, onClose, onSave }: EditInvoi
                     <View style={styles.fieldContainer}>
                         <ThemedText style={styles.label}>Amount</ThemedText>
                         <TextInput
+                            testID="edit-invoice-amount-input"
                             style={[styles.input, isDark && styles.inputDark]}
                             value={formState.amount}
                             keyboardType="numeric"
@@ -256,7 +258,7 @@ export default function EditInvoiceSheet({ invoice, onClose, onSave }: EditInvoi
                     </View>
                 </View>
 
-                <Pressable onPress={handleSave} style={styles.submitButton}>
+                <Pressable testID="edit-invoice-save" onPress={handleSave} style={styles.submitButton}>
                     <ThemedText style={styles.submitButtonText}>Save</ThemedText>
                 </Pressable>
 

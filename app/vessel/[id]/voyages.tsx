@@ -37,6 +37,7 @@ export default function VesselVoyages() {
 
   const AddVoyageButton = (
     <TouchableOpacity
+      testID="add-voyage-button"
       onPress={handleAddVoyage}
       className="p-2 bg-blue-600 rounded-full"
     >
@@ -46,7 +47,7 @@ export default function VesselVoyages() {
 
   if (isLoadingVessel || isLoadingVoyage) {
     return (
-      <ThemedView className="flex-1 bg-gray-100 dark:bg-[#000]">
+      <ThemedView testID="vessel-voyages-loading" className="flex-1 bg-gray-100 dark:bg-[#000]">
         <VesselTopBar
           vesselName={vessel?.vesselName ?? ''}
           vesselImage={vessel?.vesselPicture}
@@ -58,7 +59,7 @@ export default function VesselVoyages() {
   }
 
   return (
-    <ThemedView className="flex-1 bg-gray-100 dark:bg-[#000]">
+    <ThemedView testID="vessel-voyages-screen" className="flex-1 bg-gray-100 dark:bg-[#000]">
       {/* Top App Bar */}
       <VesselTopBar
         vesselName={vessel?.vesselName ?? ''}

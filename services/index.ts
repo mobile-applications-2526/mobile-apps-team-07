@@ -11,6 +11,7 @@ export * as noonReportService from './noonReport.service';
 export * as documentService from './document.service';
 export * as invoiceService from './invoice.service';
 export * as cargoService from './cargo.service';
+export * as documentProcessingService from './documentProcessing.service';
 
 // Export service objects
 export { AuthService } from './auth.service';

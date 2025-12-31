@@ -21,9 +21,10 @@ interface VesselCardProps {
   status: VesselStatus | null;
   onDeletePress: (vessel: Vessel) => void;
   onEditPress?: (vessel: Vessel) => void;
+  testID?: string;
 }
 
-export function VesselCard({ vessel, voyage, status, onDeletePress, onEditPress }: VesselCardProps) {
+export function VesselCard({ vessel, voyage, status, onDeletePress, onEditPress, testID }: VesselCardProps) {
   const router = useRouter();
   const { lightImpact, mediumImpact } = useHaptics();
   const [showImageViewer, setShowImageViewer] = useState(false);
@@ -114,6 +115,7 @@ export function VesselCard({ vessel, voyage, status, onDeletePress, onEditPress 
 
   return (
     <TouchableOpacity
+      testID={testID}
       className="bg-white dark:bg-[#1c1c1e] rounded-xl mb-2.5 overflow-hidden"
       activeOpacity={0.7}
       onPress={handlePress}
@@ -166,6 +168,7 @@ export function VesselCard({ vessel, voyage, status, onDeletePress, onEditPress 
         {/* Action Icons */}
         <View className="items-center justify-center h-10">
           <TouchableOpacity
+            testID={testID ? `${testID}-delete` : undefined}
             className="p-1.5"
             activeOpacity={0.6}
             hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
@@ -174,6 +177,7 @@ export function VesselCard({ vessel, voyage, status, onDeletePress, onEditPress 
             <Trash2 size={16} color="#9ca3af" />
           </TouchableOpacity>
           <TouchableOpacity
+            testID={testID ? `${testID}-edit` : undefined}
             className="p-1.5 mt-1"
             activeOpacity={0.6}
             hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}

@@ -23,7 +23,7 @@ export default function Overview() {
   }
 
   return (
-    <ThemedView className="flex-1 bg-gray-100 dark:bg-[#000]">
+    <ThemedView testID="fleet-overview-screen" className="flex-1 bg-gray-100 dark:bg-[#000]">
       {/* Header */}
       <View
         className="px-4 pb-3 bg-white dark:bg-[#1c1c1e] border-b border-gray-100 dark:border-gray-800"
@@ -31,15 +31,16 @@ export default function Overview() {
       >
         <View className="flex-row items-center justify-between">
           <View>
-            <ThemedText type="title" className="text-2xl font-bold">
+            <ThemedText testID="fleet-title" type="title" className="text-2xl font-bold">
               My Fleet
             </ThemedText>
-            <ThemedText className="text-xs text-gray-400 dark:text-gray-500 mt-0.5">
+            <ThemedText testID="vessel-count" className="text-xs text-gray-400 dark:text-gray-500 mt-0.5">
               {state.vesselsWithStatus.length} vessel{state.vesselsWithStatus.length !== 1 ? 's' : ''}
             </ThemedText>
           </View>
           <View className="flex-row items-center gap-3">
             <TouchableOpacity
+              testID="settings-button"
               className="w-9 h-9 rounded-full bg-gray-200 dark:bg-gray-800 items-center justify-center"
               activeOpacity={0.8}
               onPress={() => router.push('/settings')}
@@ -48,6 +49,7 @@ export default function Overview() {
             </TouchableOpacity>
 
             <TouchableOpacity
+              testID="add-vessel-button"
               className="w-9 h-9 rounded-full bg-blue-500 items-center justify-center"
               activeOpacity={0.8}
               onPress={actions.handleAddPress}
@@ -61,10 +63,12 @@ export default function Overview() {
       {/* Vessel List */}
       <View className="flex-1 relative">
         <FlatList
+          testID="vessel-list"
           data={state.vesselsWithStatus}
           keyExtractor={(item) => item.vessel.id.toString()}
-          renderItem={({ item }) =>
+          renderItem={({ item, index }) =>
             <VesselCard
+              testID={`vessel-card-${index}`}
               vessel={item.vessel}
               voyage={item.activeVoyage}
               status={item.latestStatus}
@@ -80,6 +84,7 @@ export default function Overview() {
           ListEmptyComponent={<EmptyVesselList />}
           refreshControl={
             <RefreshControl
+              testID="fleet-refresh-control"
               refreshing={state.isLoading}
               onRefresh={actions.onRefresh}
               tintColor="#007AFF" // Optional: iOS spinner color

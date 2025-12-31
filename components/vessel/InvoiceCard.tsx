@@ -12,6 +12,7 @@ interface InvoiceCardProps {
     onEdit: (i: Invoice) => void;
     onDelete: (i: Invoice) => void;
     processing?: boolean;
+    testID?: string;
 }
 
 export function InvoiceCard({
@@ -19,7 +20,8 @@ export function InvoiceCard({
     onDownload,
     onEdit,
     onDelete,
-    processing
+    processing,
+    testID
 }: InvoiceCardProps) {
     const { mediumImpact } = useHaptics();
 
@@ -37,6 +39,7 @@ export function InvoiceCard({
 
     return (
         <View
+            testID={testID}
             className="bg-white dark:bg-[#1c1c1e] rounded-xl mb-3 overflow-hidden"
             style={{
                 shadowColor: '#000',
@@ -67,6 +70,7 @@ export function InvoiceCard({
                 {/* Actions */}
                 <View className="flex-row items-center">
                     <TouchableOpacity
+                        testID={testID ? `${testID}-download` : undefined}
                         className="p-2"
                         onPress={() => onDownload(invoice)}
                         disabled={!!processing}
@@ -75,6 +79,7 @@ export function InvoiceCard({
                         <Download size={16} color={processing ? '#d1d5db' : '#9ca3af'} />
                     </TouchableOpacity>
                     <TouchableOpacity
+                        testID={testID ? `${testID}-edit` : undefined}
                         className="p-2"
                         onPress={() => onEdit(invoice)}
                         disabled={!!processing}
@@ -83,6 +88,7 @@ export function InvoiceCard({
                         <Pencil size={16} color={processing ? '#d1d5db' : '#9ca3af'} />
                     </TouchableOpacity>
                     <TouchableOpacity
+                        testID={testID ? `${testID}-delete` : undefined}
                         className="p-2"
                         onPress={() => { mediumImpact(); onDelete(invoice); }}
                         disabled={!!processing}

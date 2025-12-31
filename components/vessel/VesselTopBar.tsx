@@ -9,14 +9,16 @@ interface VesselTopBarProps {
   vesselName: string;
   vesselImage?: string | null;
   rightContent?: React.ReactNode;
+  testID?: string;
 }
 
-export function VesselTopBar({ vesselName, vesselImage, rightContent }: VesselTopBarProps) {
+export function VesselTopBar({ vesselName, vesselImage, rightContent, testID }: VesselTopBarProps) {
   const insets = useSafeAreaInsets();
   const [showImageViewer, setShowImageViewer] = useState(false);
 
   return (
     <View
+      testID={testID || "vessel-top-bar"}
       className="px-4 bg-white dark:bg-[#1c1c1e] border-b border-gray-200 dark:border-gray-800 flex-row items-center justify-between"
       style={{
         paddingTop: insets.top + 8,
@@ -24,7 +26,7 @@ export function VesselTopBar({ vesselName, vesselImage, rightContent }: VesselTo
       }}
     >
       <View className="flex-1 mr-4">
-        <ThemedText type="title" className="text-xl font-bold" numberOfLines={1}>
+        <ThemedText testID={testID ? `${testID}-name` : "vessel-top-bar-name"} type="title" className="text-xl font-bold" numberOfLines={1}>
           {vesselName}
         </ThemedText>
       </View>
@@ -38,6 +40,7 @@ export function VesselTopBar({ vesselName, vesselImage, rightContent }: VesselTo
 
         {/* Vessel Image */}
         <Pressable
+          testID={testID ? `${testID}-image` : "vessel-top-bar-image"}
           onLongPress={() => vesselImage && setShowImageViewer(true)}
           delayLongPress={300}
         >

@@ -317,6 +317,7 @@ export function VoyageDetails({
               <View>
                 {noonReports.map((report, index) => (
                   <NoonReportCard
+                    key={report.id ?? index}
                     index={index}
                     report={report}
                     formatDate={formatDate}/>

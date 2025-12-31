@@ -36,9 +36,9 @@ export default function VesselOverview() {
   }
 
   return (
-    <View className="flex-1 relative">
+    <View testID="vessel-overview-screen" className="flex-1 relative">
       {/* 1. LAYER: Background Map */}
-      <View style={StyleSheet.absoluteFill}>
+      <View testID="vessel-map" style={StyleSheet.absoluteFill}>
         <VesselMap
           latitude={vesselStatus?.latitude}
           longitude={vesselStatus?.longitude}

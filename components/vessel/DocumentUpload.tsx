@@ -15,6 +15,7 @@ type Props = {
   onDownload: (doc: DocType) => void;
   onDelete: (id: number) => void;
   hasBorder?: boolean;
+  testID?: string;
 };
 
 export const DocumentUpload: React.FC<Props> = ({
@@ -26,9 +27,10 @@ export const DocumentUpload: React.FC<Props> = ({
   onDownload,
   onDelete,
   hasBorder,
+  testID,
 }) => {
   return (
-    <View className={`w-full mb-4 ${hasBorder ? 'border-t border-gray-100 dark:border-gray-800 pt-4 mt-2' : ''}`}>
+    <View testID={testID} className={`w-full mb-4 ${hasBorder ? 'border-t border-gray-100 dark:border-gray-800 pt-4 mt-2' : ''}`}>
       <View className="mb-2">
         <View className="flex-row items-center justify-between w-full">
           <View className="flex-row items-center flex-shrink-0">
@@ -47,6 +49,7 @@ export const DocumentUpload: React.FC<Props> = ({
                 Uploaded {new Date(doc.documentDate).toLocaleDateString('en-US', { day: 'numeric', month: 'short', year: 'numeric' })}
               </ThemedText>
               <TouchableOpacity
+                testID={testID ? `${testID}-replace` : undefined}
                 onPress={() => onReplace(type, doc.id)}
                 className="w-full px-3 py-2 border border-blue-500 dark:border-blue-400 rounded-lg items-center justify-center mb-2"
                 activeOpacity={0.7}
@@ -54,6 +57,7 @@ export const DocumentUpload: React.FC<Props> = ({
                 <ThemedText className="text-blue-500 dark:text-blue-400 font-medium text-xs">Replace</ThemedText>
               </TouchableOpacity>
               <TouchableOpacity
+                testID={testID ? `${testID}-download` : undefined}
                 onPress={() => onDownload(doc)}
                 className="w-full px-3 py-2 bg-blue-600 rounded-lg items-center justify-center"
                 activeOpacity={0.7}
@@ -64,6 +68,7 @@ export const DocumentUpload: React.FC<Props> = ({
                 </View>
               </TouchableOpacity>
               <TouchableOpacity
+                testID={testID ? `${testID}-delete` : undefined}
                 onPress={() => onDelete(doc.id)}
                 className="w-full px-3 py-2 border border-red-500 dark:border-red-400 rounded-lg items-center justify-center"
                 activeOpacity={0.7}
@@ -75,6 +80,7 @@ export const DocumentUpload: React.FC<Props> = ({
         </View>
       ) : (
         <TouchableOpacity
+          testID={testID ? `${testID}-upload` : undefined}
           onPress={() => onUpload(type)}
           activeOpacity={0.6}
           className="w-full items-center justify-center border-2 border-dashed border-gray-300 dark:border-gray-700 rounded-xl py-4 bg-gray-50 dark:bg-gray-900/30"

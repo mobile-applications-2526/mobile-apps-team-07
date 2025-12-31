@@ -13,3 +13,4 @@ export * from './common';
 export * from './invoice';
 export * from './cargo';
 export * from './documentViewer';
+export * from './documentProcessing';

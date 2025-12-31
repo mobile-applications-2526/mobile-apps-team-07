@@ -190,8 +190,8 @@ export default function EditVesselModal({
       handleIndicatorStyle={{ backgroundColor: isDark ? '#404040' : '#e5e7eb' }}
       onDismiss={onCancel}
     >
-      <View style={styles.header}>
-        <ThemedText style={styles.headerTitle}>Edit Vessel</ThemedText>
+      <View testID="edit-vessel-modal" style={styles.header}>
+        <ThemedText testID="edit-vessel-title" style={styles.headerTitle}>Edit Vessel</ThemedText>
       </View>
 
       <BottomSheetScrollView
@@ -208,6 +208,7 @@ export default function EditVesselModal({
             <View style={[styles.input, isDark && styles.inputDark, { flexDirection: 'row', alignItems: 'center' }]}>
               <ThemedText style={{ fontSize: 17, color: isDark ? '#FFF' : '#000', minWidth: 100 }}>Name</ThemedText>
               <TextInput
+                testID="edit-vessel-name-input"
                 style={[styles.nativeInput, isDark && { color: '#FFF' }]}
                 placeholder="Enter name"
                 placeholderTextColor={isDark ? '#666' : '#999'}
@@ -236,6 +237,7 @@ export default function EditVesselModal({
           <View style={styles.fieldContainer}>
             <ThemedText style={styles.label}>Vessel Type</ThemedText>
             <Pressable
+              testID="edit-vessel-type-picker"
               onPress={() => showSelection('Select Vessel Type', [...VESSEL_TYPES], (opt) => setVesselType(opt as VesselType))}
               style={[styles.input, isDark && styles.inputDark, { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' }]}
             >
@@ -248,6 +250,7 @@ export default function EditVesselModal({
           <View style={styles.fieldContainer}>
             <ThemedText style={styles.label}>Subtype</ThemedText>
             <Pressable
+              testID="edit-vessel-subtype-picker"
               onPress={() => showSelection('Select Subtype', (SUBTYPES[vesselType] || SUBTYPES['Gas Carrier']), (opt) => setVesselSubtype(opt))}
               style={[styles.input, isDark && styles.inputDark, { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' }]}
             >
@@ -260,6 +263,7 @@ export default function EditVesselModal({
           <View style={styles.fieldContainer}>
             <ThemedText style={styles.label}>Vessel Photo</ThemedText>
             <Pressable
+              testID="edit-vessel-photo-button"
               onPress={showImageSelection}
               style={[styles.input, isDark && styles.inputDark, { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' }]}
             >
@@ -267,6 +271,7 @@ export default function EditVesselModal({
               <View style={{ flexDirection: 'row', alignItems: 'center' }}>
                 {vesselPicture ? (
                   <Image
+                    testID="edit-vessel-photo-preview"
                     source={{ uri: vesselPicture }}
                     style={{ width: 32, height: 32, borderRadius: 4, marginRight: 8 }}
                   />
@@ -279,6 +284,7 @@ export default function EditVesselModal({
 
         {/* Submit Button */}
         <Pressable
+          testID="save-vessel-button"
           onPress={handleSubmit}
           disabled={!isFormValid || isSaving}
           style={[

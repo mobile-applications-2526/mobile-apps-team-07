@@ -398,8 +398,8 @@ export default function CreateInvoiceSheet({ visible, onClose, onSuccess, vessel
             handleIndicatorStyle={{ backgroundColor: isDark ? '#404040' : '#e5e7eb' }}
             onDismiss={onClose}
         >
-            <View style={styles.header}>
-                <ThemedText style={styles.headerTitle}>Create Invoice</ThemedText>
+            <View testID="create-invoice-sheet" style={styles.header}>
+                <ThemedText testID="create-invoice-title" style={styles.headerTitle}>Create Invoice</ThemedText>
             </View>
 
             <BottomSheetScrollView contentContainerStyle={styles.content} showsVerticalScrollIndicator={false}>
@@ -426,7 +426,7 @@ export default function CreateInvoiceSheet({ visible, onClose, onSuccess, vessel
                     <ThemedText style={styles.sectionHeader}>Basic Information</ThemedText>
                     <View style={styles.fieldContainer}>
                         <ThemedText style={styles.label}>Invoice Number</ThemedText>
-                        <TextInput style={[styles.input, isDark && styles.inputDark]} value={invoiceNumber} onChangeText={setInvoiceNumber} />
+                        <TextInput testID="create-invoice-number-input" style={[styles.input, isDark && styles.inputDark]} value={invoiceNumber} onChangeText={setInvoiceNumber} />
                     </View>
                     <View>{renderDateInput('Invoice Date', invoiceDate, 'invoice')}{renderDateInput('Due Date', dueDate, 'due')}</View>
 
@@ -566,7 +566,7 @@ export default function CreateInvoiceSheet({ visible, onClose, onSuccess, vessel
                 <View style={{ marginTop: 24, marginBottom: 48, alignItems: 'center', paddingHorizontal: 16 }}>
                     <ThemedText style={{ fontSize: 16, color: '#666' }}>Total Invoice Amount</ThemedText>
                     <ThemedText style={{ fontSize: 24, fontWeight: '800', marginVertical: 16 }}>{currency} {grandTotal.toLocaleString('en-US', { minimumFractionDigits: 2 })}</ThemedText>
-                    <Pressable onPress={handleSubmit} disabled={processing} style={[styles.submitButton, processing && { opacity: 0.7 }]}>
+                    <Pressable testID="create-invoice-submit" onPress={handleSubmit} disabled={processing} style={[styles.submitButton, processing && { opacity: 0.7 }]}>
                         <ThemedText style={styles.submitButtonText}>{processing ? 'Creating...' : 'Generate Invoice'}</ThemedText>
                     </Pressable>
                 </View>

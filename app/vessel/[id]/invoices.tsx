@@ -76,12 +76,13 @@ export default function VesselInvoices() {
   }
 
   return (
-    <ThemedView className="flex-1 bg-gray-100 dark:bg-[#000] p-0">
+    <ThemedView testID="vessel-invoices-screen" className="flex-1 bg-gray-100 dark:bg-[#000] p-0">
       <VesselTopBar
         vesselName={vessel?.vesselName ?? ''}
         vesselImage={vessel?.vesselPicture}
         rightContent={
           <TouchableOpacity
+            testID="add-invoice-button"
             onPress={() => setShowCreateInvoice(true)}
             className="p-2 bg-blue-600 rounded-full"
           >
@@ -94,7 +95,7 @@ export default function VesselInvoices() {
         {isLoadingInvoices ? (
           <Loader />
         ) : sorted.length === 0 ? (
-          <View className="flex-1 items-center justify-center p-6">
+          <View testID="empty-invoices" className="flex-1 items-center justify-center p-6">
             <View className="w-16 h-16 rounded-full bg-gray-100 dark:bg-gray-800 items-center justify-center mb-4">
               <Receipt size={32} color="#9ca3af" />
             </View>
@@ -102,10 +103,11 @@ export default function VesselInvoices() {
           </View>
         ) : (
           <FlatList
+            testID="invoices-list"
             data={sorted}
             keyExtractor={i => i.id}
-            renderItem={({ item }) => (
-              <InvoiceCard invoice={item} onDownload={handleDownload} onEdit={handleEdit} onDelete={handleDelete} processing={!!processingMap[item.id]} />
+            renderItem={({ item, index }) => (
+              <InvoiceCard testID={`invoice-card-${index}`} invoice={item} onDownload={handleDownload} onEdit={handleEdit} onDelete={handleDelete} processing={!!processingMap[item.id]} />
             )}
             contentContainerStyle={{ paddingBottom: 48 }}
             showsVerticalScrollIndicator={false}
