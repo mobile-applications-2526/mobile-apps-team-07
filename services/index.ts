@@ -16,7 +16,7 @@ export * as documentProcessingService from './documentProcessing.service';
 // Export service objects
 export { AuthService } from './auth.service';
 export { StorageService } from './storage.service';
-export { apiClient } from './api-client.service';
+export { apiClient } from './api.client';
 
 // Export mappers
 export { mapBackendInvoice } from './mappers';

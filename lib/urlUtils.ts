@@ -4,7 +4,7 @@
  * Helper functions for URL manipulation.
  */
 
-import { API_URL } from '@/services/serviceConfig';
+import { API_URL } from '@/services/config.service';
 
 /**
  * Constructs a full URL from a relative API path.

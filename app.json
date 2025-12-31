@@ -4,7 +4,7 @@
     "slug": "Safarban",
     "version": "1.0.0",
     "orientation": "portrait",
-    "icon": "./assets/images/safarban-icon-2.0.png",
+    "icon": "./assets/images/safarban-icon-filled.png",
     "scheme": "safarban",
     "userInterfaceStyle": "automatic",
     "newArchEnabled": true,
