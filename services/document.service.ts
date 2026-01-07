@@ -12,13 +12,41 @@ const FileSystemUploadType = {
 };
 
 export const downloadDocument = async (
-  url: string
+  url: string,
+  documentName?: string
 ): Promise<any> => {
   const token = await StorageService.getToken();
 
-  // Extract filename from URL
-  const filename = url.split('/').pop() || 'document.pdf';
+  // Use provided document name, or extract from URL, or use a default
+  let filename = documentName;
+
+  if (!filename) {
+    // Try to extract filename from URL
+    const urlFilename = url.split('/').pop();
+    if (urlFilename && urlFilename.includes('.')) {
+      filename = urlFilename;
+    } else {
+      // Default filename - will be determined by content type if possible
+      filename = 'document';
+    }
+  }
+
+  // Ensure filename has an extension
+  if (!filename.includes('.')) {
+    // Try to detect extension from URL query params or default to pdf
+    const urlLower = url.toLowerCase();
+    if (urlLower.includes('.png') || urlLower.includes('png')) {
+      filename += '.png';
+    } else if (urlLower.includes('.jpg') || urlLower.includes('.jpeg') || urlLower.includes('jpeg')) {
+      filename += '.jpg';
+    } else {
+      filename += '.pdf';
+    }
+  }
+
   const fileUri = `${FileSystem.documentDirectory}${filename}`;
+
+  console.log('[Download] Starting download:', { url, filename, fileUri });
 
   // Download with auth
   const result = await FileSystem.downloadAsync(url, fileUri, {
@@ -27,8 +55,50 @@ export const downloadDocument = async (
     },
   });
 
-  // Open file
-  await Sharing.shareAsync(result.uri);
+  console.log('[Download] Result:', { status: result.status, uri: result.uri });
+
+  // Check if download was successful
+  if (result.status !== 200) {
+    console.error('[Download] Failed with status:', result.status);
+    throw new Error(`Download failed with status ${result.status}`);
+  }
+
+  // Verify file exists and has content
+  const fileInfo = await FileSystem.getInfoAsync(result.uri);
+  console.log('[Download] File info:', fileInfo);
+
+  if (!fileInfo.exists) {
+    throw new Error('Downloaded file does not exist');
+  }
+
+  // Check if file is too small (likely an error response)
+  if (fileInfo.size && fileInfo.size < 100) {
+    // Try to read the content to see if it's an error message
+    try {
+      const content = await FileSystem.readAsStringAsync(result.uri);
+      console.error('[Download] File too small, content:', content);
+      // Delete the invalid file
+      await FileSystem.deleteAsync(result.uri, { idempotent: true });
+      throw new Error(`Download failed: ${content || 'File is empty or corrupted'}`);
+    } catch (readErr) {
+      await FileSystem.deleteAsync(result.uri, { idempotent: true });
+      throw new Error('Downloaded file is empty or corrupted');
+    }
+  }
+
+  // Open file with proper MIME type based on extension
+  const extension = filename.split('.').pop()?.toLowerCase();
+  let mimeType = 'application/pdf';
+  if (extension === 'png') {
+    mimeType = 'image/png';
+  } else if (extension === 'jpg' || extension === 'jpeg') {
+    mimeType = 'image/jpeg';
+  }
+
+  await Sharing.shareAsync(result.uri, {
+    mimeType,
+    dialogTitle: `Save ${filename}`,
+  });
 }
 
 export const replaceDocument = async (

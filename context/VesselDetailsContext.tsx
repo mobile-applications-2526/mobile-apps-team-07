@@ -68,8 +68,21 @@ export function VesselDetailsProvider({ children }: VesselDetailsProviderProps) 
   const vesselStatus = vesselQuery.data?.latestStatus ?? null;
   const activeVoyage = vesselQuery.data?.activeVoyage ?? null;
   const activeCharterParty = vesselQuery.data?.activeCharter ?? null;
-  const vesselVoyages = voyagesQuery.data ?? [];
   const documents = documentsQuery.data ?? [];
+
+  // Sort voyages by start date (newest first) to ensure proper navigation
+  // New voyages will always appear at index 0
+  const vesselVoyages = useMemo(() => {
+    const voyages = voyagesQuery.data ?? [];
+    return [...voyages].sort((a, b) => {
+      // Sort by voyageStartDate descending (newest first)
+      const dateA = a.voyageStartDate ? new Date(a.voyageStartDate).getTime() : 0;
+      const dateB = b.voyageStartDate ? new Date(b.voyageStartDate).getTime() : 0;
+      if (dateB !== dateA) return dateB - dateA;
+      // If dates are equal, sort by ID descending (higher ID = newer)
+      return (b.id ?? 0) - (a.id ?? 0);
+    });
+  }, [voyagesQuery.data]);
 
   // Document flags
   const hasQ88 = useMemo(() => documents.some(d => d.documentType === 'Q88'), [documents]);

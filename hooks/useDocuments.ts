@@ -61,24 +61,25 @@ export const useDocuments = (
   const onDownload = async (doc: Document) => {
     if (!doc || !doc.fileUrl) return;
     try {
-      const url = doc.fileUrl.startsWith('http') ? doc.fileUrl 
+      const url = doc.fileUrl.startsWith('http') ? doc.fileUrl
           : `${API_URL}${doc.fileUrl}`;
       console.log('Opening document URL:', url);
-      await documentService.downloadDocument(url);
+      // Pass the document name to preserve the original file format/extension
+      await documentService.downloadDocument(url, doc.documentName);
     } catch (err) {
       console.error('Failed to open document URL', err, { doc });
       Alert.alert('Download failed', 'Unable to open document URL');
     }
   };
 
-  const pickAndValidateFile = async ()=>{
+  const pickAndValidateFile = async (): Promise<{ uri: string; name: string; mimeType: string } | null> => {
     const DocumentPicker: any = await import('expo-document-picker');
-    const res = await DocumentPicker.getDocumentAsync({ 
+    const res = await DocumentPicker.getDocumentAsync({
       type: SUPPORTED_FORMATS,
-      copyToCacheDirectory: true 
+      copyToCacheDirectory: true
     });
 
-    if (res.canceled || !res.assets || res.assets.length === 0) 
+    if (res.canceled || !res.assets || res.assets.length === 0)
       return null;
 
     const asset = res.assets[0];
@@ -89,15 +90,23 @@ export const useDocuments = (
     if (!SUPPORTED_EXTENSIONS.some(ext => lower.endsWith(ext))) {
       Alert.alert('File format error', 'Only PDF, PNG, and JPEG files are supported');
       return null;
-    }      
+    }
 
     const fileSize = asset.size || 0;
     if (fileSize > MAX_FILE_SIZE.bytes) {
       Alert.alert('File size error', `Maximum file size is ${MAX_FILE_SIZE.string}`);
       return null;
     }
-    
-    return uri;
+
+    // Determine MIME type from file extension
+    let mimeType = 'application/pdf';
+    if (lower.endsWith('.png')) {
+      mimeType = 'image/png';
+    } else if (lower.endsWith('.jpg') || lower.endsWith('.jpeg')) {
+      mimeType = 'image/jpeg';
+    }
+
+    return { uri, name, mimeType };
   }
 
   const uploadDocument = async (type: DocumentType) => {
@@ -108,13 +117,15 @@ export const useDocuments = (
     if (existing && category == 'vessels') {
       const ok = await replaceAlert(type);
 
-      if (ok) replaceDocument(type, existing.id); 
+      if (ok) replaceDocument(type, existing.id);
       else return;
     }
 
-    const uri = await pickAndValidateFile();
+    const fileInfo = await pickAndValidateFile();
 
-    if(!uri) return; 
+    if(!fileInfo) return;
+
+    const { uri, name: fileName, mimeType } = fileInfo;
 
     // Check if this document type supports OCR processing
     const processingType = PROCESSING_SUPPORTED_TYPES[type];
@@ -128,7 +139,7 @@ export const useDocuments = (
 
         const uploadResp = await documentProcessingService.uploadDocument(
           {
-            file: { uri, type: 'application/pdf', name: `${type}.pdf` },
+            file: { uri, type: mimeType, name: fileName },
             documentType: processingType,
             vesselId: subjectId,
             asyncProcessing: false,
@@ -148,7 +159,7 @@ export const useDocuments = (
           pathname: '/document-processing/processing',
           params: {
             documentId: docId.toString(),
-            documentName: `${type}.pdf`,
+            documentName: fileName,
           },
         });
       } else {
@@ -195,9 +206,11 @@ export const useDocuments = (
 
   const replaceDocument = async (type: DocumentType, documentId: number) => {
 
-    const uri = await pickAndValidateFile();
+    const fileInfo = await pickAndValidateFile();
 
-    if(!uri) return; 
+    if(!fileInfo) return;
+
+    const { uri } = fileInfo;
 
     try {
 
@@ -206,10 +219,10 @@ export const useDocuments = (
       try {
         const uploadResp = await documentService.replaceDocument(
           String(documentId),
-          String(subjectId), 
-          category, 
-          uri, 
-          type, 
+          String(subjectId),
+          category,
+          uri,
+          type,
         );
 
         console.log('Upload response:', uploadResp);

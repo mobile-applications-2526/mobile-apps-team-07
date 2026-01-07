@@ -1,7 +1,7 @@
 import { useState, useCallback, useMemo } from 'react';
-import { Alert, Linking } from 'react-native';
+import { Alert } from 'react-native';
 import { Invoice } from '@/types';
-import { invoiceService } from '@/services';
+import { invoiceService, documentService, API_URL } from '@/services';
 import { mapBackendInvoice } from '@/services';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { invoiceKeys } from './queries';
@@ -59,23 +59,37 @@ export function useInvoices(vesselId: number | undefined) {
     const downloadPdf = useCallback(async (inv: Invoice) => {
         try {
             setProcessing(inv.id, true);
-            if (inv.pdfUrl) {
-                await Linking.openURL(inv.pdfUrl);
+
+            // Get the PDF URL from invoice or fetch latest
+            let pdfUrl = inv.pdfUrl || inv.fileUrl;
+
+            if (!pdfUrl) {
+                // Fetch latest invoice to get PDF URL
+                const fresh = await invoiceService.getInvoiceById(Number(inv.id));
+                pdfUrl = (fresh as any)?.fileUrl ?? (fresh as any)?.pdfUrl ?? null;
+
+                if (pdfUrl) {
+                    // Invalidate to update cache with PDF URL
+                    queryClient.invalidateQueries({ queryKey: invoiceKeys.byVessel(vesselId!) });
+                }
+            }
+
+            if (!pdfUrl) {
+                Alert.alert('PDF not available', 'PDF is still being generated. Please try again later.');
                 return;
             }
-            // fetch latest
-            const fresh = await invoiceService.getInvoiceById(Number(inv.id));
-            const pdf = fresh?.fileUrl ?? fresh?.pdfUrl ?? null;
-            if (pdf) {
-                // Invalidate to update cache with PDF URL
-                queryClient.invalidateQueries({ queryKey: invoiceKeys.byVessel(vesselId!) });
-                await Linking.openURL(pdf);
-            } else {
-                Alert.alert('PDF not available', 'PDF is still being generated. Please try again later.');
-            }
-        } catch (err) {
+
+            // Ensure full URL construction (backend returns relative URL like /api/invoices/{id}/download)
+            const fullUrl = pdfUrl.startsWith('http') ? pdfUrl : `${API_URL}${pdfUrl}`;
+
+            // Generate a proper filename for the invoice
+            const filename = `Invoice_${inv.number.replace(/[^a-zA-Z0-9-_]/g, '_')}.pdf`;
+
+            // Use the document download service to properly download and share the file
+            await documentService.downloadDocument(fullUrl, filename);
+        } catch (err: any) {
             console.error('Download failed', err);
-            Alert.alert('Could not open PDF', 'An error occurred while opening the PDF.');
+            Alert.alert('Download failed', err?.message || 'An error occurred while downloading the invoice.');
         } finally {
             setProcessing(inv.id, false);
         }
