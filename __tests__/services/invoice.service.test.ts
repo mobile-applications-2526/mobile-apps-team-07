@@ -19,11 +19,11 @@ import {
   createTCInvoice,
   createVCInvoice,
 } from '../../services/invoice.service';
-import { apiClient } from '../../services/api-client.service';
+import { apiClient } from '../../services/api.client';
 import * as db from '../../lib/database';
 
 // Mock dependencies
-jest.mock('../../services/api-client.service', () => ({
+jest.mock('../../services/api.client', () => ({
   apiClient: {
     get: jest.fn(),
     post: jest.fn(),

@@ -6,7 +6,7 @@
  * Implements cache-first strategy: load from cache immediately, then fetch from backend and update cache.
  */
 
-import { VoyagePort, PortType } from "@/types";
+import { VoyagePort, PortType, VesselPort } from "@/types";
 import { apiClient } from "./api.client";
 import * as db from '@/lib/database';
 
@@ -164,4 +164,72 @@ export async function invalidatePortsCacheForVoyage(voyageId: number): Promise<v
   await db.deleteCacheValue(PORT_CACHE_KEYS.PORTS_BY_VOYAGE(voyageId));
   // Also invalidate voyage details cache since it includes ports
   await db.deleteCacheValue(db.CACHE_KEYS.VOYAGE_DETAILS_BY_ID(voyageId));
+}
+
+// ============================================
+// VESSEL PORT OPERATIONS (Per-Vessel Port History)
+// ============================================
+
+/**
+ * Search vessel ports (autocomplete)
+ */
+export async function searchVesselPorts(vesselId: number, query: string): Promise<VesselPort[]> {
+  const params = query ? `?query=${encodeURIComponent(query)}` : '';
+  return await apiClient.get<VesselPort[]>(`/api/vessels/${vesselId}/ports/search${params}`);
+}
+
+/**
+ * Get all ports for a vessel
+ */
+export async function getVesselPorts(vesselId: number): Promise<VesselPort[]> {
+  return await apiClient.get<VesselPort[]>(`/api/vessels/${vesselId}/ports`);
+}
+
+/**
+ * Get recent vessel ports
+ */
+export async function getRecentVesselPorts(vesselId: number): Promise<VesselPort[]> {
+  return await apiClient.get<VesselPort[]>(`/api/vessels/${vesselId}/ports/recent`);
+}
+
+/**
+ * Get most visited vessel ports
+ */
+export async function getMostVisitedVesselPorts(vesselId: number): Promise<VesselPort[]> {
+  return await apiClient.get<VesselPort[]>(`/api/vessels/${vesselId}/ports/most-visited`);
+}
+
+/**
+ * Add a new port to vessel's history
+ */
+export async function addVesselPort(vesselId: number, port: Partial<VesselPort>): Promise<VesselPort> {
+  return await apiClient.post<VesselPort>(`/api/vessels/${vesselId}/ports`, port);
+}
+
+/**
+ * Update vessel port details
+ */
+export async function updateVesselPort(
+  vesselId: number,
+  portId: number,
+  portDetails: Partial<VesselPort>
+): Promise<VesselPort> {
+  return await apiClient.put<VesselPort>(`/api/vessels/${vesselId}/ports/${portId}`, portDetails);
+}
+
+/**
+ * Record a port visit (increment visit count)
+ */
+export async function recordVesselPortVisit(vesselId: number, portCode: string): Promise<VesselPort> {
+  return await apiClient.post<VesselPort>(
+    `/api/vessels/${vesselId}/ports/visit?portCode=${encodeURIComponent(portCode)}`,
+    {}
+  );
+}
+
+/**
+ * Delete a port from vessel's history
+ */
+export async function deleteVesselPort(vesselId: number, portId: number): Promise<void> {
+  await apiClient.delete(`/api/vessels/${vesselId}/ports/${portId}`);
 }

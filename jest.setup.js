@@ -1,4 +1,28 @@
-import '@testing-library/react-native/extend-expect';
+// React 19 testing environment setup
+globalThis.IS_REACT_ACT_ENVIRONMENT = true;
+
+import '@testing-library/react-native';
+import { configure } from '@testing-library/react-native';
+
+// Enable React 19 concurrent mode support
+configure({
+  asyncUtilTimeout: 5000,
+});
+
+// Mock react-native-css-interop (NativeWind dependency)
+jest.mock('react-native-css-interop', () => ({
+  cssInterop: jest.fn((component) => component),
+  remapProps: jest.fn((component) => component),
+  useColorScheme: jest.fn(() => 'light'),
+  useUnstableNativeVariable: jest.fn(),
+  vars: jest.fn(),
+}));
+
+// Mock nativewind
+jest.mock('nativewind', () => ({
+  styled: jest.fn((component) => component),
+  useColorScheme: jest.fn(() => ({ colorScheme: 'light', setColorScheme: jest.fn(), toggleColorScheme: jest.fn() })),
+}));
 
 // Mock expo-secure-store
 jest.mock('expo-secure-store', () => ({

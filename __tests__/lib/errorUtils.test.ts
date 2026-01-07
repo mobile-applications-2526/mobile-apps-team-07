@@ -146,9 +146,19 @@ describe('Error Utilities', () => {
   // HTML ERROR PAGES
   // ============================================
   describe('HTML Error Pages', () => {
-    it('should handle HTML error responses', () => {
+    it('should handle HTML error responses with 500 status', () => {
+      // Note: The code checks for "500" before HTML, so this matches the 500 error handler
       const htmlError =
         '<!DOCTYPE html><html><body>500 Internal Server Error</body></html>';
+      const result = getFriendlyErrorMessage(htmlError);
+      expect(result).toBe(
+        'The server encountered an error. Please try again in a few minutes.'
+      );
+    });
+
+    it('should handle HTML error responses without status code', () => {
+      const htmlError =
+        '<!DOCTYPE html><html><body>Something went wrong</body></html>';
       const result = getFriendlyErrorMessage(htmlError);
       expect(result).toBe(
         'The server encountered an unexpected error. Our team has been notified.'

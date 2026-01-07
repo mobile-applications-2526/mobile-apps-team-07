@@ -4,8 +4,31 @@ import BottomSheet, { BottomSheetScrollView } from '@gorhom/bottom-sheet';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { DataSection, DataRow } from '@/components/common';
 import { KPIGraph } from '@/components/vessel/KPIGraph';
-import { Vessel, VesselKPIs, VesselStatus, Voyage, CharterParty } from '@/types';
+import { Vessel, VesselKPIs, VesselStatus, Voyage, CharterParty, BunkerInventory, WaterInventory } from '@/types';
 import { formatValue, formatDate } from '@/lib/utils';
+
+// Helper to format fuel type names
+const formatFuelType = (type: string) => {
+    const names: Record<string, string> = {
+        HFO: 'Heavy Fuel Oil',
+        LSFO: 'Low Sulphur FO',
+        MGO: 'Marine Gas Oil',
+        MDO: 'Marine Diesel',
+        ULSFO: 'Ultra Low Sulphur',
+    };
+    return names[type] || type;
+};
+
+// Helper to format water type names
+const formatWaterType = (type: string) => {
+    const names: Record<string, string> = {
+        FRESH: 'Fresh Water',
+        BALLAST: 'Ballast Water',
+        GRAY: 'Gray Water',
+        PRODUCED: 'Produced Water',
+    };
+    return names[type] || type;
+};
 
 interface VesselOverviewSheetProps {
     vessel: Vessel;
@@ -79,6 +102,59 @@ export function VesselOverviewSheet({
                         <DataRow label="Fuel ROB" value={formatValue(vesselStatus.fuelRob, ' MT')} />
                         <DataRow label="Sea Condition" value={formatValue(vesselStatus.seaCondition)} />
                         <DataRow label="Wind Force" value={formatValue(vesselStatus.windForceBeaufort, ' Beaufort')} />
+                    </DataSection>
+                )}
+
+                {/* Bunker Inventory (ROB) */}
+                {vesselStatus?.bunkerInventory && vesselStatus.bunkerInventory.length > 0 && (
+                    <DataSection title="Bunker ROB (Fuel on Board)">
+                        {vesselStatus.bunkerInventory.map((bunker, index) => (
+                            <View key={`bunker-${index}`}>
+                                <DataRow
+                                    label={formatFuelType(bunker.fuelType)}
+                                    value={formatValue(bunker.robMt, ' MT')}
+                                />
+                                {bunker.consumedMt !== undefined && bunker.consumedMt > 0 && (
+                                    <DataRow
+                                        label={`  └ Consumed`}
+                                        value={formatValue(bunker.consumedMt, ' MT/day')}
+                                    />
+                                )}
+                                {bunker.sulphurPercent !== undefined && (
+                                    <DataRow
+                                        label={`  └ Sulphur`}
+                                        value={formatValue(bunker.sulphurPercent, '%')}
+                                    />
+                                )}
+                            </View>
+                        ))}
+                    </DataSection>
+                )}
+
+                {/* Water Inventory (WOB) */}
+                {vesselStatus?.waterInventory && vesselStatus.waterInventory.length > 0 && (
+                    <DataSection title="Water on Board">
+                        {vesselStatus.waterInventory.map((water, index) => (
+                            <View key={`water-${index}`}>
+                                <DataRow
+                                    label={formatWaterType(water.waterType)}
+                                    value={formatValue(water.quantityMt, ' MT')}
+                                />
+                                {water.capacityMt !== undefined && water.capacityMt > 0 && (
+                                    <DataRow
+                                        label={`  └ Capacity`}
+                                        value={`${((water.quantityMt / water.capacityMt) * 100).toFixed(0)}% of ${water.capacityMt} MT`}
+                                    />
+                                )}
+                            </View>
+                        ))}
+                    </DataSection>
+                )}
+
+                {/* Crew on Board */}
+                {vesselStatus?.crewOnBoard !== undefined && vesselStatus.crewOnBoard > 0 && (
+                    <DataSection title="Crew">
+                        <DataRow label="Crew on Board" value={formatValue(vesselStatus.crewOnBoard)} />
                     </DataSection>
                 )}
 

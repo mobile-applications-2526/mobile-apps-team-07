@@ -85,7 +85,55 @@ export interface VesselStatus {
   fuelConsumptionAe: number;
   fuelRob: number;
   remarks: string;
-};
+  crewOnBoard?: number;
+  bunkerInventory?: BunkerInventory[];
+  waterInventory?: WaterInventory[];
+}
+
+// Fuel types for IMO 2020 compliance
+export type FuelType = 'HFO' | 'LSFO' | 'MGO' | 'MDO' | 'ULSFO';
+
+// Water types for tank tracking
+export type WaterType = 'FRESH' | 'BALLAST' | 'GRAY' | 'PRODUCED';
+
+// Bunker (fuel) inventory per noon report
+export interface BunkerInventory {
+  id: number;
+  fuelType: FuelType;
+  robMt: number;           // Remaining on board (metric tons)
+  consumedMt: number;      // Consumed since last report
+  receivedMt?: number;     // Bunkered/received
+  sulphurPercent?: number; // IMO 2020 compliance
+  viscosity?: number;      // cSt at 50°C
+  density?: number;        // kg/m³
+}
+
+// Water inventory per noon report
+export interface WaterInventory {
+  id: number;
+  waterType: WaterType;
+  quantityMt: number;      // Current quantity (metric tons)
+  capacityMt?: number;     // Tank capacity
+  consumedMt?: number;     // Daily consumption
+  producedMt?: number;     // Produced by watermaker
+}
+
+// Per-vessel port master data
+export interface VesselPort {
+  id: number;
+  portName: string;
+  portCode?: string;       // UNLOCODE (e.g., NLRTM)
+  country?: string;
+  latitude?: number;
+  longitude?: number;
+  timezone?: string;
+  visitCount?: number;
+  lastVisit?: string;
+  approachInstructions?: string;
+  pilotageNotes?: string;
+  maxDraft?: number;
+  terminalContacts?: string;
+}
 
 export interface VesselWithStatus {
   vessel: Vessel;
@@ -131,3 +179,21 @@ export type VesselActivity =
   | 'Drifting';
 
 export type NoonReport = VesselStatus;
+
+// Cargo types with OTHER option
+export type CargoType =
+  | 'CRUDE_OIL'
+  | 'REFINED_PRODUCTS'
+  | 'LNG'
+  | 'LPG'
+  | 'CHEMICALS'
+  | 'CONTAINERS'
+  | 'DRY_BULK'
+  | 'GENERAL_CARGO'
+  | 'VEHICLES'
+  | 'LIVESTOCK'
+  | 'PROPANE'
+  | 'BUTANE'
+  | 'AMMONIA'
+  | 'ETHYLENE'
+  | 'OTHER';

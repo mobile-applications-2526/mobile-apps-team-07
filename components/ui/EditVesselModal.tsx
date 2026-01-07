@@ -7,7 +7,7 @@ import { BottomSheetModal, BottomSheetBackdrop, BottomSheetScrollView } from '@g
 import { ThemedText } from '@/components/common';
 import { Camera } from 'lucide-react-native';
 import { useColorScheme } from 'nativewind';
-import { Vessel } from '@/types';
+import { Vessel, VesselSubtype } from '@/types';
 import * as ImagePicker from 'expo-image-picker';
 
 // Vessel type options
@@ -15,7 +15,7 @@ const VESSEL_TYPES = ['Gas Carrier', 'Chemical Tanker', 'MR Tanker'] as const;
 type VesselType = typeof VESSEL_TYPES[number];
 
 // Subtype options based on vessel type
-const SUBTYPES: Record<VesselType, string[]> = {
+const SUBTYPES: Record<VesselType, VesselSubtype[]> = {
   'Gas Carrier': ['LPG', 'LNG', 'LEG'],
   'Chemical Tanker': ['Type 1', 'Type 2', 'Type 3'],
   'MR Tanker': ['Clean', 'Dirty'],
@@ -44,7 +44,7 @@ export default function EditVesselModal({
   // Form State
   const [vesselName, setVesselName] = React.useState('');
   const [vesselType, setVesselType] = React.useState<VesselType>('Gas Carrier');
-  const [vesselSubtype, setVesselSubtype] = React.useState('LPG');
+  const [vesselSubtype, setVesselSubtype] = React.useState<VesselSubtype>('LPG');
   const [vesselPicture, setVesselPicture] = React.useState('');
 
   React.useEffect(() => {
@@ -251,7 +251,7 @@ export default function EditVesselModal({
             <ThemedText style={styles.label}>Subtype</ThemedText>
             <Pressable
               testID="edit-vessel-subtype-picker"
-              onPress={() => showSelection('Select Subtype', (SUBTYPES[vesselType] || SUBTYPES['Gas Carrier']), (opt) => setVesselSubtype(opt))}
+              onPress={() => showSelection('Select Subtype', (SUBTYPES[vesselType] || SUBTYPES['Gas Carrier']), (opt) => setVesselSubtype(opt as VesselSubtype))}
               style={[styles.input, isDark && styles.inputDark, { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' }]}
             >
               <ThemedText style={{ fontSize: 17, color: isDark ? '#FFF' : '#000' }}>{vesselSubtype}</ThemedText>

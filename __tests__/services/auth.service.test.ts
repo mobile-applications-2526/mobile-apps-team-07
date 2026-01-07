@@ -8,10 +8,10 @@
  */
 
 import { AuthService } from '../../services/auth.service';
-import { apiClient } from '../../services/api-client.service';
+import { apiClient } from '../../services/api.client';
 
 // Mock the API client
-jest.mock('../../services/api-client.service', () => ({
+jest.mock('../../services/api.client', () => ({
   apiClient: {
     post: jest.fn(),
     get: jest.fn(),
