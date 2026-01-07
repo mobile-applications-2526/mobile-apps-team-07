@@ -208,7 +208,7 @@ export default function TCInvoiceFormSheet({ visible, onClose, onSuccess, vessel
                 totalAmount,
                 paymentStatus: 'Pending',
                 remarks,
-                vessel: { id: parseInt(vesselId) },
+                vesselId: parseInt(vesselId),
                 periodFrom: periodFrom.toISOString().split('T')[0],
                 periodTo: periodTo.toISOString().split('T')[0],
                 hireDays: parseFloat(hireDays),
