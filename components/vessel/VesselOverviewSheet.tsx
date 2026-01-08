@@ -96,7 +96,7 @@ export function VesselOverviewSheet({
                         status={kpis?.speed.status ?? 'no_data'}
                     />
                     <KPIGraph
-                        title="Fuel Consumption"
+                        title="Fuel Cons."
                         actual={kpis?.fuelConsumption.actual ?? null}
                         target={kpis?.fuelConsumption.target ?? null}
                         actualLabel="Actual"

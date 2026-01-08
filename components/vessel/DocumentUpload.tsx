@@ -59,7 +59,7 @@ export const DocumentUpload: React.FC<Props> = ({
               <TouchableOpacity
                 testID={testID ? `${testID}-download` : undefined}
                 onPress={() => onDownload(doc)}
-                className="w-full px-3 py-2 bg-blue-600 rounded-lg items-center justify-center"
+                className="w-full px-3 py-2 bg-blue-600 rounded-lg items-center justify-center mb-2"
                 activeOpacity={0.7}
               >
                 <View className="flex-row items-center gap-2">

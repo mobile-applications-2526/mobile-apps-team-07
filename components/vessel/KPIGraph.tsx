@@ -102,18 +102,19 @@ export function KPIGraph({
     return (
         <View className="mb-4">
             <View className="flex-row justify-between items-center mb-2">
-                <ThemedText className="text-sm font-medium">{title}</ThemedText>
-                <View className="flex-row items-center">
-                    <ThemedText className="text-sm font-bold">
-                        {actual !== null ? `${actual} ${unit}` : '-'}
+                <ThemedText className="text-sm font-medium" style={{ flexShrink: 0 }}>{title}</ThemedText>
+                <View className="flex-row items-center" style={{ flexShrink: 1, marginLeft: 8 }}>
+                    <ThemedText className="text-sm font-bold" numberOfLines={1}>
+                        {actual !== null ? `${actual.toFixed(1)}` : '-'}
                     </ThemedText>
-                    <ThemedText className="text-sm text-gray-500 dark:text-gray-400 mx-1">|</ThemedText>
-                    <ThemedText className="text-sm text-gray-500 dark:text-gray-400">
-                        {target !== null ? `${target} ${unit} CP` : '-'}
+                    <ThemedText className="text-xs text-gray-500 dark:text-gray-400 mx-1">vs</ThemedText>
+                    <ThemedText className="text-sm text-gray-500 dark:text-gray-400" numberOfLines={1}>
+                        {target !== null ? `${target}` : '-'}
                     </ThemedText>
+                    <ThemedText className="text-xs text-gray-500 dark:text-gray-400 ml-1">{unit}</ThemedText>
                     <View
                         className="w-5 h-5 rounded-full items-center justify-center ml-2"
-                        style={{ backgroundColor: statusColor }}
+                        style={{ backgroundColor: statusColor, flexShrink: 0 }}
                     >
                         <ThemedText className="text-xs text-white font-bold">
                             {getStatusIcon()}
