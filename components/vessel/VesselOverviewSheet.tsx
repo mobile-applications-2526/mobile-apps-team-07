@@ -84,6 +84,38 @@ export function VesselOverviewSheet({
                     <DataRow label="Build Year" value={formatValue(vessel.buildYear)} />
                 </DataSection>
 
+                {/* Performance vs Charter Party - moved to top for visibility */}
+                <DataSection title="Performance vs Charter Party">
+                    <KPIGraph
+                        title="Speed"
+                        actual={kpis?.speed.actual ?? null}
+                        target={kpis?.speed.target ?? null}
+                        actualLabel="Actual"
+                        targetLabel="CP"
+                        unit="kts"
+                        status={kpis?.speed.status ?? 'no_data'}
+                    />
+                    <KPIGraph
+                        title="Fuel Consumption"
+                        actual={kpis?.fuelConsumption.actual ?? null}
+                        target={kpis?.fuelConsumption.target ?? null}
+                        actualLabel="Actual"
+                        targetLabel="CP"
+                        unit="MT/day"
+                        status={kpis?.fuelConsumption.status ?? 'no_data'}
+                        isLowerBetter
+                    />
+                    <KPIGraph
+                        title="Cargo Temp"
+                        actual={kpis?.cargoTemp.actual ?? null}
+                        target={kpis?.cargoTemp.required ?? null}
+                        actualLabel="Actual"
+                        targetLabel="CP"
+                        unit="°C"
+                        status={kpis?.cargoTemp.status ?? 'no_voyage'}
+                    />
+                </DataSection>
+
                 {/* Latest Status from Noon Report */}
                 {vesselStatus && (
                     <DataSection title="Latest Status (Noon Report)">
@@ -204,37 +236,6 @@ export function VesselOverviewSheet({
                     <DataRow label="Cubic Capacity" value={formatValue(vessel.cubicCapacityM3, ' M³')} />
                     <DataRow label="Cargo Tanks" value={formatValue(vessel.cargoTanksCount)} />
                     <DataRow label="Tank Coating" value={formatValue(vessel.tankCoating)} />
-                </DataSection>
-
-                <DataSection title="Performance vs Charter Party">
-                    <KPIGraph
-                        title="Speed"
-                        actual={kpis?.speed.actual ?? null}
-                        target={kpis?.speed.target ?? null}
-                        actualLabel="Actual"
-                        targetLabel="CP"
-                        unit="kts"
-                        status={kpis?.speed.status ?? 'no_data'}
-                    />
-                    <KPIGraph
-                        title="Fuel Consumption"
-                        actual={kpis?.fuelConsumption.actual ?? null}
-                        target={kpis?.fuelConsumption.target ?? null}
-                        actualLabel="Actual"
-                        targetLabel="CP"
-                        unit="MT/day"
-                        status={kpis?.fuelConsumption.status ?? 'no_data'}
-                        isLowerBetter
-                    />
-                    <KPIGraph
-                        title="Cargo Temp"
-                        actual={kpis?.cargoTemp.actual ?? null}
-                        target={kpis?.cargoTemp.required ?? null}
-                        actualLabel="Actual"
-                        targetLabel="CP"
-                        unit="°C"
-                        status={kpis?.cargoTemp.status ?? 'no_voyage'}
-                    />
                 </DataSection>
 
                 <DataSection title="Dimensions">
