@@ -1,75 +1,49 @@
 # Safarban - Maritime Fleet Management
 
-A React Native mobile application for managing maritime vessel operations, voyages, and document processing.
+A React Native mobile application for managing maritime vessel operations, voyages, documents, and real-time vessel tracking.
 
 ## Features
 
-- **Fleet Overview**: View and manage your vessel fleet with real-time status
+- **Fleet Overview**: View and manage your vessel fleet with real-time status and position tracking
 - **Voyage Management**: Create, track, and manage vessel voyages with ports and cargo
-- **Document Processing**: Upload and process maritime documents with AI-powered extraction
+- **Document Processing**: Upload and process maritime documents (Q88, Form C) with AI-powered extraction
 - **Charter Party Management**: Handle time charter and voyage charter contracts
-- **Noon Reports**: Track vessel status and operational reports
+- **Noon Reports**: Track vessel status, fuel consumption (ROB), and water inventory
+- **Performance KPIs**: Compare actual vs charter party performance (speed, fuel, cargo temp)
+- **Invoice Management**: View and manage voyage-related invoices
 
-## Prerequisites
+## Quick Start
 
-Before running the app, ensure you have the following installed:
+### Prerequisites
 
-- **Node.js** (v18 or higher)
+- **Node.js** v18 or higher
 - **npm** or **yarn**
 - **Expo CLI**: `npm install -g expo-cli`
 
-### For iOS Development
-- **macOS** (required)
-- **Xcode** (latest version from App Store)
-- **CocoaPods**: `sudo gem install cocoapods`
-
-### For Android Development
-- **Android Studio** with Android SDK
-- **Java Development Kit (JDK)** 17 or higher
-- Android Emulator or physical device
-
-## Environment Setup
-
-Create a `.env` file in the root directory with the following variables:
-
-```env
-# API Configuration
-EXPO_PUBLIC_API_URL=https://your-api-url.com
-
-# Optional: Disable authentication for development
-# EXPO_PUBLIC_DISABLE_AUTHENTICATION=true
-```
-
-### Environment Variables
-
-| Variable | Required | Description |
-|----------|----------|-------------|
-| `EXPO_PUBLIC_API_URL` | Yes | Backend API URL (defaults to `https://w-shipping-api.onrender.com`) |
-| `EXPO_PUBLIC_DISABLE_AUTHENTICATION` | No | Set to `true` to bypass login during development |
-
-## Installation
-
-1. **Clone the repository**
-   ```bash
-   git clone <repository-url>
-   cd mobile-apps-team-07
-   ```
-
-2. **Install dependencies**
-   ```bash
-   npm install
-   ```
-
-3. **Install iOS dependencies** (macOS only)
-   ```bash
-   cd ios && pod install && cd ..
-   ```
-
-## Running the App
-
-### iOS (macOS only)
+### Installation
 
 ```bash
+# Clone the repository
+git clone <repository-url>
+cd mobile-apps-team-07
+
+# Install dependencies
+npm install
+```
+
+## Running on iOS
+
+### Requirements
+- macOS (required for iOS development)
+- Xcode (latest version from App Store)
+- CocoaPods: `sudo gem install cocoapods`
+
+### Steps
+
+```bash
+# Install iOS dependencies (first time only)
+cd ios && pod install && cd ..
+
 # Run on iOS Simulator
 npx expo run:ios
 
@@ -80,7 +54,23 @@ npx expo run:ios --device "iPhone 15 Pro"
 xcrun simctl list devices
 ```
 
-### Android
+### iOS Troubleshooting
+
+| Issue | Solution |
+|-------|----------|
+| Pod install fails | `cd ios && pod install --repo-update && cd ..` |
+| Build fails | Open `ios/Safarban.xcworkspace` in Xcode and check errors |
+| Simulator not found | `xcrun simctl list devices` |
+| Map not showing | Ensure location permissions are granted |
+
+## Running on Android
+
+### Requirements
+- Android Studio with Android SDK
+- Java Development Kit (JDK) 17 or higher
+- Android Emulator or physical device with USB debugging enabled
+
+### Steps
 
 ```bash
 # Run on Android Emulator or connected device
@@ -88,9 +78,23 @@ npx expo run:android
 
 # Run on specific device
 npx expo run:android --device
+
+# List connected devices
+adb devices
 ```
 
-### Development Server (Expo Go)
+### Android Troubleshooting
+
+| Issue | Solution |
+|-------|----------|
+| Build fails | `cd android && ./gradlew clean && cd ..` then rebuild |
+| Token/Auth errors | Clear app data: `adb shell pm clear com.dadez.Safarban` |
+| Emulator networking | Ensure emulator has internet access |
+| SDK not found | Set `ANDROID_HOME` environment variable |
+
+## Development Server (Expo Go)
+
+For quick development without native builds:
 
 ```bash
 # Start the Expo development server
@@ -101,36 +105,77 @@ npx expo start
 # - Android: Expo Go app
 ```
 
-## Troubleshooting
+**Note**: Some native features may not work in Expo Go. Use `npx expo run:ios` or `npx expo run:android` for full functionality.
 
-### iOS Issues
+## Environment Configuration
 
-- **Pod install fails**: Run `cd ios && pod install --repo-update && cd ..`
-- **Build fails**: Open `ios/Safarban.xcworkspace` in Xcode and check for errors
-- **Simulator not found**: Run `xcrun simctl list devices` to see available simulators
+Create a `.env` file in the root directory:
 
-### Android Issues
+```env
+# API Configuration (required)
+EXPO_PUBLIC_API_URL=https://w-shipping-api.onrender.com
 
-- **Token/Auth errors**: Clear app data: `adb shell pm clear com.dadez.Safarban`
-- **Build fails**: Run `cd android && ./gradlew clean && cd ..` then rebuild
-- **Emulator networking issues**: Ensure emulator has internet access
+# Development options
+EXPO_PUBLIC_DISABLE_AUTHENTICATION=false
+```
 
-### General Issues
+| Variable | Required | Description |
+|----------|----------|-------------|
+| `EXPO_PUBLIC_API_URL` | Yes | Backend API URL |
+| `EXPO_PUBLIC_DISABLE_AUTHENTICATION` | No | Set `true` to bypass login |
 
-- **Session expired errors**: Log out, force close app, log in again
-- **API connection issues**: Verify `EXPO_PUBLIC_API_URL` in `.env` file
-- **Cache issues**: Clear Metro cache: `npx expo start --clear`
+## App Usage Guide
+
+### Login
+- Use your credentials to log in
+- Default test account: `admin@safarban.be` / `admin123`
+
+### Fleet Overview
+- View all vessels in your fleet
+- Tap a vessel to see details
+- Pull down to refresh
+
+### Vessel Details
+- **Overview Tab**: Position on map, performance KPIs, latest noon report data
+- **Specs Tab**: Upload required documents (Q88, Form C for gas carriers)
+- **Voyages Tab**: View and manage vessel voyages
+- **Invoices Tab**: View voyage-related invoices
+
+### Document Upload
+1. Go to vessel's Specs tab
+2. Tap "Upload" on Q88 or Form C
+3. Select PDF file (max 25MB)
+4. Document is processed automatically
+
+### Performance vs Charter Party
+The overview shows real-time comparison:
+- **Speed**: Actual vs charter party speed (kts)
+- **Fuel Cons.**: Daily consumption vs allowance (MT/day)
+- **Cargo Temp**: Actual vs required temperature (°C)
+
+## Running Tests
+
+```bash
+# Run all tests
+npm test
+
+# Run tests with coverage
+npm test -- --coverage
+
+# Run specific test file
+npm test -- --testPathPattern="hooks"
+```
 
 ## Project Structure
 
 ```
 mobile-apps-team-07/
 ├── app/                    # App screens (file-based routing)
-│   ├── (tabs)/            # Tab navigation screens
+│   ├── (tabs)/            # Tab navigation (fleet, invoices, profile)
 │   ├── document-processing/ # Document upload & review
 │   └── vessel/            # Vessel details & voyages
 ├── components/            # Reusable UI components
-│   ├── common/           # Shared components (Loader, ThemedView, etc.)
+│   ├── common/           # Shared components (Loader, Card, etc.)
 │   ├── vessel/           # Vessel-specific components
 │   └── voyage/           # Voyage-specific components
 ├── hooks/                # Custom React hooks
@@ -139,19 +184,42 @@ mobile-apps-team-07/
 ├── types/                # TypeScript type definitions
 ├── context/              # React Context providers
 ├── lib/                  # Utility functions and database
-├── constants/            # App constants and configuration
-├── android/              # Android native code
-└── ios/                  # iOS native code
+└── __tests__/            # Test files
 ```
 
 ## Tech Stack
 
-- **Framework**: React Native with Expo
-- **Navigation**: Expo Router (file-based routing)
-- **Styling**: NativeWind (Tailwind CSS for React Native)
-- **State Management**: React Query (TanStack Query)
-- **Storage**: Expo SecureStore (tokens), SQLite (cache)
-- **UI Components**: Custom components with Lucide icons
+| Category | Technology |
+|----------|------------|
+| Framework | React Native with Expo |
+| Navigation | Expo Router (file-based) |
+| Styling | NativeWind (Tailwind CSS) |
+| State Management | React Query (TanStack) |
+| Storage | SecureStore (tokens), SQLite (cache) |
+| Maps | React Native Maps |
+| Icons | Lucide React Native |
+
+## Common Issues
+
+### Session Expired
+Log out, force close the app, and log in again.
+
+### API Connection Issues
+1. Check `EXPO_PUBLIC_API_URL` in `.env`
+2. Verify backend is running
+3. Check network connectivity
+
+### Cache Issues
+Clear Metro cache: `npx expo start --clear`
+
+### Build Issues
+```bash
+# Clean and rebuild
+rm -rf node_modules
+npm install
+cd ios && pod install && cd ..
+npx expo run:ios
+```
 
 ## Team
 

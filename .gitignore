@@ -82,3 +82,5 @@ expo-env.d.ts
 # yarn.lock
 
 # End of file
+# Claude Code local files
+.claude/

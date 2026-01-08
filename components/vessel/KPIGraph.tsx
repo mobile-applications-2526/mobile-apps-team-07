@@ -1,16 +1,31 @@
+/**
+ * KPIGraph Component
+ *
+ * Displays a Key Performance Indicator with a visual progress bar.
+ * Used in vessel overview to show Speed, Fuel Consumption, and Cargo Temperature
+ * performance against charter party targets.
+ *
+ * Status colors:
+ * - green: Performance meets or exceeds target
+ * - yellow: Performance slightly below target (warning)
+ * - red: Performance significantly below target
+ * - no_data: Awaiting noon report data
+ * - no_cp: No charter party linked
+ * - no_voyage: No active voyage
+ */
 import React from 'react';
 import { View, useColorScheme } from 'react-native';
 import { ThemedText } from '@/components/common';
 
 export interface KPIGraphProps {
-    title: string;
-    actual: number | null;
-    target: number | null;
-    actualLabel: string;
-    targetLabel: string;
-    unit: string;
+    title: string;           // KPI name (e.g., "Speed", "Fuel Cons.")
+    actual: number | null;   // Current actual value from noon report
+    target: number | null;   // Target value from charter party or vessel specs
+    actualLabel: string;     // Label for actual value (e.g., "Actual")
+    targetLabel: string;     // Label for target value (e.g., "CP")
+    unit: string;            // Unit of measurement (e.g., "kts", "MT/day")
     status: 'green' | 'yellow' | 'red' | 'no_data' | 'no_cp' | 'no_voyage';
-    isLowerBetter?: boolean;
+    isLowerBetter?: boolean; // True for metrics where lower is better (e.g., fuel consumption)
 }
 
 export function KPIGraph({
